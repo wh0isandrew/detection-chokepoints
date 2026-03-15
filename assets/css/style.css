@@ -564,6 +564,83 @@ pre .hljs { padding: 0 !important; }
   opacity: 0;
 }
 
+/* ─── ClickGrab payload examples ────────────────────────────────────────── */
+.cg-payload-example {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: .65rem .9rem;
+  font-size: .78rem;
+  font-family: ui-monospace, monospace;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: .5rem 0 .15rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.cg-payload-example code { font-size: inherit; }
+.cg-payload-meta {
+  font-size: .72rem;
+  color: var(--text-dim);
+  margin-bottom: .6rem;
+}
+.cg-payload-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  margin: .5rem 0 .15rem;
+}
+
+/* ─── ClickGrab infra enrichment detail row ──────────────────────────────── */
+.cg-infra-detail-row { display: none; }
+.cg-infra-detail-row.expanded { display: table-row; }
+.cg-infra-detail-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.5rem;
+  padding: .6rem .6rem .6rem 1.6rem;
+  background: var(--bg-input);
+  border-top: 1px dashed var(--border);
+}
+.cg-infra-field { display: flex; flex-direction: column; gap: .1rem; }
+.cg-infra-field-label {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+}
+.cg-infra-field-val {
+  font-size: .8rem;
+  font-family: ui-monospace, monospace;
+  color: var(--text-muted);
+}
+.cg-infra-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 .3rem 0 0;
+  color: var(--text-dim);
+  line-height: 1;
+  vertical-align: middle;
+}
+.cg-infra-toggle .collapsible-chevron { font-size: .9rem; }
+
+/* Hosting type badges */
+.cg-badge-hosting-bp   { display: inline-block; background: rgba(218,54,51,.15);  color: var(--critical); font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-hosting-cdn  { display: inline-block; background: rgba(56,139,253,.15); color: var(--low);      font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-hosting-mgd  { display: inline-block; background: rgba(227,179,65,.15); color: var(--high);     font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-hosting-comp { display: inline-block; background: rgba(240,136,62,.15); color: var(--accent);   font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-hosting-unk  { display: inline-block; background: var(--bg-input);      color: var(--text-dim); font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+
+/* Status badges */
+.cg-badge-status-active   { display: inline-block; background: rgba(63,185,80,.15);  color: var(--medium); font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-status-down     { display: inline-block; background: rgba(218,54,51,.1);   color: var(--text-dim); font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+.cg-badge-status-unknown  { display: inline-block; background: var(--bg-input);      color: var(--text-dim); font-size: .65rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; letter-spacing: .03em; text-transform: uppercase; }
+
 /* ─── Raw Logs section ───────────────────────────────────────────────────── */
 .raw-log-item { margin-bottom: 1.5rem; }
 .raw-log-item:last-child { margin-bottom: 0; }

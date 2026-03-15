@@ -24,6 +24,8 @@ import os
 from collections import defaultdict
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+import urllib.request
+import urllib.error
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -67,6 +69,101 @@ RE_HIDDEN = re.compile(r'-w\s+h(?:idden)?\b|-WindowStyle\s+Hidden\b', re.IGNOREC
 
 # CDN staging
 CDN_PATTERNS = re.compile(r'cdn[-.]|\.wixstatic\.com|irp\.cdn-website\.com', re.IGNORECASE)
+
+# ---------------------------------------------------------------------------
+# Infrastructure enrichment
+# ---------------------------------------------------------------------------
+
+# Analyst-curated labels for known staging hosts (updated manually as new hosts appear)
+_ANALYST_TAGS = {
+    'irp.cdn-website.com':              {'hosting_type': 'cdn',         'status': 'active'},
+    'yogasitesdev.wpengine.com':        {'hosting_type': 'managed',     'status': 'active'},
+    'aatox.com':                        {'hosting_type': 'bulletproof', 'status': 'taken_down'},
+    '80.253.249.186':                   {'hosting_type': 'bulletproof', 'status': 'taken_down'},
+    '95.164.53.214':                    {'hosting_type': 'bulletproof', 'status': 'taken_down'},
+    '91.247.36.3':                      {'hosting_type': 'bulletproof', 'status': 'taken_down'},
+    'sitecariri.com.br':                {'hosting_type': 'compromised', 'status': 'unknown'},
+    'fundacion-cannabis-argentina.org': {'hosting_type': 'compromised', 'status': 'unknown'},
+    'ghenvironment.com':                {'hosting_type': 'compromised', 'status': 'unknown'},
+    'cmparazinho.rn.gov.br':            {'hosting_type': 'compromised', 'status': 'unknown'},
+}
+
+_RE_IP = re.compile(r'^\d{1,3}(?:\.\d{1,3}){3}$')
+
+def _is_ip(host):
+    return bool(_RE_IP.match(host))
+
+def _dns_history_url(host):
+    if _is_ip(host):
+        return f'https://securitytrails.com/list/ip/{host}'
+    return f'https://securitytrails.com/domain/{host}/history/a'
+
+def _yaml_str(s):
+    """Return a JSON-quoted string safe for embedding as a YAML scalar value."""
+    return json.dumps(str(s)) if s is not None else 'null'
+
+_enrich_cache = {}
+
+def enrich_domain(host):
+    """Fetch ASN, geo, and registration info for a hostname or IP.
+
+    Returns a dict with keys: asn, country, city, created, registrar, is_ip.
+    All values default to None on lookup failure — the YAML writer emits 'null'.
+    Network calls are skipped if host is in the in-process cache.
+    """
+    if host in _enrich_cache:
+        return _enrich_cache[host]
+
+    result = {
+        'asn': None, 'country': None, 'city': None,
+        'created': None, 'registrar': None, 'is_ip': _is_ip(host),
+    }
+
+    # --- ip-api.com geo/ASN lookup (works for both IPs and domain names) ---
+    try:
+        url = f'http://ip-api.com/json/{host}?fields=status,country,city,as,org'
+        req = urllib.request.Request(url, headers={'User-Agent': 'detection-chokepoints/1.0'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+        if data.get('status') == 'success':
+            result['asn'] = data.get('as') or data.get('org') or None
+            result['country'] = data.get('country') or None
+            result['city'] = data.get('city') or None
+    except Exception:
+        pass
+
+    # --- RDAP domain registration date + registrar (domains only) ---
+    if not result['is_ip']:
+        try:
+            rdap_url = f'https://rdap.org/domain/{host}'
+            req = urllib.request.Request(
+                rdap_url,
+                headers={'User-Agent': 'detection-chokepoints/1.0', 'Accept': 'application/json'}
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read())
+            for event in data.get('events', []):
+                if event.get('eventAction') == 'registration':
+                    result['created'] = event.get('eventDate', '')[:10] or None
+                    break
+            for entity in data.get('entities', []):
+                if 'registrar' in entity.get('roles', []):
+                    vcard = entity.get('vcardArray', [])
+                    if isinstance(vcard, list) and len(vcard) > 1:
+                        for field in vcard[1]:
+                            if isinstance(field, list) and field[0] == 'fn':
+                                result['registrar'] = field[3] or None
+                                break
+                    break
+        except Exception:
+            pass
+
+    _enrich_cache[host] = result
+    return result
+
+# Payload example collection constants
+_MAX_EXAMPLES = 3
+_EXAMPLE_MAXLEN = 350
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -290,6 +387,9 @@ def analyse(input_path):
     cradles_total = defaultdict(int)
     evasion_totals = defaultdict(int)
 
+    # Payload examples — up to _MAX_EXAMPLES per category for the trends page
+    payload_examples = defaultdict(list)
+
     for record in sites:
         if not isinstance(record, dict):
             continue
@@ -354,11 +454,91 @@ def analyse(input_path):
             domain_counts[domain] += 1
             domain_cdn[domain] = is_cdn
 
+        # --- Payload examples (collect representative samples per category) ---
+        def _add_ex(key, text, extra=None):
+            if len(payload_examples[key]) >= _MAX_EXAMPLES:
+                return
+            t = str(text).strip()[:_EXAMPLE_MAXLEN]
+            if not t:
+                return
+            # Deduplicate on first 50 chars
+            existing_keys = [
+                e.get('text', e.get('url', e.get('encoded', '')))[:50]
+                for e in payload_examples[key]
+            ]
+            if t[:50] in existing_keys:
+                return
+            entry = {'date': date}
+            if extra:
+                entry.update(extra)
+            else:
+                entry['text'] = t
+            payload_examples[key].append(entry)
+
+        if ps_text:
+            if RE_IWR.search(ps_text) and has_iex:
+                _add_ex('iwr_iex', ps_text)
+            if RE_IRM.search(ps_text) and has_iex and not RE_IWR.search(ps_text):
+                _add_ex('irm_iex', ps_text)
+            if RE_WEBCLIENT.search(ps_text):
+                _add_ex('webclient', ps_text)
+            if RE_CURL.search(ps_text):
+                _add_ex('curl', ps_text)
+            if RE_SELF_DELETE.search(ps_text):
+                _add_ex('self_delete', ps_text)
+            if RE_HIDDEN.search(ps_text):
+                _add_ex('hidden_window', ps_text)
+
+        # Base64: capture encoded command + decoded text together
+        if record.get('Base64Strings') and len(payload_examples['base64']) < _MAX_EXAMPLES:
+            enc_cmd = ''
+            enc_field = record.get('EncodedPowerShell')
+            if isinstance(enc_field, list) and enc_field:
+                enc_cmd = str(enc_field[0]).strip()[:_EXAMPLE_MAXLEN]
+            elif isinstance(enc_field, str) and enc_field:
+                enc_cmd = enc_field.strip()[:_EXAMPLE_MAXLEN]
+            decoded_text = ''
+            b64 = record.get('Base64Strings')
+            if isinstance(b64, dict):
+                decoded_text = str(b64.get('Decoded') or b64.get('decoded') or '').strip()[:_EXAMPLE_MAXLEN]
+            elif isinstance(b64, list):
+                for item in b64:
+                    if isinstance(item, dict):
+                        d_val = item.get('Decoded') or item.get('decoded') or ''
+                        if d_val:
+                            decoded_text = str(d_val).strip()[:_EXAMPLE_MAXLEN]
+                            break
+            if enc_cmd or decoded_text:
+                _add_ex('base64', enc_cmd or '(encoded command)', {
+                    'encoded': enc_cmd or '(encoded command not captured)',
+                    'decoded': decoded_text or '(decoded text not available)',
+                })
+
+        # CDN staging: capture the actual download URL
+        if has_cdn and len(payload_examples['cdn_staging']) < _MAX_EXAMPLES:
+            downloads = record.get('PowerShellDownloads') or []
+            if isinstance(downloads, dict):
+                downloads = [downloads]
+            for dl in downloads:
+                if isinstance(dl, dict):
+                    cdn_url = dl.get('URL') or dl.get('url') or ''
+                    if cdn_url and CDN_PATTERNS.search(cdn_url):
+                        _add_ex('cdn_staging', cdn_url, {'url': cdn_url.strip()[:_EXAMPLE_MAXLEN]})
+                        break
+
     # Sort dates
     sorted_dates = sorted(by_date.keys())
 
     # Build top-10 staging domains
     top_domains = sorted(domain_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # Enrich staging domains with geo/ASN/registration data
+    print("Enriching staging domains via ip-api.com and RDAP...")
+    domain_enrichment = {}
+    for domain, _count in top_domains:
+        print(f"  {domain}...", end=' ', flush=True)
+        domain_enrichment[domain] = enrich_domain(domain)
+        print('done')
 
     total_sites = sum(d['total'] for d in by_date.values())
     total_malicious = sum(d['malicious'] for d in by_date.values())
@@ -426,9 +606,39 @@ def analyse(input_path):
     lines.append('staging_domains:')
     for domain, count in top_domains:
         cdn_flag = 'true' if domain_cdn.get(domain) else 'false'
+        enr = domain_enrichment.get(domain, {})
+        tags = _ANALYST_TAGS.get(domain, {'hosting_type': 'unknown', 'status': 'unknown'})
         lines.append(f'  - domain: "{domain}"')
         lines.append(f'    count: {count}')
         lines.append(f'    cdn: {cdn_flag}')
+        lines.append(f'    is_ip: {"true" if enr.get("is_ip") else "false"}')
+        lines.append(f'    asn: {_yaml_str(enr.get("asn"))}')
+        lines.append(f'    country: {_yaml_str(enr.get("country"))}')
+        lines.append(f'    city: {_yaml_str(enr.get("city"))}')
+        lines.append(f'    hosting_type: "{tags["hosting_type"]}"')
+        lines.append(f'    created: {_yaml_str(enr.get("created"))}')
+        lines.append(f'    registrar: {_yaml_str(enr.get("registrar"))}')
+        lines.append(f'    status: "{tags["status"]}"')
+        lines.append(f'    dns_history_url: "{_dns_history_url(domain)}"')
+
+    # Payload examples (up to _MAX_EXAMPLES per detection category)
+    lines.append('')
+    lines.append('payload_examples:')
+    for key in ['iwr_iex', 'irm_iex', 'webclient', 'curl', 'base64', 'self_delete', 'cdn_staging', 'hidden_window']:
+        examples = payload_examples.get(key, [])
+        if examples:
+            lines.append(f'  {key}:')
+            for ex in examples:
+                lines.append(f'    - date: "{ex["date"]}"')
+                if key == 'base64':
+                    lines.append(f'      encoded: {_yaml_str(ex.get("encoded"))}')
+                    lines.append(f'      decoded: {_yaml_str(ex.get("decoded"))}')
+                elif key == 'cdn_staging':
+                    lines.append(f'      url: {_yaml_str(ex.get("url"))}')
+                else:
+                    lines.append(f'      text: {_yaml_str(ex.get("text"))}')
+        else:
+            lines.append(f'  {key}: []')
 
     # ---------------------------------------------------------------------------
     # Monthly aggregation (for readable trend charts)
