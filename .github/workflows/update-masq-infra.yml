@@ -1,0 +1,40 @@
+name: Update Masq-Infra Data
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Every Monday 06:00 UTC
+  workflow_dispatch:        # Allow manual trigger for on-demand runs
+
+permissions:
+  contents: write           # Required to commit _data/masq_infra.json back to repo
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests mmh3 shodan
+
+      - name: Run data pipeline
+        env:
+          URLSCAN_API_KEY: ${{ secrets.URLSCAN_API_KEY }}
+          SHODAN_API_KEY:  ${{ secrets.SHODAN_API_KEY }}
+          MB_API_KEY:      ${{ secrets.MB_API_KEY }}
+          VT_API_KEY:      ${{ secrets.VT_API_KEY }}
+          VALIDIN_API_KEY: ${{ secrets.VALIDIN_API_KEY }}
+        run: python scripts/update_masq_infra.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add _data/masq_infra.json
+          git diff --staged --quiet || git commit -m "chore: update masq-infra data [$(date -u +%Y-%m-%d)]"
+          git push
