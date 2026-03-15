@@ -74,6 +74,13 @@ permalink: /trends/clickgrab/
 .cg-rec-tier { flex: 0 0 62px; }
 .cg-rec-body { flex: 1; font-size: .875rem; color: var(--text-muted); }
 .cg-rec-body strong { color: var(--text); display: block; margin-bottom: .2rem; }
+.cg-rec-examples { margin-top: .5rem; }
+.cg-rec-examples-toggle {
+  background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: center; gap: .3rem;
+  color: var(--text-dim); font-size: .78rem; font-family: inherit;
+}
+.cg-rec-examples-toggle:hover { color: var(--text-muted); }
 </style>
 
 <div class="cg-page">
@@ -209,33 +216,101 @@ permalink: /trends/clickgrab/
 <h2>Staging Infrastructure</h2>
 <p>Domains serving the actual payloads (from PowerShell download commands). CDN-hosted payloads defeat domain-reputation blocking — the infrastructure looks like legitimate web hosting.</p>
 
+<div style="overflow-x:auto;">
 <table class="cg-table">
   <thead>
     <tr>
-      <th>Domain</th>
-      <th>Payload count</th>
+      <th></th>
+      <th>Domain / IP</th>
+      <th>Payloads</th>
       <th>Type</th>
       <th>Blind spot</th>
     </tr>
   </thead>
   <tbody>
     {% for d in site.data.clickgrab_trends.staging_domains %}
-    <tr>
-      <td>{{ d.domain }}</td>
+    <tr class="cg-infra-row">
+      <td style="padding:.45rem .25rem .45rem .4rem;width:1.2rem;">
+        <button class="cg-infra-toggle" aria-expanded="false"
+                data-target="infra-detail-{{ forloop.index }}"
+                aria-label="Show details for {{ d.domain }}">
+          <span class="collapsible-chevron">›</span>
+        </button>
+      </td>
+      <td><code style="font-size:.8rem;">{{ d.domain }}</code></td>
       <td>{{ d.count }}</td>
       <td>
-        {% if d.cdn %}<span class="cg-badge-cdn">CDN</span>{% else %}—{% endif %}
+        {% if d.cdn %}<span class="cg-badge-cdn">CDN</span>
+        {% elsif d.is_ip %}<span class="cg-badge-ip">IP</span>
+        {% else %}—{% endif %}
       </td>
-      <td style="color:var(--text-muted);font-family:inherit;">
+      <td style="color:var(--text-muted);font-family:inherit;font-size:.8rem;">
         {% if d.cdn %}Domain reputation blocklists ineffective (legitimate CDN provider)
         {% elsif d.domain contains "wpengine.com" %}Managed WP hosting — likely compromised; blocklist removes legitimate sites
         {% elsif d.domain contains "blogspot.com" or d.domain contains "blogger.com" %}Google-hosted; domain blocking would block all of Blogger
         {% else %}—{% endif %}
       </td>
     </tr>
+    <tr id="infra-detail-{{ forloop.index }}" class="cg-infra-detail-row">
+      <td colspan="5" style="padding:0;">
+        <div class="cg-infra-detail-body">
+          {% if d.asn %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">ASN</span>
+            <span class="cg-infra-field-val">{{ d.asn }}</span>
+          </div>
+          {% endif %}
+          {% if d.country %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">Country{% if d.city %} / City{% endif %}</span>
+            <span class="cg-infra-field-val">{{ d.country }}{% if d.city %} · {{ d.city }}{% endif %}</span>
+          </div>
+          {% endif %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">Hosting</span>
+            <span class="cg-infra-field-val">
+              {% if d.hosting_type == "cdn" %}<span class="cg-badge-hosting-cdn">CDN</span> Legitimate content delivery network
+              {% elsif d.hosting_type == "managed" %}<span class="cg-badge-hosting-mgd">Managed</span> Managed hosting (likely compromised)
+              {% elsif d.hosting_type == "bulletproof" %}<span class="cg-badge-hosting-bp">Bulletproof</span> Abuse-tolerant VPS / dedicated hosting
+              {% elsif d.hosting_type == "compromised" %}<span class="cg-badge-hosting-comp">Compromised</span> Legitimate site abused as staging host
+              {% else %}<span class="cg-badge-hosting-unk">Unknown</span>{% endif %}
+            </span>
+          </div>
+          {% unless d.is_ip %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">Registered</span>
+            <span class="cg-infra-field-val">{% if d.created %}{{ d.created }}{% else %}—{% endif %}</span>
+          </div>
+          {% if d.registrar %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">Registrar</span>
+            <span class="cg-infra-field-val">{{ d.registrar }}</span>
+          </div>
+          {% endif %}
+          {% endunless %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">Status</span>
+            <span class="cg-infra-field-val">
+              {% if d.status == "active" %}<span class="cg-badge-status-active">Active</span>
+              {% elsif d.status == "taken_down" %}<span class="cg-badge-status-down">Taken down</span>
+              {% else %}<span class="cg-badge-status-unknown">Unknown</span>{% endif %}
+            </span>
+          </div>
+          {% if d.dns_history_url %}
+          <div class="cg-infra-field">
+            <span class="cg-infra-field-label">DNS history</span>
+            <span class="cg-infra-field-val"><a href="{{ d.dns_history_url }}" target="_blank" rel="noopener">SecurityTrails →</a></span>
+          </div>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
+
+<p style="font-size:.75rem;color:var(--text-dim);margin:.25rem 0 .75rem;">Click any row to expand ASN, geo, hosting type, and registration details. ASN / geo data populated by <code>analyze_clickgrab.py</code> via ip-api.com and RDAP on next pipeline run. Passive DNS history requires a SecurityTrails or similar account.</p>
 
 <div class="cg-callout cg-callout--alert">
   <strong>CDN-hosted staging defeats domain blocking.</strong> <code>irp.cdn-website.com</code> appeared in {{ site.data.clickgrab_trends.evasion_totals.cdn_staging }} payload fetches. This is a legitimate CDN used by website builders — blocking it would impact legitimate sites. Detection must shift to behavioral signals (PowerShell → network → unusual domain path) rather than domain-reputation lookup.
@@ -250,6 +325,21 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-body">
     <strong>Detect unusual parent → PowerShell spawn</strong>
     Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="{{ '/sigma-rules/clickfix/' | relative_url }}">sigma-rules/clickfix/hunt.yml</a>.
+    {% if site.data.clickgrab_trends.payload_examples.hidden_window.size > 0 %}
+    <div class="cg-rec-examples">
+      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
+              data-target="payload-ex-hidden">
+        <span class="collapsible-chevron">›</span>
+        Example payloads ({{ site.data.clickgrab_trends.payload_examples.hidden_window | size }})
+      </button>
+      <div id="payload-ex-hidden" class="collapsible-body collapsed">
+        {% for ex in site.data.clickgrab_trends.payload_examples.hidden_window %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -258,6 +348,46 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-body">
     <strong>Cradle-agnostic network fetch detection</strong>
     Move from IWR/IRM string matching to: <em>PowerShell process → outbound HTTP/HTTPS to non-Microsoft, non-CDN domain → path ends in .ps1/.txt/.hta</em>. This catches IWR, Curl, WebClient, and any future cradle. Update Sigma rules to use process+network correlation, not command-string pattern matching.
+    {% assign all_cradle_examples = site.data.clickgrab_trends.payload_examples.iwr_iex | concat: site.data.clickgrab_trends.payload_examples.irm_iex | concat: site.data.clickgrab_trends.payload_examples.webclient | concat: site.data.clickgrab_trends.payload_examples.curl %}
+    {% if all_cradle_examples.size > 0 %}
+    <div class="cg-rec-examples">
+      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
+              data-target="payload-ex-cradles">
+        <span class="collapsible-chevron">›</span>
+        Example payloads ({{ all_cradle_examples | size }})
+      </button>
+      <div id="payload-ex-cradles" class="collapsible-body collapsed">
+        {% if site.data.clickgrab_trends.payload_examples.iwr_iex.size > 0 %}
+        <div class="cg-payload-label">IWR / IEX</div>
+        {% for ex in site.data.clickgrab_trends.payload_examples.iwr_iex %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+        {% endif %}
+        {% if site.data.clickgrab_trends.payload_examples.irm_iex.size > 0 %}
+        <div class="cg-payload-label">IRM / IEX</div>
+        {% for ex in site.data.clickgrab_trends.payload_examples.irm_iex %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+        {% endif %}
+        {% if site.data.clickgrab_trends.payload_examples.webclient.size > 0 %}
+        <div class="cg-payload-label">WebClient</div>
+        {% for ex in site.data.clickgrab_trends.payload_examples.webclient %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+        {% endif %}
+        {% if site.data.clickgrab_trends.payload_examples.curl.size > 0 %}
+        <div class="cg-payload-label">Curl</div>
+        {% for ex in site.data.clickgrab_trends.payload_examples.curl %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -266,6 +396,24 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-body">
     <strong>Detect Base64 decode + execute</strong>
     <code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. This covers the 18× Base64 increase seen in Jan 2026.
+    {% if site.data.clickgrab_trends.payload_examples.base64.size > 0 %}
+    <div class="cg-rec-examples">
+      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
+              data-target="payload-ex-b64">
+        <span class="collapsible-chevron">›</span>
+        Example payloads ({{ site.data.clickgrab_trends.payload_examples.base64 | size }})
+      </button>
+      <div id="payload-ex-b64" class="collapsible-body collapsed">
+        {% for ex in site.data.clickgrab_trends.payload_examples.base64 %}
+        <div class="cg-payload-label">Encoded command</div>
+        <pre class="cg-payload-example"><code>{{ ex.encoded }}</code></pre>
+        <div class="cg-payload-label">Decoded</div>
+        <pre class="cg-payload-example"><code>{{ ex.decoded }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -274,6 +422,21 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-body">
     <strong>File write → execute → delete correlation (new Dec 2025)</strong>
     Self-delete appeared at scale in December 2025. Correlate: script written to <code>%TEMP%</code> → process execution from that path → file deletion within seconds. If artifact-based rules are your only coverage, they're now blind after execution completes. Use process execution telemetry, not file presence.
+    {% if site.data.clickgrab_trends.payload_examples.self_delete.size > 0 %}
+    <div class="cg-rec-examples">
+      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
+              data-target="payload-ex-selfdelete">
+        <span class="collapsible-chevron">›</span>
+        Example payloads ({{ site.data.clickgrab_trends.payload_examples.self_delete | size }})
+      </button>
+      <div id="payload-ex-selfdelete" class="collapsible-body collapsed">
+        {% for ex in site.data.clickgrab_trends.payload_examples.self_delete %}
+        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -282,6 +445,21 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-body">
     <strong>CDN staging: pivot from domain blocking to path-pattern detection</strong>
     <code>irp.cdn-website.com</code> is a legitimate CDN. Block it and you break legitimate sites. Instead, alert on PowerShell fetching from <code>*.cdn-website.com</code> paths matching <code>/files/uploaded/*.ps1</code>. Or use JA4/TLS fingerprinting on the outbound connection rather than the destination hostname.
+    {% if site.data.clickgrab_trends.payload_examples.cdn_staging.size > 0 %}
+    <div class="cg-rec-examples">
+      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
+              data-target="payload-ex-cdn">
+        <span class="collapsible-chevron">›</span>
+        Example staging URLs ({{ site.data.clickgrab_trends.payload_examples.cdn_staging | size }})
+      </button>
+      <div id="payload-ex-cdn" class="collapsible-body collapsed">
+        {% for ex in site.data.clickgrab_trends.payload_examples.cdn_staging %}
+        <pre class="cg-payload-example"><code>{{ ex.url }}</code></pre>
+        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -292,3 +470,27 @@ permalink: /trends/clickgrab/
 window.CLICKGRAB_TRENDS = {{ site.data.clickgrab_trends | jsonify }};
 </script>
 <script src="{{ '/assets/js/clickgrab-trends.js' | relative_url }}"></script>
+<script>
+// Collapsible payload example toggles
+document.querySelectorAll('.collapsible-header').forEach(function(header) {
+  header.addEventListener('click', function() {
+    var expanded = header.getAttribute('aria-expanded') === 'true';
+    header.setAttribute('aria-expanded', String(!expanded));
+    var target = header.getAttribute('data-target');
+    var body = target ? document.getElementById(target) : null;
+    if (body) body.classList.toggle('collapsed', expanded);
+  });
+});
+
+// Infra table row expand toggles
+document.querySelectorAll('.cg-infra-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!expanded));
+    var chevron = btn.querySelector('.collapsible-chevron');
+    if (chevron) chevron.style.transform = expanded ? '' : 'rotate(90deg)';
+    var row = document.getElementById(btn.getAttribute('data-target'));
+    if (row) row.classList.toggle('expanded', !expanded);
+  });
+});
+</script>
