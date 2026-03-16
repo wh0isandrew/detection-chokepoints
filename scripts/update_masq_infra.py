@@ -144,16 +144,20 @@ def collect_urlscan(api_key: str) -> list[dict]:
 
             results = data.get("results", [])
             for item in results:
-                # Client-side malicious filter — keeps free API keys working
-                verdicts = item.get("verdicts", {})
-                overall = verdicts.get("overall", {})
-                if not overall.get("malicious", False):
-                    continue
-
                 page = item.get("page", {})
                 domain = page.get("domain", "")
                 if not domain:
                     continue
+
+                # Store URLScan's verdict for informational use in recent_samples,
+                # but do NOT gate on it — verdicts.overall.malicious is only populated
+                # when URLScan's scanner or community explicitly flags the domain, which
+                # misses many impersonation sites scanned before weaponization.
+                verdicts = item.get("verdicts", {})
+                urlscan_malicious = (
+                    verdicts.get("overall", {}).get("malicious", False)
+                    or verdicts.get("urlscan", {}).get("malicious", False)
+                )
 
                 payload_sha256 = None
                 download_url = None
@@ -167,13 +171,14 @@ def collect_urlscan(api_key: str) -> list[dict]:
                         break
 
                 rec = {
-                    "domain":         domain,
-                    "asnname":        page.get("asnname", "Unknown"),
-                    "first_seen":     item.get("task", {}).get("time", ""),
-                    "page_title":     page.get("title", ""),
-                    "payload_sha256": payload_sha256,
-                    "download_url":   download_url,
-                    "mime_type":      mime_type,
+                    "domain":             domain,
+                    "asnname":            page.get("asnname", "Unknown"),
+                    "first_seen":         item.get("task", {}).get("time", ""),
+                    "page_title":         page.get("title", ""),
+                    "payload_sha256":     payload_sha256,
+                    "download_url":       download_url,
+                    "mime_type":          mime_type,
+                    "urlscan_malicious":  urlscan_malicious,
                 }
 
                 # Keep earliest first_seen per domain
@@ -188,8 +193,14 @@ def collect_urlscan(api_key: str) -> list[dict]:
             if not data.get("has_more") or brand_count >= 500:
                 break
 
-            last = results[-1]
-            params["search_after"] = last.get("sort", [""])[0]
+            # Bug guards: results may be empty even when has_more is true (edge case);
+            # sort may be an explicit empty array rather than a missing key.
+            if not results:
+                break
+            sort_val = results[-1].get("sort") or []
+            if not sort_val:
+                break
+            params["search_after"] = sort_val[0]
 
         time.sleep(URLSCAN_RATE_LIMIT_SLEEP)
         print(f"  URLScan: {brand} → {brand_count} result(s)", file=sys.stderr)
