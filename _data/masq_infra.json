@@ -2,10 +2,10 @@
   "meta": {
     "last_updated": "2026-03-16",
     "lookback_days": 30,
-    "sample_size": 1061
+    "sample_size": 1056
   },
   "stats": {
-    "tls_lets_encrypt_pct": 90.0,
+    "tls_lets_encrypt_pct": 88.5,
     "domain_to_resolution_hours_median": 0,
     "favicon_reuse_pct": 10.1,
     "favicon_clusters_found": 4
@@ -13,28 +13,33 @@
   "hosting_providers": [
     {
       "name": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "count": 316,
-      "pct": 29.8
-    },
-    {
-      "name": "IS-AS-1 - Interserver, Inc, US",
-      "count": 85,
-      "pct": 8.0
+      "count": 320,
+      "pct": 30.3
     },
     {
       "name": "Unknown",
-      "count": 83,
-      "pct": 7.8
+      "count": 78,
+      "pct": 7.4
     },
     {
-      "name": "AMAZON-02 - Amazon.com, Inc., US",
+      "name": "IS-AS-1 - Interserver, Inc, US",
       "count": 76,
       "pct": 7.2
     },
     {
       "name": "CONFLUENCE-NETWORK-INC - Confluence Networks Inc, VG",
-      "count": 71,
-      "pct": 6.7
+      "count": 72,
+      "pct": 6.8
+    },
+    {
+      "name": "AMAZON-02 - Amazon.com, Inc., US",
+      "count": 70,
+      "pct": 6.6
+    },
+    {
+      "name": "HETZNER-AS Hetzner Online GmbH, DE",
+      "count": 31,
+      "pct": 2.9
     },
     {
       "name": "ACE-AS-AP ACE, SG",
@@ -42,56 +47,56 @@
       "pct": 2.9
     },
     {
-      "name": "HETZNER-AS Hetzner Online GmbH, DE",
-      "count": 29,
-      "pct": 2.7
+      "name": "AMAZON-AES - Amazon.com, Inc., US",
+      "count": 21,
+      "pct": 2.0
     },
     {
       "name": "OVH OVH SAS, FR",
-      "count": 18,
-      "pct": 1.7
-    },
-    {
-      "name": "AMAZON-AES - Amazon.com, Inc., US",
-      "count": 17,
-      "pct": 1.6
+      "count": 21,
+      "pct": 2.0
     },
     {
       "name": "GOOGLE-CLOUD-PLATFORM - Google LLC, US",
-      "count": 17,
-      "pct": 1.6
+      "count": 16,
+      "pct": 1.5
     }
   ],
   "lure_types": [
     {
       "tag": "unknown",
-      "count": 823,
-      "pct": 77.6
+      "count": 821,
+      "pct": 77.7
     },
     {
       "tag": "fake_ai_tool",
-      "count": 123,
-      "pct": 11.6
+      "count": 120,
+      "pct": 11.4
     },
     {
       "tag": "fake_software",
-      "count": 56,
-      "pct": 5.3
+      "count": 57,
+      "pct": 5.4
     },
     {
       "tag": "fake_update",
-      "count": 40,
-      "pct": 3.8
-    },
-    {
-      "tag": "fake_tool",
-      "count": 10,
-      "pct": 0.9
+      "count": 37,
+      "pct": 3.5
     },
     {
       "tag": "game_crack",
+      "count": 11,
+      "pct": 1.0
+    },
+    {
+      "tag": "fake_tool",
       "count": 9,
-      "pct": 0.8
+      "pct": 0.9
+    },
+    {
+      "tag": "media_piracy",
+      "count": 1,
+      "pct": 0.1
     }
   ],
   "payload_families": [],
@@ -184,11 +189,11 @@
       "brand": "telegram",
       "count": 100,
       "sample_hosts": [
+        "178.62.195.95",
         "178.62.222.210",
         "95.161.64.99",
         "test.test.test",
-        "149.154.167.99",
-        "okbiquge.com"
+        "149.154.167.99"
       ]
     },
     {
@@ -223,203 +228,203 @@
   ],
   "recent_samples": [
     {
-      "domain": "www.www.www.bntebktky8.discord.tattoo",
+      "domain": "robloxapkmenu.com",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:22:14.593Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "chatgptwww.myaccount.elizabethgas.com",
+      "asn": "CONFLUENCE-NETWORK-INC - Confluence Networks Inc, VG",
+      "lure_type": "fake_ai_tool",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:22:05.951Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "steamway.pl",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:21:26.761Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "lancashiresteamcompany.co.uk",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:20:13.471Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "es-mad-anx-r007.router.teamviewer.com",
+      "asn": "AS-ANEXIA Anexia Cloud Solutions GmbH, AT",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:17:12.037Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "admin.eu.au.dev.mail.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
       "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:19:21.521Z",
+      "first_seen": "2026-03-16T07:16:48.579Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "www.steamironparts.com",
-      "asn": "GOOGLE-CLOUD-PLATFORM - Google LLC, US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:18:29.349Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "www.www.api.new.discord.tattoo",
+      "domain": "mariels.grwww.eydgtvro.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
-      "lure_type": "fake_update",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:16:12.493Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "telegram-proxy-fetcher.pages.dev",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
       "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:16:07.418Z",
+      "first_seen": "2026-03-16T07:16:16.259Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "www.aristeam-advisory.com",
-      "asn": "GOOGLE-CLOUD-PLATFORM - Google LLC, US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:14:58.360Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "richmondhomesteam.com",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:10:38.284Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "telegram-girlfriend.com",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:09:39.530Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "telegram-ai-girlfriend.com",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "lure_type": "fake_software",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:09:10.716Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "telegramgirlfriend.com",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:08:42.982Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "steamdonkeycoffee.com",
-      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:07:52.088Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "www.www.update.wwwvjsw173w25.discord.tattoo",
+      "domain": "admin.au.eu.ea.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
-      "lure_type": "fake_update",
+      "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:07:43.269Z",
+      "first_seen": "2026-03-16T07:16:15.350Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "foxsignal.dev",
+      "domain": "admin.gekqcsyhb.discord.tattoo",
+      "asn": "IS-AS-1 - Interserver, Inc, US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:16:00.638Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "petera.ehomesteam.com",
       "asn": "AMAZON-02 - Amazon.com, Inc., US",
       "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:07:17.387Z",
+      "first_seen": "2026-03-16T07:15:35.244Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "m.discordservices.com",
-      "asn": "SEDO-AS SEDO GmbH, DE",
-      "lure_type": "unknown",
-      "payload_sha256": null,
-      "malware_family": null,
-      "file_type": null,
-      "first_seen": "2026-03-16T03:06:41.846Z",
-      "urlhaus_tags": []
-    },
-    {
-      "domain": "www.www.update.sandbox.discord.tattoo",
+      "domain": "1admin.goodnewsmall.comefbrhlix.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
       "lure_type": "fake_update",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:06:40.926Z",
+      "first_seen": "2026-03-16T07:15:33.779Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "as.ny.mw.ea.discord.tattoo",
+      "domain": "www.hufdxyjb.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
       "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:06:33.098Z",
+      "first_seen": "2026-03-16T07:14:08.743Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "preview-claude-setup-dependabot-bun-ogrjh.veraphysio.xyz",
-      "asn": "HETZNER-AS Hetzner Online GmbH, DE",
-      "lure_type": "fake_ai_tool",
+      "domain": "magentasignaljump.com",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:05:53.197Z",
+      "first_seen": "2026-03-16T07:13:07.147Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "server-preview-claude-setup-dependabot-bun-ogrjh.veraphysio.xyz",
-      "asn": "HETZNER-AS Hetzner Online GmbH, DE",
-      "lure_type": "fake_ai_tool",
+      "domain": "www.steamhousenh.com",
+      "asn": "SQUARESPACE - Squarespace, Inc., US",
+      "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:05:52.577Z",
+      "first_seen": "2026-03-16T07:12:52.567Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "claudemoney.com",
-      "asn": "AS17378 - TierPoint, LLC, US",
-      "lure_type": "fake_ai_tool",
+      "domain": "24hourfitnessteam.com",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:05:41.847Z",
+      "first_seen": "2026-03-16T07:12:52.056Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "www.update.www.wwwgateway.discord.tattoo",
-      "asn": "IS-AS-1 - Interserver, Inc, US",
-      "lure_type": "fake_update",
+      "domain": "steamylit.co.uk",
+      "asn": "AMAZON-02 - Amazon.com, Inc., US",
+      "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:04:59.184Z",
+      "first_seen": "2026-03-16T07:12:02.973Z",
       "urlhaus_tags": []
     },
     {
-      "domain": "au.da.eu.ea.api.discord.tattoo",
+      "domain": "www.api.www.cwdtzbgm.discord.tattoo",
       "asn": "IS-AS-1 - Interserver, Inc, US",
       "lure_type": "unknown",
       "payload_sha256": null,
       "malware_family": null,
       "file_type": null,
-      "first_seen": "2026-03-16T03:04:20.545Z",
+      "first_seen": "2026-03-16T07:11:05.527Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "www.steamcareinccypress.com",
+      "asn": "GOOGLE-CLOUD-PLATFORM - Google LLC, US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:07:25.598Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "steamors.store",
+      "asn": "CLOUDFLARENET - Cloudflare, Inc., US",
+      "lure_type": "unknown",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:06:32.165Z",
+      "urlhaus_tags": []
+    },
+    {
+      "domain": "download.telegram-desktop.me",
+      "asn": "SELECTEL-MSK JSC Selectel, RU",
+      "lure_type": "fake_software",
+      "payload_sha256": null,
+      "malware_family": null,
+      "file_type": null,
+      "first_seen": "2026-03-16T07:06:12.945Z",
       "urlhaus_tags": []
     }
   ]
