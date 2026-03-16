@@ -405,6 +405,18 @@ def collect_validin_dns_delta(domains: list[str], api_key: str) -> dict:
                 fast_deploy_count += 1
             checked += 1
 
+        except requests.exceptions.ConnectionError as e:
+            # DNS failure means the API is unreachable from this environment.
+            # Break immediately — no point trying remaining 99 domains.
+            if "NameResolutionError" in str(e) or "Failed to resolve" in str(e):
+                print(
+                    "[WARN] Validin API unreachable (DNS resolution failed) — "
+                    "skipping pDNS delta. Check that api.validin.com is accessible "
+                    "from this runner.",
+                    file=sys.stderr,
+                )
+                break
+            print(f"  [WARN] Validin connection error for {domain}: {e}", file=sys.stderr)
         except Exception as e:
             print(f"  [WARN] Validin/crt.sh error for {domain}: {e}", file=sys.stderr)
         finally:
