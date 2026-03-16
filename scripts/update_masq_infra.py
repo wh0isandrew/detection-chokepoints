@@ -107,9 +107,12 @@ def _urlscan_request_with_backoff(url: str, params: dict, headers: dict) -> dict
             print(f"  [WARN] URLScan 429 — waiting {wait}s", file=sys.stderr)
             time.sleep(wait)
             continue
-        if r.status_code == 403:
+        if r.status_code in (400, 403):
+            # 403: query requires elevated API tier.
+            # 400: malformed request — most commonly a bad search_after cursor;
+            #      stop paginating for this brand rather than crashing.
             print(
-                f"  [WARN] URLScan 403 for query — query may require elevated API tier. "
+                f"  [WARN] URLScan {r.status_code} — stopping pagination. "
                 f"URL: {r.url}",
                 file=sys.stderr,
             )
@@ -200,7 +203,10 @@ def collect_urlscan(api_key: str) -> list[dict]:
             sort_val = results[-1].get("sort") or []
             if not sort_val:
                 break
-            params["search_after"] = sort_val[0]
+            # Pass the full sort array so requests encodes it as repeated params:
+            # search_after=v1&search_after=v2 — required by URLScan's Elasticsearch
+            # backend. Passing only sort_val[0] produces a 400 on page 2+.
+            params["search_after"] = sort_val
 
         time.sleep(URLSCAN_RATE_LIMIT_SLEEP)
         print(f"  URLScan: {brand} → {brand_count} result(s)", file=sys.stderr)
