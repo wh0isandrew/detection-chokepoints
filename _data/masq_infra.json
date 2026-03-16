@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "last_updated": "—",
+    "lookback_days": 30,
+    "sample_size": 0
+  },
+  "stats": {
+    "tls_lets_encrypt_pct": 0,
+    "domain_to_resolution_hours_median": 0,
+    "favicon_reuse_pct": 0,
+    "favicon_clusters_found": 0
+  },
+  "hosting_providers": [],
+  "lure_types": [],
+  "payload_families": [],
+  "payload_file_types": [],
+  "urlhaus_tags": [],
+  "favicon_clusters": [],
+  "recent_samples": []
+}

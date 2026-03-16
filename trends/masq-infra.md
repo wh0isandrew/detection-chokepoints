@@ -95,21 +95,21 @@ permalink: /trends/masq-infra/
 <h1>Software Impersonation Infrastructure</h1>
 <p class="cg-meta">
   Coverage: T1036 Masquerading · T1583.001 Domains · T1608.001 Upload Malware
-  &nbsp;·&nbsp; Updated: 2025-03-15
+  &nbsp;·&nbsp; Updated: {{ site.data.masq_infra.meta.last_updated }}{% if site.data.masq_infra.meta.sample_size > 0 %} &nbsp;·&nbsp; n={{ site.data.masq_infra.meta.sample_size }}, {{ site.data.masq_infra.meta.lookback_days }}-day lookback{% endif %}
 </p>
 
 <!-- ── Stats ─────────────────────────────────────────────────────────── -->
 <div class="cg-stats">
   <div class="cg-stat">
-    <div class="cg-stat-val">99%+</div>
+    <div class="cg-stat-val">{% if site.data.masq_infra.stats.tls_lets_encrypt_pct > 0 %}{{ site.data.masq_infra.stats.tls_lets_encrypt_pct }}%{% else %}99%+{% endif %}</div>
     <div class="cg-stat-lbl">Malicious sites with valid TLS (Let's Encrypt)</div>
   </div>
   <div class="cg-stat">
-    <div class="cg-stat-val">&lt;48h</div>
+    <div class="cg-stat-val">{% if site.data.masq_infra.stats.domain_to_resolution_hours_median > 0 %}{{ site.data.masq_infra.stats.domain_to_resolution_hours_median }}h{% else %}&lt;48h{% endif %}</div>
     <div class="cg-stat-lbl">Typical domain-to-weaponized timeline</div>
   </div>
   <div class="cg-stat">
-    <div class="cg-stat-val">~40%</div>
+    <div class="cg-stat-val">{% if site.data.masq_infra.stats.favicon_reuse_pct > 0 %}{{ site.data.masq_infra.stats.favicon_reuse_pct }}%{% else %}~40%{% endif %}</div>
     <div class="cg-stat-lbl">Fake software sites reusing favicon from impersonated brand</div>
   </div>
   <div class="cg-stat">
@@ -204,6 +204,121 @@ permalink: /trends/masq-infra/
     </tr>
   </tbody>
 </table>
+
+{% if site.data.masq_infra.meta.sample_size > 0 %}
+<!-- ── Live data: Hosting providers ──────────────────────────────────── -->
+<h3>Observed Hosting Providers ({{ site.data.masq_infra.meta.lookback_days }}-day window)</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Provider / ASN</th><th>Domains</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for provider in site.data.masq_infra.hosting_providers %}
+    <tr>
+      <td>{{ provider.name }}</td>
+      <td>{{ provider.count }}</td>
+      <td class="muted">{{ provider.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ── Live data: Lure types ─────────────────────────────────────────── -->
+<h3>Lure Type Breakdown</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Category</th><th>Domains</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for lure in site.data.masq_infra.lure_types %}
+    <tr>
+      <td>{{ lure.tag | replace: "_", " " }}</td>
+      <td>{{ lure.count }}</td>
+      <td class="muted">{{ lure.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ── Live data: Payload families ──────────────────────────────────── -->
+{% if site.data.masq_infra.payload_families.size > 0 %}
+<h3>Payload Families</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Family</th><th>Samples</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for fam in site.data.masq_infra.payload_families %}
+    <tr>
+      <td>{{ fam.family }}</td>
+      <td>{{ fam.count }}</td>
+      <td class="muted">{{ fam.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── Live data: URLHaus tags ───────────────────────────────────────── -->
+{% if site.data.masq_infra.urlhaus_tags.size > 0 %}
+<h3>URLHaus Delivery Tags</h3>
+<p>Malware families observed delivering via fake software lures (URLHaus).</p>
+<table class="cg-table">
+  <thead>
+    <tr><th>Tag</th><th>URLs</th></tr>
+  </thead>
+  <tbody>
+    {% for tag in site.data.masq_infra.urlhaus_tags limit:10 %}
+    <tr>
+      <td>{{ tag.tag }}</td>
+      <td>{{ tag.count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── Live data: Favicon clusters ──────────────────────────────────── -->
+{% if site.data.masq_infra.favicon_clusters.size > 0 %}
+<h3>Favicon Hash Clusters (Shodan)</h3>
+<p>Infrastructure clusters discovered by querying Shodan for brand favicon hashes. Each row represents a distinct hash shared across multiple impersonator domains.</p>
+<table class="cg-table">
+  <thead>
+    <tr><th>Brand</th><th>Hash</th><th>Hosts found</th></tr>
+  </thead>
+  <tbody>
+    {% for cluster in site.data.masq_infra.favicon_clusters %}
+    <tr>
+      <td>{{ cluster.brand }}</td>
+      <td class="mono">{{ cluster.hash }}</td>
+      <td>{{ cluster.count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── Live data: Recent samples ─────────────────────────────────────── -->
+{% if site.data.masq_infra.recent_samples.size > 0 %}
+<h3>Recent Confirmed Samples</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Family</th><th>File type</th></tr>
+  </thead>
+  <tbody>
+    {% for sample in site.data.masq_infra.recent_samples %}
+    <tr>
+      <td class="muted">{{ sample.first_seen | date: "%Y-%m-%d" }}</td>
+      <td class="mono">{{ sample.domain }}</td>
+      <td>{{ sample.lure_type | replace: "_", " " }}</td>
+      <td>{{ sample.malware_family | default: "—" }}</td>
+      <td class="muted">{{ sample.file_type | default: "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
 
 <!-- ── Favicon abuse ──────────────────────────────────────────────────── -->
 <h2>Favicon Abuse</h2>
