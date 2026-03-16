@@ -220,8 +220,9 @@ def classify_lure(download_url: str, page_title: str, domain: str) -> str:
     """
     Classify a record into a lure category based on URL, title, and domain.
     Precedence: fake_ai_tool > game_crack > media_piracy > fake_update > fake_tool > fake_software
+    Any argument may be None (e.g. download_url when no payload was found).
     """
-    text = " ".join([download_url, page_title, domain]).lower()
+    text = " ".join(v or "" for v in [download_url, page_title, domain]).lower()
     for category, keywords in LURE_PATTERNS.items():
         if any(kw in text for kw in keywords):
             return category
@@ -421,17 +422,21 @@ def collect_validin_dns_delta(domains: list[str], api_key: str) -> dict:
 
 # ── URLHaus delivery URL collector ─────────────────────────────────────────────
 
-def collect_urlhaus(brands: list[str]) -> list[dict]:
+def collect_urlhaus(brands: list[str], api_key: str = "") -> list[dict]:
     """
     Collect confirmed malware delivery URLs from URLHaus that match brand names.
-    No API key required.
+    api_key is optional but required since abuse.ch moved to Auth-Key authentication.
+    Register for a free key at https://abuse.ch/
     """
     records: list[dict] = []
     seen_urls: set[str] = set()
+    # Auth-Key header — required on all /v1/ endpoints since late 2024.
+    # Requests without it receive 401. Key is free at abuse.ch.
+    headers = {"Auth-Key": api_key} if api_key else {}
 
     # Recent URLs feed
     try:
-        r = requests.get(URLHAUS_RECENT_URL, timeout=20)
+        r = requests.get(URLHAUS_RECENT_URL, timeout=20, headers=headers)
         r.raise_for_status()
         for item in r.json().get("urls", []):
             url = item.get("url", "")
@@ -457,7 +462,7 @@ def collect_urlhaus(brands: list[str]) -> list[dict]:
     malware_tags = ["Lumma", "RedLine", "Vidar", "StealC", "AsyncRAT", "Remcos", "AgentTesla"]
     for tag in malware_tags:
         try:
-            r = requests.post(URLHAUS_TAG_URL, data={"tag": tag}, timeout=15)
+            r = requests.post(URLHAUS_TAG_URL, data={"tag": tag}, timeout=15, headers=headers)
             r.raise_for_status()
             for item in r.json().get("urls", []):
                 url = item.get("url", "")
@@ -647,11 +652,14 @@ def main() -> None:
     args = parser.parse_args()
 
     # API keys
-    urlscan_key = os.environ.get("URLSCAN_API_KEY", "").strip()
-    shodan_key  = os.environ.get("SHODAN_API_KEY", "").strip()
-    mb_key      = os.environ.get("MB_API_KEY", "").strip()
-    vt_key      = os.environ.get("VT_API_KEY", "").strip()
-    validin_key = os.environ.get("VALIDIN_API_KEY", "").strip()
+    urlscan_key  = os.environ.get("URLSCAN_API_KEY",  "").strip()
+    shodan_key   = os.environ.get("SHODAN_API_KEY",   "").strip()
+    mb_key       = os.environ.get("MB_API_KEY",       "").strip()
+    vt_key       = os.environ.get("VT_API_KEY",       "").strip()
+    validin_key  = os.environ.get("VALIDIN_API_KEY",  "").strip()
+    urlhaus_key  = os.environ.get("URLHAUS_API_KEY",  "").strip()
+    if not urlhaus_key:
+        print("[WARN] URLHAUS_API_KEY not set — URLHaus queries will be skipped (401)", file=sys.stderr)
 
     if not urlscan_key:
         print("[ERROR] URLSCAN_API_KEY is required", file=sys.stderr)
@@ -683,7 +691,7 @@ def main() -> None:
         sys.exit(1)
 
     print(f"[2/6] Collecting URLHaus records ...", file=sys.stderr)
-    urlhaus_records = collect_urlhaus(BRANDS)
+    urlhaus_records = collect_urlhaus(BRANDS, urlhaus_key)
 
     # --- Enrich ---
     print(f"[3/6] Enriching {len(raw_records)} records ...", file=sys.stderr)
