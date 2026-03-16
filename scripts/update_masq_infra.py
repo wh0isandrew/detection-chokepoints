@@ -616,11 +616,11 @@ def main() -> None:
     args = parser.parse_args()
 
     # API keys
-    urlscan_key = os.environ.get("URLSCAN_API_KEY", "")
-    shodan_key  = os.environ.get("SHODAN_API_KEY", "")
-    mb_key      = os.environ.get("MB_API_KEY", "")
-    vt_key      = os.environ.get("VT_API_KEY", "")
-    validin_key = os.environ.get("VALIDIN_API_KEY", "")
+    urlscan_key = os.environ.get("URLSCAN_API_KEY", "").strip()
+    shodan_key  = os.environ.get("SHODAN_API_KEY", "").strip()
+    mb_key      = os.environ.get("MB_API_KEY", "").strip()
+    vt_key      = os.environ.get("VT_API_KEY", "").strip()
+    validin_key = os.environ.get("VALIDIN_API_KEY", "").strip()
 
     if not urlscan_key:
         print("[ERROR] URLSCAN_API_KEY is required", file=sys.stderr)
