@@ -102,6 +102,9 @@ Detection now requires fewer chances. Chokepoints are how you maximize each one.
 | [Renamed RMM Tools](chokepoints/initial-access/renamed-rmm-tools.yml) | Initial Access / C2 | HIGH | HIGH | MEDIUM |
 | [Remote Execution Tools](chokepoints/lateral-movement/remote-execution-tools.yml) | Lateral Movement | HIGH | HIGH | MEDIUM |
 | [Ransomware Service Manipulation](chokepoints/defense-evasion/ransomware-service-manipulation.yml) | Defense Evasion / Impact | CRITICAL | HIGH | LOW |
+| [Browser Credential Theft](chokepoints/credential-access/browser-credential-theft.yml) | Credential Access | CRITICAL | HIGH | MEDIUM |
+| [EDR Bypass Techniques](chokepoints/defense-evasion/edr-bypass-techniques.yml) | Defense Evasion | CRITICAL | HIGH | HIGH |
+| [Web Shell Persistence](chokepoints/persistence/web-shells.yml) | Persistence / Initial Access | CRITICAL | HIGH | MEDIUM |
 
 ---
 
@@ -115,8 +118,13 @@ detection-chokepoints/
 │   │   └── renamed-rmm-tools.yml
 │   ├── lateral-movement/
 │   │   └── remote-execution-tools.yml
-│   └── defense-evasion/
-│       └── ransomware-service-manipulation.yml
+│   ├── defense-evasion/
+│   │   ├── ransomware-service-manipulation.yml
+│   │   └── edr-bypass-techniques.yml
+│   ├── credential-access/
+│   │   └── browser-credential-theft.yml
+│   └── persistence/
+│       └── web-shells.yml
 ├── sigma-rules/                    # Detection rules at 3 maturity levels
 │   ├── clickfix/
 │   │   ├── research.yml
@@ -124,13 +132,29 @@ detection-chokepoints/
 │   │   └── analyst.yml
 │   ├── renamed-rmm/
 │   ├── remote-execution/
-│   └── ransomware-service/
+│   ├── ransomware-service/
+│   ├── browser-credential-theft/
+│   ├── edr-bypass/
+│   └── web-shells/
+├── iok-rules/                      # Indicator of Knowledge rules for lure/phishing page detection
+│   └── clickfix/
+│       └── clickfix-lure.yml
+├── emulation/                      # PowerShell scripts to validate detections against each chokepoint
+│   ├── clickfix-techniques/
+│   ├── renamed-rmm-tools/
+│   ├── remote-execution-tools/
+│   ├── ransomware-service-manipulation/
+│   ├── browser-credential-theft/
+│   ├── edr-bypass-techniques/
+│   └── web-shells/
 ├── attack-chains/                  # Full kill chain documentation
 │   ├── ransomware.md
 │   └── infostealers.md
 ├── intel/                          # Free intelligence resources
 │   └── clickgrab.md
-├── trends/                         # Quarterly threat trends and chokepoint shifts
+├── trends/                         # Threat trend analyses and chokepoint shifts
+│   ├── index.md                    # Trends landing page
+│   ├── clickgrab.md                # Live ClickFix delivery chain analysis (20K+ sites)
 │   ├── 2025-q1.md
 │   └── chokepoint-shifts.md
 ├── templates/                      # Templates for contributors
@@ -151,13 +175,18 @@ detection-chokepoints/
 1. Browse [chokepoints/](chokepoints/) by tactic
 2. Grab the sigma rule at your target maturity level from [sigma-rules/](sigma-rules/)
 3. Check [intel/clickgrab.md](intel/clickgrab.md) for free ClickFix payload IOCs
-4. Review [trends/2025-q1.md](trends/2025-q1.md) for current threat landscape
+4. Review [trends/](trends/) for live data analysis and current threat landscape
 
 ### For Detection Engineers
 1. Use the Research rule to baseline behavior in your environment
 2. Tune the Hunt rule against your baseline to reduce false positives
 3. Deploy the Analyst rule to production once false positive rate is acceptable
-4. Log updates to your sigma rules in `CHANGELOG.md`
+4. Validate rules with the PowerShell emulation scripts in [emulation/](emulation/)
+5. Log updates to your sigma rules in `CHANGELOG.md`
+
+### For Phishing/Lure Detection
+1. Check [iok-rules/](iok-rules/) for Indicator of Knowledge rules targeting lure page behaviors
+2. IOK rules detect the invariant page-side behaviors (e.g. clipboard seeding + execution instruction) regardless of visual design or obfuscation
 
 ### For Tracking Threat Evolution
 1. When a new tool variant emerges: use [templates/quick-add.md](templates/quick-add.md)
