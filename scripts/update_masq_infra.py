@@ -107,6 +107,13 @@ def _urlscan_request_with_backoff(url: str, params: dict, headers: dict) -> dict
             print(f"  [WARN] URLScan 429 — waiting {wait}s", file=sys.stderr)
             time.sleep(wait)
             continue
+        if r.status_code == 403:
+            print(
+                f"  [WARN] URLScan 403 for query — query may require elevated API tier. "
+                f"URL: {r.url}",
+                file=sys.stderr,
+            )
+            return None
         r.raise_for_status()
         return r.json()
     return None
@@ -121,10 +128,11 @@ def collect_urlscan(api_key: str) -> list[dict]:
     seen_domains: dict[str, dict] = {}
 
     for brand in BRANDS:
+        # verdicts.malicious:true requires an elevated URLScan API tier (403 on free keys).
+        # Filter malicious results client-side from verdicts.overall.malicious instead.
         query = (
             f'page.domain:*{brand}* '
-            f'AND date:>now-{LOOKBACK_DAYS}d '
-            f'AND verdicts.malicious:true'
+            f'AND date:>now-{LOOKBACK_DAYS}d'
         )
         params: dict = {"q": query, "size": 100}
         brand_count = 0
@@ -136,6 +144,12 @@ def collect_urlscan(api_key: str) -> list[dict]:
 
             results = data.get("results", [])
             for item in results:
+                # Client-side malicious filter — keeps free API keys working
+                verdicts = item.get("verdicts", {})
+                overall = verdicts.get("overall", {})
+                if not overall.get("malicious", False):
+                    continue
+
                 page = item.get("page", {})
                 domain = page.get("domain", "")
                 if not domain:
