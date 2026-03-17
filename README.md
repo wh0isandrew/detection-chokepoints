@@ -32,6 +32,13 @@ the chokepoint, and you detect all current and future variations that require it
 | Requires constant signature updates | Durable — new tools hit the same chokepoints |
 | High long-term maintenance cost | Low long-term maintenance cost |
 
+**This isn't theory.** Kaspersky's analysis of eight major ransomware groups — Conti, Pysa,
+Clop, Hive, LockBit 2.0, RagnarLocker, BlackByte, and BlackCat — found that all eight share
+the same core kill chain. External Remote Services, Command & Scripting Interpreter, WMI,
+and LSASS credential dumping appear across every single group, regardless of variant,
+affiliate, or toolset. Shadow copy deletion and service stopping appear in 7–8 of 8. The
+tools rotate; the requirements do not.
+
 **Time = Money.** Dwell time has compressed from weeks to hours as Initial Access
 Brokers (IABs) sell pre-authenticated environments to ransomware operators. There's no
 time to chase every new tool signature. Chokepoints let you strangle threats at the
@@ -41,7 +48,13 @@ conditions they *cannot avoid*.
 
 ## The Framework
 
-Every chokepoint is defined by three questions:
+Matt Graeber's research framework describes a three-step process for building durable
+detection: **(1) define and scope the technique** — what is the invariant core at a
+technical level? **(2) identify variations** — what inputs can an attacker control to evade
+naive detections? **(3) validate coverage** — does your detection fire on the invariant
+regardless of the variation chosen?
+
+Every chokepoint in this repository is built around those three questions:
 
 ```
 ┌─────────────────┬──────────────────────┬──────────────────────────────┐
@@ -53,8 +66,10 @@ Every chokepoint is defined by three questions:
 └─────────────────┴──────────────────────┴──────────────────────────────┘
 ```
 
-The **prerequisites** are the chokepoint. Everything else is just the current
-implementation.
+The **prerequisites** are the chokepoint. The scope keeps the work bounded. The variations
+column is what you use to validate that your detection survives tool rotation. As Jeffrey Snover
+put it: *"to ship is to choose"* — a chokepoint with solid coverage of the invariant beats
+a perfect detection that never ships.
 
 ---
 
@@ -90,20 +105,30 @@ session tokens at scale. IABs sell pre-mapped enterprise environments to ransomw
 operators — complete with domain admin creds, VPN access, and network maps. Ransomware
 groups skip the initial access and reconnaissance phases entirely.
 
+At the same time, new ransomware families now appear at a rate of at least one per month.
+Each new family is a new tool built on the same underlying kill chain. The Kaspersky 2022
+report documented this directly: *"the core techniques remain the same throughout the
+cyber kill chain. The attack patterns thus revealed are not accidental, because this class
+of attack requires the hackers to go through certain stages."* Requires — that is the word
+that matters. You cannot encrypt a domain without credential access. You cannot move
+laterally without execution. You cannot avoid service manipulation before encryption.
+
 Detection now requires fewer chances. Chokepoints are how you maximize each one.
 
 ---
 
 ## Chokepoint Index
 
+`†` = empirically confirmed across 8/8 major ransomware groups (Kaspersky 2022)
+
 | Chokepoint | Tactic | Priority | Prevalence | Difficulty |
 |------------|--------|----------|------------|------------|
 | [ClickFix Techniques](chokepoints/initial-access/clickfix-techniques.yml) | Initial Access | HIGH | HIGH | LOW |
 | [Renamed RMM Tools](chokepoints/initial-access/renamed-rmm-tools.yml) | Initial Access / C2 | HIGH | HIGH | MEDIUM |
-| [Remote Execution Tools](chokepoints/lateral-movement/remote-execution-tools.yml) | Lateral Movement | HIGH | HIGH | MEDIUM |
-| [Ransomware Service Manipulation](chokepoints/defense-evasion/ransomware-service-manipulation.yml) | Defense Evasion / Impact | CRITICAL | HIGH | LOW |
-| [Browser Credential Theft](chokepoints/credential-access/browser-credential-theft.yml) | Credential Access | CRITICAL | HIGH | MEDIUM |
-| [EDR Bypass Techniques](chokepoints/defense-evasion/edr-bypass-techniques.yml) | Defense Evasion | CRITICAL | HIGH | HIGH |
+| [Remote Execution Tools](chokepoints/lateral-movement/remote-execution-tools.yml) `†` | Lateral Movement | HIGH | HIGH | MEDIUM |
+| [Ransomware Service Manipulation](chokepoints/defense-evasion/ransomware-service-manipulation.yml) `†` | Defense Evasion / Impact | CRITICAL | HIGH | LOW |
+| [Browser Credential Theft](chokepoints/credential-access/browser-credential-theft.yml) `†` | Credential Access | CRITICAL | HIGH | MEDIUM |
+| [EDR Bypass Techniques](chokepoints/defense-evasion/edr-bypass-techniques.yml) `†` | Defense Evasion | CRITICAL | HIGH | HIGH |
 | [Web Shell Persistence](chokepoints/persistence/web-shells.yml) | Persistence / Initial Access | CRITICAL | HIGH | MEDIUM |
 
 ---
@@ -220,15 +245,15 @@ and PR checklist.
 
 ## Resources
 
-| Resource | Link |
-|----------|------|
-| MITRE ATT&CK | https://attack.mitre.org/ |
-| Sigma Specification | https://github.com/SigmaHQ/sigma-specification |
-| ClickGrab (free ClickFix intel) | https://mhaggis.github.io/ClickGrab/ |
-| Mandiant M-Trends | https://www.mandiant.com/m-trends |
-| Kaspersky Ransomware TTPs | https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf |
-| SOC Investigation - EID 5145 | https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/ |
-| Huntress ClickFix Analysis | https://huntress.com/blog/dont-sweat-clickfix-techniques |
+| Resource | Description |
+|----------|-------------|
+| [MITRE ATT&CK](https://attack.mitre.org/) | Technique taxonomy used for all chokepoint mappings |
+| [Sigma Specification](https://github.com/SigmaHQ/sigma-specification) | Rule format used across all detection levels |
+| [ClickGrab (ClickFix intel)](https://mhaggis.github.io/ClickGrab/) | Live crawl data feeding the ClickFix trends analysis |
+| [Mandiant M-Trends](https://www.mandiant.com/m-trends) | Source for TTR compression statistics in this README |
+| [Kaspersky — Common TTPs of Modern Ransomware](https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf) | Cross-group TTP analysis across 8 ransomware families — empirical foundation for the chokepoint approach |
+| [Red Canary — The Why, What, and How of Threat Research](https://redcanary.com/blog/threat-detection/threat-research-questions/) | Research methodology behind the Scope/Variations/Prerequisites framework |
+| [Huntress ClickFix Analysis](https://huntress.com/blog/dont-sweat-clickfix-techniques) | In-the-wild ClickFix variant breakdown |
 
 ---
 
