@@ -34,6 +34,12 @@ BRANDS = [
     "anydesk", "teamviewer", "telegram", "discord", "signal",
     "chatgpt", "midjourney", "claude",
     "steam", "epicgames", "minecraft", "roblox",
+    # Crypto/wallet (wallet stealers almost exclusively)
+    "metamask", "ledger", "exodus", "phantom", "electrum",
+    # VPN tools (common RAT/stealer delivery vector)
+    "nordvpn", "expressvpn", "protonvpn", "mullvad",
+    # Remote work / conferencing (corporate targeting)
+    "zoom", "slack",
 ]
 
 # Pre-computed brand favicon URLs. Hashes are fetched at runtime so they remain
@@ -55,6 +61,9 @@ BRAND_FAVICON_SEEDS = {
 
 LURE_PATTERNS = {
     "fake_ai_tool":  ["chatgpt", "gpt", "midjourney", "claude", "gemini", "copilot"],
+    "crypto_wallet": ["metamask", "phantom", "ledger", "exodus", "electrum", "coinbase", "trezor", "trustwallet"],
+    "vpn_tool":      ["nordvpn", "expressvpn", "protonvpn", "mullvad", "cyberghost", "surfshark"],
+    "remote_work":   ["zoom", "slack", "webex", "teams"],
     "game_crack":    ["crack", "cheat", "hack", "mod", "trainer", "keygen", "warez"],
     "media_piracy":  ["movie", "series", "episode", "codec", "torrent", "mkv", "iptv"],
     "fake_update":   ["update", "patch", "upgrade", "latest", "v2", "new"],
@@ -173,6 +182,26 @@ def collect_urlscan(api_key: str) -> list[dict]:
                         mime_type      = h.get("mimeType")
                         break
 
+                submitted_url = item.get("task", {}).get("url", "")
+                page_url      = page.get("url", "")
+                try:
+                    submitted_host = submitted_url.split("/")[2] if submitted_url else ""
+                    page_host      = page_url.split("/")[2] if page_url else ""
+                    was_redirected = bool(submitted_host and page_host and submitted_host != page_host)
+                except Exception:
+                    was_redirected = False
+
+                if download_url:
+                    try:
+                        payload_host   = download_url.split("/")[2]
+                        payload_offhost = payload_host != domain
+                    except Exception:
+                        payload_host    = None
+                        payload_offhost = False
+                else:
+                    payload_host    = None
+                    payload_offhost = False
+
                 rec = {
                     "domain":             domain,
                     "asnname":            page.get("asnname", "Unknown"),
@@ -182,6 +211,10 @@ def collect_urlscan(api_key: str) -> list[dict]:
                     "download_url":       download_url,
                     "mime_type":          mime_type,
                     "urlscan_malicious":  urlscan_malicious,
+                    "submitted_url":      submitted_url,
+                    "was_redirected":     was_redirected,
+                    "payload_host":       payload_host,
+                    "payload_offhost":    payload_offhost,
                 }
 
                 # Keep earliest first_seen per domain
@@ -227,6 +260,40 @@ def classify_lure(download_url: str, page_title: str, domain: str) -> str:
         if any(kw in text for kw in keywords):
             return category
     return "unknown"
+
+
+# ── Traffic source classifier ──────────────────────────────────────────────────
+
+def classify_traffic_source(domain: str, was_redirected: bool) -> str:
+    """
+    Heuristic classification of how users likely arrive at a lure domain.
+      combosquat  — brand + action word in domain (get-vlc.com, 7zip-download.net)
+      typosquat   — brand name with slight misspelling or homoglyph
+      seo_bait    — brand buried in longer string, often generic TLD (.top/.click/.xyz)
+      redirected  — submitted URL host differs from landing page (ad tracker, redirect chain)
+    """
+    if was_redirected:
+        return "redirected"
+
+    d = domain.lower()
+    d_clean = re.sub(r"[^a-z0-9]", "", d)
+
+    action_words = ["download", "get", "free", "install", "setup", "official", "latest", "portable"]
+
+    for brand in BRANDS:
+        b = re.sub(r"[^a-z0-9]", "", brand.lower())
+        if b not in d_clean:
+            continue
+        idx = d_clean.index(b)
+        prefix = d_clean[:idx]
+        suffix = d_clean[idx + len(b):]
+        if any(w in prefix or w in suffix for w in action_words):
+            return "combosquat"
+        # Brand alone with digits appended (7zip24.com) or homoglyph variant
+        if re.search(r"\d", suffix) or len(suffix) <= 3:
+            return "typosquat"
+
+    return "seo_bait"
 
 
 # ── MalwareBazaar enricher ─────────────────────────────────────────────────────
@@ -533,6 +600,195 @@ def collect_crtsh_stats(domains: list[str]) -> dict:
     }
 
 
+# ── MalwareBazaar brand-tag collector ─────────────────────────────────────────
+
+def collect_malwarebazaar_brand_samples(brands: list[str], api_key: str) -> list[dict]:
+    """
+    Proactively query MalwareBazaar for known payload families (by tag) and
+    cross-reference file names against brand names. Fills payload_families even
+    when URLScan doesn't capture the actual binary download.
+    """
+    if not api_key:
+        return []
+
+    PAYLOAD_TAGS = [
+        "Lumma", "RedLine", "Vidar", "StealC", "AsyncRAT",
+        "Remcos", "AgentTesla", "CobaltStrike", "Amadey",
+        "RisePro", "MetaStealer", "Raccoon", "AMOS",
+    ]
+    headers  = {"Auth-Key": api_key}
+    results: list[dict] = []
+    brand_set = {re.sub(r"[^a-z0-9]", "", b.lower()) for b in brands}
+
+    for tag in PAYLOAD_TAGS:
+        try:
+            r = requests.post(
+                MB_API_URL,
+                data={"query": "get_taginfo", "tag": tag, "limit": 50},
+                headers=headers,
+                timeout=15,
+            )
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            if data.get("query_status") != "tag_info":
+                continue
+            for sample in (data.get("data") or []):
+                fname = re.sub(r"[^a-z0-9]", "", (sample.get("file_name") or "").lower())
+                stags = [t.lower() for t in (sample.get("tags") or [])]
+                if any(b in fname or b in " ".join(stags) for b in brand_set):
+                    results.append({
+                        "sha256":          sample.get("sha256_hash"),
+                        "malware_family":  tag,
+                        "file_type":       sample.get("file_type"),
+                        "mb_tags":         sample.get("tags") or [],
+                        "first_seen":      sample.get("first_seen"),
+                    })
+        except Exception as e:
+            print(f"  [WARN] MalwareBazaar tag query failed for {tag}: {e}", file=sys.stderr)
+        time.sleep(MB_RATE_LIMIT_SLEEP)
+
+    print(f"  MalwareBazaar brand samples: {len(results)}", file=sys.stderr)
+    return results
+
+
+# ── Campaign fingerprinting ────────────────────────────────────────────────────
+
+def _most_common_brand(records: list[dict]) -> str:
+    from collections import Counter
+    hits: Counter = Counter()
+    for rec in records:
+        d = re.sub(r"[^a-z0-9]", "", (rec.get("domain") or "").lower())
+        for brand in BRANDS:
+            b = re.sub(r"[^a-z0-9]", "", brand.lower())
+            if b in d:
+                hits[brand] += 1
+    return hits.most_common(1)[0][0] if hits else "unknown"
+
+
+def fingerprint_campaigns(records: list[dict]) -> list[dict]:
+    """
+    Cluster lure domains into likely campaigns via two shared-signal types:
+
+    shared_payload — multiple domains serving identical SHA256; same operator reusing binary
+    asn_cohort     — 3+ domains on same ASN within the same calendar month; batch registration
+    """
+    from collections import defaultdict
+    clusters: list[dict] = []
+
+    # Signal 1: shared payload SHA256
+    by_sha: dict = defaultdict(list)
+    for rec in records:
+        if rec.get("payload_sha256"):
+            by_sha[rec["payload_sha256"]].append(rec)
+    for sha, group in by_sha.items():
+        if len(group) >= 2:
+            families = sorted({r.get("malware_family") for r in group if r.get("malware_family")})
+            dates    = sorted(r["first_seen"] for r in group if r.get("first_seen"))
+            clusters.append({
+                "cluster_type":    "shared_payload",
+                "signal":          sha[:16] + "…",
+                "brand":           _most_common_brand(group),
+                "domain_count":    len(group),
+                "domains":         [r["domain"] for r in group[:10]],
+                "payload_families": families,
+                "date_range":      {"first": dates[0], "last": dates[-1]} if dates else {},
+            })
+
+    # Signal 2: ASN + calendar-month cohort (3+ domains)
+    by_asn_month: dict = defaultdict(list)
+    for rec in records:
+        asn = (rec.get("asnname") or "").strip()
+        ts  = (rec.get("first_seen") or "")
+        if asn and ts:
+            month = ts[:7]  # YYYY-MM
+            by_asn_month[(asn, month)].append(rec)
+    for (asn, month), group in by_asn_month.items():
+        if len(group) >= 3:
+            dates = sorted(r["first_seen"] for r in group if r.get("first_seen"))
+            families = sorted({r.get("malware_family") for r in group if r.get("malware_family")})
+            clusters.append({
+                "cluster_type":    "asn_cohort",
+                "signal":          f"{asn} / {month}",
+                "brand":           _most_common_brand(group),
+                "domain_count":    len(group),
+                "domains":         [r["domain"] for r in group[:10]],
+                "payload_families": families,
+                "date_range":      {"first": dates[0], "last": dates[-1]} if dates else {},
+            })
+
+    return sorted(clusters, key=lambda c: c["domain_count"], reverse=True)[:20]
+
+
+# ── Domain pattern extractor ───────────────────────────────────────────────────
+
+def extract_domain_patterns(domains: list[str]) -> list[dict]:
+    """
+    Identify recurring structural naming patterns across lure domains.
+    Returns skeletonised patterns (brand replaced with {brand}, digits with {N})
+    seen 2+ times, sorted by frequency.
+    """
+    from collections import Counter
+    patterns: Counter = Counter()
+    examples: dict    = {}
+
+    for domain in domains:
+        parts = domain.split(".")
+        name  = parts[0].lower()
+        tld   = ".".join(parts[1:])
+
+        # Replace brand substrings with placeholder
+        for brand in BRANDS:
+            b = brand.lower().replace("-", "")
+            name = re.sub(re.escape(b), "{brand}", name, flags=re.IGNORECASE)
+            name = re.sub(re.escape(brand.lower()), "{brand}", name, flags=re.IGNORECASE)
+
+        # Collapse digit runs
+        name = re.sub(r"\d+", "{N}", name)
+        skeleton = f"{name}.{tld}"
+
+        patterns[skeleton] += 1
+        if skeleton not in examples:
+            examples[skeleton] = domain
+
+    return [
+        {"pattern": pat, "count": cnt, "example": examples[pat]}
+        for pat, cnt in patterns.most_common(15)
+        if cnt >= 2
+    ]
+
+
+# ── Delivery chain builder ─────────────────────────────────────────────────────
+
+def _build_delivery_chains(records: list[dict]) -> list[dict]:
+    """
+    Build a sample set of delivery chain walk-throughs for records that have
+    a payload host (either on or off the lure domain).
+    Returns up to 10 illustrative examples sorted most-recent first.
+    """
+    chains = []
+    seen: set = set()
+    for rec in sorted(records, key=lambda r: r.get("first_seen") or "", reverse=True):
+        if not rec.get("payload_host"):
+            continue
+        key = (rec.get("domain"), rec.get("payload_host"))
+        if key in seen:
+            continue
+        seen.add(key)
+        chains.append({
+            "lure_domain":    rec.get("domain"),
+            "payload_host":   rec.get("payload_host"),
+            "offhost":        rec.get("payload_offhost", False),
+            "was_redirected": rec.get("was_redirected", False),
+            "file_type":      rec.get("file_type") or rec.get("mime_type"),
+            "malware_family": rec.get("malware_family"),
+            "first_seen":     rec.get("first_seen"),
+        })
+        if len(chains) >= 10:
+            break
+    return chains
+
+
 # ── Stats aggregator ───────────────────────────────────────────────────────────
 
 def _top_n(items: list[tuple[str, int]], n: int = 10) -> list[dict]:
@@ -549,6 +805,7 @@ def aggregate(
     shodan_clusters: list[dict],
     validin_stats: dict,
     urlhaus_records: list[dict],
+    mb_brand_samples: list[dict] | None = None,
 ) -> dict:
     from collections import Counter
 
@@ -568,18 +825,24 @@ def aggregate(
         for k, v in lure_counter.most_common()
     ]
 
-    # Payload families
+    # Payload families — merge URLScan-enriched records + MalwareBazaar brand samples
     family_counter: Counter = Counter(
         r["malware_family"] for r in records if r.get("malware_family")
     )
+    for s in (mb_brand_samples or []):
+        if s.get("malware_family"):
+            family_counter[s["malware_family"]] += 1
     payload_families = _top_n(list(family_counter.items()))
     for item in payload_families:
         item["family"] = item.pop("name")
 
-    # Payload file types
+    # Payload file types — merge URLScan records + MB samples
     type_counter: Counter = Counter(
         r["file_type"] for r in records if r.get("file_type")
     )
+    for s in (mb_brand_samples or []):
+        if s.get("file_type"):
+            type_counter[s["file_type"]] += 1
     payload_file_types = _top_n(list(type_counter.items()))
     for item in payload_file_types:
         item["type"] = item.pop("name")
@@ -594,6 +857,24 @@ def aggregate(
         for k, v in tag_counter.most_common(20)
     ]
 
+    # Traffic sources
+    src_counter: Counter = Counter(r.get("traffic_source", "seo_bait") for r in records)
+    src_total = sum(src_counter.values())
+    traffic_sources = [
+        {"source": k, "count": v, "pct": round(v / src_total * 100, 1) if src_total else 0}
+        for k, v in src_counter.most_common()
+    ]
+
+    # Payload hosting stats
+    offhost_recs = [r for r in records if r.get("payload_host")]
+    offhost_count = sum(1 for r in offhost_recs if r.get("payload_offhost"))
+    ph_counter: Counter = Counter(r["payload_host"] for r in offhost_recs if r.get("payload_offhost"))
+    payload_hosting = {
+        "offhost_count":     offhost_count,
+        "offhost_pct":       round(offhost_count / len(records) * 100, 1) if records else 0,
+        "top_payload_hosts": _top_n(list(ph_counter.items()), n=5),
+    }
+
     # Recent samples — last 20 by first_seen desc
     sorted_records = sorted(
         records,
@@ -602,14 +883,17 @@ def aggregate(
     )
     recent_samples = [
         {
-            "domain":         r.get("domain"),
-            "asn":            r.get("asnname"),
-            "lure_type":      r.get("lure_type"),
-            "payload_sha256": r.get("payload_sha256"),
-            "malware_family": r.get("malware_family"),
-            "file_type":      r.get("file_type"),
-            "first_seen":     r.get("first_seen"),
-            "urlhaus_tags":   r.get("urlhaus_tags", []),
+            "domain":          r.get("domain"),
+            "asn":             r.get("asnname"),
+            "lure_type":       r.get("lure_type"),
+            "traffic_source":  r.get("traffic_source"),
+            "payload_sha256":  r.get("payload_sha256"),
+            "malware_family":  r.get("malware_family"),
+            "file_type":       r.get("file_type"),
+            "payload_host":    r.get("payload_host"),
+            "payload_offhost": r.get("payload_offhost"),
+            "first_seen":      r.get("first_seen"),
+            "urlhaus_tags":    r.get("urlhaus_tags", []),
         }
         for r in sorted_records[:20]
     ]
@@ -645,10 +929,15 @@ def aggregate(
         },
         "hosting_providers": hosting_providers,
         "lure_types":        lure_types,
+        "traffic_sources":   traffic_sources,
         "payload_families":  payload_families,
         "payload_file_types": payload_file_types,
+        "payload_hosting":   payload_hosting,
         "urlhaus_tags":      urlhaus_tags,
         "favicon_clusters":  favicon_clusters,
+        "campaign_clusters": fingerprint_campaigns(records),
+        "domain_patterns":   extract_domain_patterns([r["domain"] for r in records]),
+        "delivery_chains":   _build_delivery_chains(records),
         "recent_samples":    recent_samples,
     }
 
@@ -723,6 +1012,10 @@ def main() -> None:
             rec.get("page_title", ""),
             rec.get("domain", ""),
         )
+        rec["traffic_source"] = classify_traffic_source(
+            rec.get("domain", ""),
+            rec.get("was_redirected", False),
+        )
         # Cross-reference URLHaus tags
         matching_uh = [u for u in urlhaus_records if rec.get("domain") in u.get("url", "")]
         rec["urlhaus_tags"] = list({t for u in matching_uh for t in u.get("tags", [])})
@@ -744,8 +1037,11 @@ def main() -> None:
     print("[6/6] Collecting Validin pDNS delta ...", file=sys.stderr)
     validin_stats = collect_validin_dns_delta(domains, validin_key) if validin_key else {}
 
+    print("[+] Querying MalwareBazaar for brand-tagged payload samples ...", file=sys.stderr)
+    mb_brand_samples = collect_malwarebazaar_brand_samples(BRANDS, mb_key)
+
     # --- Aggregate and write ---
-    output = aggregate(enriched, crt_stats, shodan_clusters, validin_stats, urlhaus_records)
+    output = aggregate(enriched, crt_stats, shodan_clusters, validin_stats, urlhaus_records, mb_brand_samples)
 
     try:
         output_path.write_text(json.dumps(output, indent=2, default=str))
