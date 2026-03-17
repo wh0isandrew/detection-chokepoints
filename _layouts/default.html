@@ -7,7 +7,6 @@
   <title>{% if page.title and page.title != site.title %}{{ page.title }} | {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
   {% seo %}
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" />
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/img/favicon.svg' | relative_url }}" />
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Restore saved theme before first paint to prevent flash -->
@@ -36,7 +35,7 @@
         <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}" target="_blank" rel="noopener">
           GitHub
         </a>
-        <a href="{{ '/CONTRIBUTING' | relative_url }}">Contribute</a>
+        <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute</a>
         <a href="https://attack.mitre.org/" target="_blank" rel="noopener">MITRE ATT&amp;CK</a>
       </span>
     </div>

@@ -324,7 +324,7 @@ permalink: /trends/clickgrab/
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
   <div class="cg-rec-body">
     <strong>Detect unusual parent → PowerShell spawn</strong>
-    Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="{{ '/sigma-rules/clickfix/' | relative_url }}">sigma-rules/clickfix/hunt.yml</a>.
+    Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt.yml" target="_blank" rel="noopener">sigma-rules/clickfix/hunt.yml</a>.
     {% if site.data.clickgrab_trends.payload_examples.hidden_window.size > 0 %}
     <div class="cg-rec-examples">
       <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"

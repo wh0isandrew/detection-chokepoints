@@ -148,4 +148,4 @@ chokepoints:
 
 ## Related Attack Chains
 
-- [Ransomware](./ransomware.md) - Often follows infostealer-provided access
+- [Ransomware]({{ '/attack-chains/ransomware/' | relative_url }}) - Often follows infostealer-provided access
