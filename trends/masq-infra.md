@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Software Impersonation Infrastructure
-description: "How adversaries build convincing fake software sites — typosquatting, favicon theft, valid TLS, and cloned UI — and the detection chokepoints that survive even perfect visual impersonation."
+description: "How to fingerprint masquerading software infrastructure — domain patterns, favicon clusters, delivery chains, campaign clustering, and the detection chokepoints that survive perfect visual impersonation."
 permalink: /trends/masq-infra/
 ---
 
@@ -88,6 +88,11 @@ permalink: /trends/masq-infra/
   padding: .5rem .75rem; flex: 1 1 280px; word-break: break-all;
 }
 .cg-fav-hash strong { color: var(--accent); display: block; font-size: .65rem; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .35rem; }
+
+/* ── Delivery chain diagram ──────────────────────────────────────────────── */
+.cg-delivery { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0 1.5rem; font-family: ui-monospace, monospace; font-size: .82rem; color: var(--text-muted); line-height: 2; }
+.cg-delivery span.node { color: var(--text); font-weight: 600; }
+.cg-delivery span.label { color: var(--accent); font-size: .75rem; }
 </style>
 
 <div class="cg-page">
@@ -98,133 +103,82 @@ permalink: /trends/masq-infra/
   &nbsp;·&nbsp; Updated: {{ site.data.masq_infra.meta.last_updated }}{% if site.data.masq_infra.meta.sample_size > 0 %} &nbsp;·&nbsp; n={{ site.data.masq_infra.meta.sample_size }}, {{ site.data.masq_infra.meta.lookback_days }}-day lookback{% endif %}
 </p>
 
+<div class="cg-callout cg-callout--info">
+  <strong>Page focus:</strong> Software impersonation is always the lure. A user must believe they are downloading legitimate software — the voluntary execution is required for the attack to succeed. This constraint makes the infrastructure fingerprint consistent and detectable. This page documents how to identify, cluster, and hunt that infrastructure, and what payloads it delivers.
+</div>
+
 <!-- ── Stats ─────────────────────────────────────────────────────────── -->
 <div class="cg-stats">
   <div class="cg-stat">
     <div class="cg-stat-val">{% if site.data.masq_infra.stats.tls_lets_encrypt_pct > 0 %}{{ site.data.masq_infra.stats.tls_lets_encrypt_pct }}%{% else %}99%+{% endif %}</div>
-    <div class="cg-stat-lbl">Malicious sites with valid TLS (Let's Encrypt)</div>
+    <div class="cg-stat-lbl">Sites with Let's Encrypt TLS</div>
   </div>
   <div class="cg-stat">
     <div class="cg-stat-val">{% if site.data.masq_infra.stats.domain_to_resolution_hours_median > 0 %}{{ site.data.masq_infra.stats.domain_to_resolution_hours_median }}h{% else %}&lt;48h{% endif %}</div>
-    <div class="cg-stat-lbl">Typical domain-to-weaponized timeline</div>
+    <div class="cg-stat-lbl">Cert issuance → live domain (median)</div>
   </div>
   <div class="cg-stat">
-    <div class="cg-stat-val">{% if site.data.masq_infra.stats.favicon_reuse_pct > 0 %}{{ site.data.masq_infra.stats.favicon_reuse_pct }}%{% else %}~40%{% endif %}</div>
-    <div class="cg-stat-lbl">Fake software sites reusing favicon from impersonated brand</div>
+    <div class="cg-stat-val">{% if site.data.masq_infra.stats.favicon_clusters_found > 0 %}{{ site.data.masq_infra.stats.favicon_clusters_found }}{% else %}—{% endif %}</div>
+    <div class="cg-stat-lbl">Brand favicon clusters found (Shodan)</div>
   </div>
   <div class="cg-stat">
     <div class="cg-stat-val">T1036.005</div>
-    <div class="cg-stat-lbl">PE OriginalFilename mismatch — primary detection chokepoint</div>
+    <div class="cg-stat-lbl">PE OriginalFilename mismatch — primary chokepoint</div>
   </div>
 </div>
 
-<!-- ── Why it works ──────────────────────────────────────────────────── -->
-<h2>Why Visual Impersonation Works</h2>
-<p>When a user searches for software — a PDF editor, a VPN client, a codec pack — they evaluate trust using visual signals: a recognizable brand name in the URL, a padlock icon, a familiar logo, and a download button that looks like the real thing. Adversaries have systematically learned to satisfy every one of these signals without controlling the legitimate brand.</p>
+<!-- ── The Lure ───────────────────────────────────────────────────────── -->
+<h2>The Lure</h2>
+<p>Software impersonation is uniquely suited to drive-by malware delivery because the user must voluntarily execute the payload. That requirement means the attacker must maintain the illusion long enough for the user to click through a download prompt and run a file. No other lure type — phishing pages, document macros, browser exploits — imposes the same constraint. The result is a consistent infrastructure pattern: a convincing download page, a real-looking binary, and an execution moment the attacker can count on.</p>
 
-<p>The attack surface exists because <strong>search engines surface results by optimization, not authenticity</strong>. SEO poisoning, malvertising, and typosquatted domains bring users to convincing clones before they reach the legitimate vendor. Once on the fake site, the user sees no technical indicator that distinguishes it from the real one — valid TLS is free, favicon bytes are copyable in one request, and entire site UIs can be cloned in minutes.</p>
+<p>Other lure types exist but use different infrastructure patterns and are out of scope here. Document/macro lures and phishing pages don't need the download-page illusion. This page covers only software-impersonation download infrastructure.</p>
 
-<div class="cg-callout cg-callout--warn">
-  <strong>The defender's problem:</strong> Every layer of trust signal that users rely on — HTTPS padlock, recognizable favicon, clean domain name, fast page load — is trivially forgeable. Detection cannot be anchored to any of these signals. The chokepoints that matter are post-download, in the execution chain where the adversary runs out of options to maintain the illusion.
-</div>
-
-<!-- ── Domain naming patterns ────────────────────────────────────────── -->
-<h2>Domain Naming Patterns</h2>
-<p>Three naming strategies dominate fake software infrastructure. All are designed to survive a quick visual scan by a user who is already expecting to find a download site.</p>
-
+<h3>Lure Taxonomy</h3>
 <table class="cg-table">
   <thead>
-    <tr>
-      <th>Strategy</th>
-      <th>Example (target: 7-zip.org)</th>
-      <th>Detection angle</th>
-    </tr>
+    <tr><th>Category</th><th>Targets</th><th>Typical payload</th></tr>
   </thead>
   <tbody>
     <tr>
-      <td><strong>Typosquatting</strong></td>
-      <td class="mono">7-z1p.org · 7ziip.org · 7-zip.net</td>
-      <td class="muted">Certificate transparency — crt.sh query on brand name substring</td>
+      <td><strong>fake_software</strong></td>
+      <td class="muted">7-Zip, WinRAR, VLC, Notepad++, Audacity, GIMP, LibreOffice</td>
+      <td class="muted">Lumma, Vidar, RedLine, StealC — general-purpose infostealers</td>
     </tr>
     <tr>
-      <td><strong>Combosquatting</strong></td>
-      <td class="mono">7zip-download.com · get-7zip.org · 7zip-free.net</td>
-      <td class="muted">Keyword + action word pattern (download, get, free, install, update)</td>
+      <td><strong>fake_ai_tool</strong></td>
+      <td class="muted">ChatGPT, Midjourney, Claude, Gemini desktop apps</td>
+      <td class="muted">Lumma, AMOS (macOS) — credential + crypto theft focus</td>
     </tr>
     <tr>
-      <td><strong>Homoglyph substitution</strong></td>
-      <td class="mono">7‑zip.org (en-dash, not hyphen) · vlc-mediа.org (Cyrillic а)</td>
-      <td class="muted">Unicode normalization check — visually identical but distinct bytes</td>
+      <td><strong>crypto_wallet</strong></td>
+      <td class="muted">MetaMask, Ledger Live, Exodus, Phantom, Electrum</td>
+      <td class="muted">Atomic Stealer, MetaStealer, Clipbanker — wallet seed theft</td>
+    </tr>
+    <tr>
+      <td><strong>vpn_tool</strong></td>
+      <td class="muted">NordVPN, ProtonVPN, Mullvad, ExpressVPN</td>
+      <td class="muted">AsyncRAT, Remcos — persistent access; privacy-seeking targets</td>
+    </tr>
+    <tr>
+      <td><strong>remote_work</strong></td>
+      <td class="muted">Zoom, Slack, Teams, Webex</td>
+      <td class="muted">CobaltStrike, AsyncRAT — corporate targeting</td>
+    </tr>
+    <tr>
+      <td><strong>fake_update</strong></td>
+      <td class="muted">Browser update prompts, Windows update lures</td>
+      <td class="muted">Varied; often paired with ClickFix delivery chains</td>
+    </tr>
+    <tr>
+      <td><strong>game_crack</strong></td>
+      <td class="muted">Steam, Roblox, Minecraft — cheat tools, "free" versions</td>
+      <td class="muted">RedLine, Raccoon — credential theft from younger user base</td>
     </tr>
   </tbody>
 </table>
 
-<div class="cg-callout cg-callout--info">
-  <strong>Combosquatting is the dominant pattern.</strong> Research across phishing and malware datasets consistently shows combosquatting (brand name + keyword suffix/prefix) outpacing classic typosquatting. The keyword additions ("download", "install", "free", "update", "official") actually increase click-through by matching the user's search intent — they're not a mistake, they're SEO strategy.
-</div>
-
-<!-- ── Infrastructure signals ────────────────────────────────────────── -->
-<h2>Infrastructure Signals</h2>
-<p>Beyond domain naming, impersonation infrastructure shares consistent hosting and certificate patterns that survive tool rotation — because the operational constraints (fast deployment, low cost, abuse-resistant hosting) don't change.</p>
-
-<h3>TLS Certificates</h3>
-<p>Let's Encrypt certificates appear on effectively all active malware delivery sites. The padlock no longer signals trust — it signals only that TLS is configured, which is free and automated. Certificate authority diversification (ZeroSSL, Buypass) is increasing as some feeds block Let's Encrypt-only domains heuristically.</p>
-
-<h3>Hosting Provider Abuse</h3>
-<p>Adversaries consistently prefer hosting infrastructure where domain reputation is initially clean and abuse reports take days to process:</p>
-
-<table class="cg-table">
-  <thead>
-    <tr>
-      <th>Provider / Service</th>
-      <th>Why it's abused</th>
-      <th>Impersonation use</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td class="mono">Cloudflare Pages</td>
-      <td class="muted">pages.dev subdomain inherits Cloudflare's reputation; free tier, instant deploy</td>
-      <td class="muted">Fake download landing pages; proxies real site assets to look authentic</td>
-    </tr>
-    <tr>
-      <td class="mono">GitHub Pages</td>
-      <td class="muted">github.io subdomain trusted by corporate proxies; free, globally distributed</td>
-      <td class="muted">Static clone sites hosting fake release pages with malicious asset links</td>
-    </tr>
-    <tr>
-      <td class="mono">Firebase Hosting</td>
-      <td class="muted">web.app / firebaseapp.com subdomains bypass many domain-reputation filters</td>
-      <td class="muted">Redirect chains: Firebase page → payload on bulletproof host</td>
-    </tr>
-    <tr>
-      <td class="mono">Namecheap / Porkbun</td>
-      <td class="muted">Low-cost registrars with minimal friction; privacy protection default</td>
-      <td class="muted">Bulk domain registration for typosquatting campaigns</td>
-    </tr>
-  </tbody>
-</table>
-
-{% if site.data.masq_infra.meta.sample_size > 0 %}
-<!-- ── Live data: Hosting providers ──────────────────────────────────── -->
-<h3>Observed Hosting Providers ({{ site.data.masq_infra.meta.lookback_days }}-day window)</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>Provider / ASN</th><th>Domains</th><th>Share</th></tr>
-  </thead>
-  <tbody>
-    {% for provider in site.data.masq_infra.hosting_providers %}
-    <tr>
-      <td>{{ provider.name }}</td>
-      <td>{{ provider.count }}</td>
-      <td class="muted">{{ provider.pct }}%</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<!-- ── Live data: Lure types ─────────────────────────────────────────── -->
-<h3>Lure Type Breakdown</h3>
+{% if site.data.masq_infra.lure_types.size > 0 %}
+<h3>Observed Lure Types ({{ site.data.masq_infra.meta.lookback_days }}-day window)</h3>
 <table class="cg-table">
   <thead>
     <tr><th>Category</th><th>Domains</th><th>Share</th></tr>
@@ -239,8 +193,326 @@ permalink: /trends/masq-infra/
     {% endfor %}
   </tbody>
 </table>
+{% endif %}
 
-<!-- ── Live data: Payload families ──────────────────────────────────── -->
+<!-- ── How Users Arrive ───────────────────────────────────────────────── -->
+<h2>How Users Arrive: Traffic Sources</h2>
+<p>Understanding how users reach lure pages determines which detection layer can intercept them. The same fake download page may be delivered via four distinct vectors, each with different detection surface.</p>
+
+<table class="cg-table">
+  <thead>
+    <tr><th>Vector</th><th>Mechanism</th><th>Domain pattern</th><th>Detection surface</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>combosquat</strong></td>
+      <td class="muted">Brand name + action word in domain; ranks well for "download X free" queries</td>
+      <td class="mono">7zip-download.com · get-vlc.net</td>
+      <td class="muted">DNS / crt.sh monitoring for brand + action-word combos</td>
+    </tr>
+    <tr>
+      <td><strong>typosquat</strong></td>
+      <td class="muted">User mistyped URL or clicked near-miss from autocomplete</td>
+      <td class="mono">7-z1p.org · vIc-media.org</td>
+      <td class="muted">Unicode normalization check; edit-distance alerting on cert transparency</td>
+    </tr>
+    <tr>
+      <td><strong>seo_bait</strong></td>
+      <td class="muted">Brand buried in longer domain string; SEO-optimised content</td>
+      <td class="mono">free-discord-nitro24.top · best7zipalternative.click</td>
+      <td class="muted">URLScan / passive DNS monitoring for brand-substring domains with generic TLDs</td>
+    </tr>
+    <tr>
+      <td><strong>redirected</strong></td>
+      <td class="muted">Malvertising via Google/Bing Ads; submitted URL is ad-tracker, landing is lure</td>
+      <td class="muted">Landing domain differs from submitted URL (ad tracking redirect)</td>
+      <td class="muted">Browser proxy logs; URLScan task.url vs page.url mismatch</td>
+    </tr>
+  </tbody>
+</table>
+
+{% if site.data.masq_infra.traffic_sources.size > 0 %}
+<h3>Observed Traffic Source Distribution</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Source</th><th>Domains</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for src in site.data.masq_infra.traffic_sources %}
+    <tr>
+      <td>{{ src.source }}</td>
+      <td>{{ src.count }}</td>
+      <td class="muted">{{ src.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── Infrastructure Fingerprinting ─────────────────────────────────── -->
+<h2>Infrastructure Fingerprinting</h2>
+<p>Because the attacker's operational constraints don't change — fast deployment, low cost, abuse-resistant hosting — the infrastructure patterns are remarkably consistent across campaigns and operators. These signals survive tool rotation and can be queried proactively.</p>
+
+<!-- 3a. Domain naming patterns -->
+<h3>Domain Naming Patterns</h3>
+<p>Three naming strategies dominate. Combosquatting (brand + action word) is the most common because it satisfies the user's search intent — the extra keyword is not a mistake, it's SEO strategy.</p>
+
+<table class="cg-table">
+  <thead>
+    <tr><th>Strategy</th><th>Example (target: 7-zip.org)</th><th>Detection angle</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Typosquatting</strong></td>
+      <td class="mono">7-z1p.org · 7ziip.org · 7-zip.net</td>
+      <td class="muted">crt.sh substring query; edit-distance ≤ 2 from official domain</td>
+    </tr>
+    <tr>
+      <td><strong>Combosquatting</strong></td>
+      <td class="mono">7zip-download.com · get-7zip.org · 7zip-free.net</td>
+      <td class="muted">Brand + {download, get, free, install, setup, official, latest} pattern</td>
+    </tr>
+    <tr>
+      <td><strong>Homoglyph substitution</strong></td>
+      <td class="mono">7‑zip.org (en-dash) · vlc-mediа.org (Cyrillic а)</td>
+      <td class="muted">Unicode normalization check — visually identical but distinct bytes</td>
+    </tr>
+  </tbody>
+</table>
+
+{% if site.data.masq_infra.domain_patterns.size > 0 %}
+<h3>Observed Naming Patterns (live data)</h3>
+<p>Recurring structural skeletons across collected samples. <code>{brand}</code> = brand name substituted; <code>{N}</code> = digit sequence.</p>
+<table class="cg-table">
+  <thead>
+    <tr><th>Pattern</th><th>Count</th><th>Example</th></tr>
+  </thead>
+  <tbody>
+    {% for pat in site.data.masq_infra.domain_patterns %}
+    <tr>
+      <td class="mono">{{ pat.pattern }}</td>
+      <td>{{ pat.count }}</td>
+      <td class="mono muted">{{ pat.example }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p><strong>URLScan hunting query:</strong></p>
+<pre><code>page.domain:*7-zip*download* AND date:&gt;now-30d
+page.domain:*vlc*install* AND date:&gt;now-30d</code></pre>
+{% endif %}
+
+<!-- 3b. TLS / Certificate signals -->
+<h3>TLS &amp; Certificate Signals</h3>
+<p>Let's Encrypt certificates appear on effectively all active delivery sites. The HTTPS padlock no longer signals trust — it signals only that TLS is configured, which is free and automated. Certificate transparency gives defenders a detection window: new impersonation infrastructure almost always acquires a certificate within hours of domain registration, before the site is weaponized or before users encounter it.</p>
+
+<p><strong>crt.sh monitoring query:</strong></p>
+<pre><code># New certificates containing brand name — run on a schedule
+https://crt.sh/?q=%25.7-zip.%25&amp;output=json
+https://crt.sh/?q=%25discord%25download%25&amp;output=json
+
+# CertStream filter (Python)
+# Alert: domain matches /(7-?zip|winrar|vlc|discord|telegram)/i
+#        AND issuer == "Let's Encrypt"
+#        AND not_before within last 48h</code></pre>
+
+<!-- 3c. Hosting -->
+<h3>Hosting &amp; ASN Clustering</h3>
+<p>Adversaries prefer hosting where domain reputation is initially clean and abuse reports take days to process. Cloudflare's infrastructure is particularly common — not because of Cloudflare abuse specifically, but because legitimate sites use Cloudflare, so <code>pages.dev</code> and Cloudflare-proxied domains inherit clean reputation signals that bypass many filters.</p>
+
+{% if site.data.masq_infra.meta.sample_size > 0 %}
+<table class="cg-table">
+  <thead>
+    <tr><th>Provider / ASN</th><th>Domains</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for provider in site.data.masq_infra.hosting_providers %}
+    <tr>
+      <td>{{ provider.name }}</td>
+      <td>{{ provider.count }}</td>
+      <td class="muted">{{ provider.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- 3d. Favicon hash pivoting -->
+<h3>Favicon Hash Pivoting</h3>
+<p>Favicons are trivially stolen — a single HTTP request retrieves the bytes that brand a fake site with a recognizable logo. What makes this useful for defenders: <strong>the same bytes hash to the same value across all infrastructure reusing that favicon</strong>. Shodan indexes HTTP response favicon hashes, enabling bulk infrastructure discovery from a single known-malicious domain.</p>
+
+<div class="cg-fav-demo">
+  <div class="cg-fav-hash">
+    <strong>Shodan query format</strong>
+    http.favicon.hash:&lt;murmur3_int32&gt;
+  </div>
+  <div class="cg-fav-hash">
+    <strong>Censys query format</strong>
+    services.http.response.favicons.md5_hash:&lt;md5hex&gt;
+  </div>
+  <div class="cg-fav-hash">
+    <strong>Compute hash locally (Python)</strong>
+    import mmh3, requests, base64<br>
+    r = requests.get('https://target.com/favicon.ico')<br>
+    h = mmh3.hash(base64.encodebytes(r.content))<br>
+    print(h)  # paste into Shodan
+  </div>
+</div>
+
+{% if site.data.masq_infra.favicon_clusters.size > 0 %}
+<h3>Active Favicon Clusters (Shodan)</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Brand</th><th>Hash</th><th>Impersonator hosts</th><th>Sample host</th></tr>
+  </thead>
+  <tbody>
+    {% for cluster in site.data.masq_infra.favicon_clusters %}
+    <tr>
+      <td>{{ cluster.brand }}</td>
+      <td class="mono">{{ cluster.hash }}</td>
+      <td>{{ cluster.count }}</td>
+      <td class="mono muted">{{ cluster.sample_hosts | first }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── IOK Rules ───────────────────────────────────────────────────────── -->
+<h2>IOK Rules — Lure Page Fingerprinting</h2>
+<p>Indicators of Kit (IOK) rules identify lure pages by their structural patterns — URL shape, HTML content, and TLS signals — before a binary is ever downloaded. These rules can be applied to URLScan results, proxy logs, or crawl pipelines.</p>
+
+<pre><code># IOK rule: fake software download page (generic)
+rule: fake_software_download_lure
+meta:
+  description: Masquerading software download page with brand impersonation
+  mitre: [T1036, T1583.001, T1608.001]
+  author: detection-chokepoints
+indicators:
+  url:
+    - pattern: "(7zip|winrar|vlc|notepad|discord|telegram|chatgpt|zoom|nordvpn).*(download|install|setup|free|get)"
+    - pattern: "(get|download|free)-(7zip|vlc|discord|telegram|chatgpt)\\.(com|net|org|top|click)"
+  html:
+    - pattern: "&lt;title&gt;.*(?:download|free|official).*(?:7-?zip|winrar|vlc|discord|telegram).*&lt;/title&gt;"
+    - pattern: "(?:btn-download|download-btn|dl-button|downloadNow)"
+  tls:
+    - issuer_cn_contains: "Let's Encrypt"</code></pre>
+
+<pre><code># IOK rule: crypto wallet impersonation
+rule: crypto_wallet_lure
+meta:
+  description: Fake crypto wallet installer — wallet seed theft
+  mitre: [T1036, T1583.001]
+indicators:
+  url:
+    - pattern: "(metamask|ledger|exodus|phantom|electrum).*(download|install|desktop|app|wallet)"
+    - pattern: "(get|install|official)-(metamask|ledger|exodus|phantom)\\."
+  html:
+    - pattern: "&lt;title&gt;.*(?:metamask|ledger live|exodus|phantom).*(?:download|wallet|app).*&lt;/title&gt;"
+    - pattern: "(?:connect-wallet|wallet-connect|seed-phrase)"
+  tls:
+    - not_before_age_hours_max: 72</code></pre>
+
+<pre><code># IOK rule: fast-deployed brand typosquat (infrastructure signal)
+rule: fast_deploy_brand_typosquat
+meta:
+  description: Brand-name domain with Let's Encrypt cert issued &lt;48h ago
+  note: High-signal for newly weaponized infrastructure before URLScan coverage
+indicators:
+  tls:
+    - issuer_cn_contains: "Let's Encrypt"
+    - not_before_age_hours_max: 48
+  url:
+    - pattern: "(7-?zip|winrar|vlc|notepad|discord|telegram|chatgpt|zoom|nordvpn)"
+    - tld_in: [".top", ".click", ".xyz", ".pw", ".cam", ".life", ".shop"]</code></pre>
+
+<!-- ── Delivery Chain ──────────────────────────────────────────────────── -->
+<h2>Delivery Chain</h2>
+<p>Where does the payload actually come from? The binary is often <strong>not</strong> hosted on the same domain as the lure page. Single-domain blocklisting misses the binary when it's staged on a CDN or separate bulletproof host.</p>
+
+<div class="cg-delivery">
+  <span class="node">[Lure page]</span> ──direct──▶ <span class="node">[Payload download]</span> <span class="label">  ← most common</span><br>
+  <span class="node">[Lure page]</span> ──302──▶ <span class="node">[CDN / file host]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← off-domain staging</span><br>
+  <span class="node">[Ad link]</span> ──▶ <span class="node">[Tracker redirect]</span> ──▶ <span class="node">[Lure page]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← malvertising</span>
+</div>
+
+{% if site.data.masq_infra.payload_hosting.offhost_count > 0 %}
+<p>In the current dataset: <strong>{{ site.data.masq_infra.payload_hosting.offhost_count }} payloads ({{ site.data.masq_infra.payload_hosting.offhost_pct }}%)</strong> are hosted on a different domain than the lure page.</p>
+
+{% if site.data.masq_infra.payload_hosting.top_payload_hosts.size > 0 %}
+<h3>Top Off-Domain Payload Hosts</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Host</th><th>Payloads</th><th>Share of off-host</th></tr>
+  </thead>
+  <tbody>
+    {% for host in site.data.masq_infra.payload_hosting.top_payload_hosts %}
+    <tr>
+      <td class="mono">{{ host.name }}</td>
+      <td>{{ host.count }}</td>
+      <td class="muted">{{ host.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if site.data.masq_infra.delivery_chains.size > 0 %}
+<h3>Sample Delivery Chains</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Lure domain</th><th>Payload host</th><th>Off-host?</th><th>File type</th><th>Family</th></tr>
+  </thead>
+  <tbody>
+    {% for chain in site.data.masq_infra.delivery_chains %}
+    <tr>
+      <td class="mono">{{ chain.lure_domain }}</td>
+      <td class="mono">{{ chain.payload_host }}</td>
+      <td class="muted">{% if chain.offhost %}yes{% else %}same domain{% endif %}</td>
+      <td class="muted">{{ chain.file_type | default: "—" }}</td>
+      <td>{{ chain.malware_family | default: "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- ── Campaign Clustering ─────────────────────────────────────────────── -->
+<h2>Campaign Clustering</h2>
+<p>Shared observable signals link multiple lure domains to the same operator or campaign. Two signals are tracked:</p>
+<ul>
+  <li><strong>shared_payload</strong> — two or more domains serving the exact same binary (SHA256 match). Same operator reusing a compiled binary without recompiling between deployments.</li>
+  <li><strong>asn_cohort</strong> — three or more domains appearing on the same ASN within the same calendar month. Consistent with batch domain registration and bulk hosting account abuse.</li>
+</ul>
+
+{% if site.data.masq_infra.campaign_clusters.size > 0 %}
+<table class="cg-table">
+  <thead>
+    <tr><th>Type</th><th>Signal</th><th>Brand</th><th>Domains</th><th>Payloads</th><th>Date range</th></tr>
+  </thead>
+  <tbody>
+    {% for cluster in site.data.masq_infra.campaign_clusters limit:10 %}
+    <tr>
+      <td>{{ cluster.cluster_type | replace: "_", " " }}</td>
+      <td class="mono muted">{{ cluster.signal }}</td>
+      <td>{{ cluster.brand }}</td>
+      <td>{{ cluster.domain_count }}</td>
+      <td class="muted">{{ cluster.payload_families | join: ", " | default: "—" }}</td>
+      <td class="muted">{% if cluster.date_range.first %}{{ cluster.date_range.first | date: "%Y-%m-%d" }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="cg-callout cg-callout--info">Campaign clustering data will populate after the next pipeline run collects payload SHA256 values or identifies ASN cohorts. Requires MalwareBazaar enrichment and at least 3 samples per ASN/month bucket.</div>
+{% endif %}
+
+<!-- ── Payload Inventory ───────────────────────────────────────────────── -->
+<h2>Payload Inventory</h2>
+<p>Software impersonation infrastructure almost exclusively delivers infostealers and RATs — malware families designed to extract credentials, crypto wallet seeds, session tokens, and system access without visible symptoms. The lure type strongly predicts the payload family.</p>
+
 {% if site.data.masq_infra.payload_families.size > 0 %}
 <h3>Payload Families</h3>
 <table class="cg-table">
@@ -259,10 +531,26 @@ permalink: /trends/masq-infra/
 </table>
 {% endif %}
 
-<!-- ── Live data: URLHaus tags ───────────────────────────────────────── -->
+{% if site.data.masq_infra.payload_file_types.size > 0 %}
+<h3>Payload File Types</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Type</th><th>Count</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for ft in site.data.masq_infra.payload_file_types %}
+    <tr>
+      <td class="mono">{{ ft.type }}</td>
+      <td>{{ ft.count }}</td>
+      <td class="muted">{{ ft.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 {% if site.data.masq_infra.urlhaus_tags.size > 0 %}
-<h3>URLHaus Delivery Tags</h3>
-<p>Malware families observed delivering via fake software lures (URLHaus).</p>
+<h3>URLHaus Threat Tags</h3>
 <table class="cg-table">
   <thead>
     <tr><th>Tag</th><th>URLs</th></tr>
@@ -278,104 +566,20 @@ permalink: /trends/masq-infra/
 </table>
 {% endif %}
 
-<!-- ── Live data: Favicon clusters ──────────────────────────────────── -->
-{% if site.data.masq_infra.favicon_clusters.size > 0 %}
-<h3>Favicon Hash Clusters (Shodan)</h3>
-<p>Infrastructure clusters discovered by querying Shodan for brand favicon hashes. Each row represents a distinct hash shared across multiple impersonator domains.</p>
-<table class="cg-table">
-  <thead>
-    <tr><th>Brand</th><th>Hash</th><th>Hosts found</th></tr>
-  </thead>
-  <tbody>
-    {% for cluster in site.data.masq_infra.favicon_clusters %}
-    <tr>
-      <td>{{ cluster.brand }}</td>
-      <td class="mono">{{ cluster.hash }}</td>
-      <td>{{ cluster.count }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-
-<!-- ── Live data: Recent samples ─────────────────────────────────────── -->
-{% if site.data.masq_infra.recent_samples.size > 0 %}
-<h3>Recent Confirmed Samples</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Family</th><th>File type</th></tr>
-  </thead>
-  <tbody>
-    {% for sample in site.data.masq_infra.recent_samples %}
-    <tr>
-      <td class="muted">{{ sample.first_seen | date: "%Y-%m-%d" }}</td>
-      <td class="mono">{{ sample.domain }}</td>
-      <td>{{ sample.lure_type | replace: "_", " " }}</td>
-      <td>{{ sample.malware_family | default: "—" }}</td>
-      <td class="muted">{{ sample.file_type | default: "—" }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-{% endif %}
-
-<!-- ── Favicon abuse ──────────────────────────────────────────────────── -->
-<h2>Favicon Abuse</h2>
-<p>Favicons are the 16×16 to 32×32 pixel icons displayed in browser tabs, bookmarks, and search results. They function as one of the fastest brand recognition signals a user processes — and they are trivially stolen.</p>
-
-<h3>The Attacker Perspective</h3>
-<p>A single HTTP request to <code>https://legitimate-brand.com/favicon.ico</code> retrieves bytes that, when served from a fake domain, cause every browser to render the impersonated brand's logo in the tab. Users scanning open tabs or bookmarks identify sites by favicon before reading the URL. Fake software sites targeting WinRAR, 7-Zip, VLC, Notepad++, and popular browsers systematically clone their favicons — the visual trust signal persists even as the URL is subtly wrong.</p>
-
-<div class="cg-callout cg-callout--alert">
-  <strong>Favicon cloning requires zero technical sophistication.</strong> It is a single <code>curl</code> command followed by placing the file at <code>/favicon.ico</code>. There is no detectable sophistication threshold — any adversary building a fake software site can and does do this. The signal is not adversary capability, it is adversary intent.
-</div>
-
-<h3>The Defender Perspective — Favicon Hash Pivoting</h3>
-<p>The same property that makes favicon cloning useful to attackers makes it useful to defenders: <strong>favicon bytes are consistent within a campaign</strong>. When an adversary deploys dozens or hundreds of fake software domains using the same stolen favicon, every one of those domains produces the same favicon hash. Shodan and Censys index HTTP responses including favicon content hashes, enabling bulk infrastructure discovery from a single known-malicious site.</p>
-
-<p>Shodan uses a <strong>Murmur3 hash</strong> of the raw favicon bytes (not base64). The hash for a given favicon is stable as long as the bytes are identical — which they are when the same file is reused across infrastructure.</p>
-
-<div class="cg-fav-demo">
-  <div class="cg-fav-hash">
-    <strong>Shodan query format</strong>
-    http.favicon.hash:&lt;murmur3_int32&gt;
-  </div>
-  <div class="cg-fav-hash">
-    <strong>Censys query format</strong>
-    services.http.response.favicons.md5_hash:&lt;md5hex&gt;
-  </div>
-  <div class="cg-fav-hash">
-    <strong>Hash a favicon locally (Python)</strong>
-    import mmh3, requests, base64<br>
-    r = requests.get('https://target.com/favicon.ico')<br>
-    h = mmh3.hash(base64.encodebytes(r.content))<br>
-    print(h)  # paste into Shodan
-  </div>
-</div>
-
-<div class="cg-callout cg-callout--tip">
-  <strong>Pivot workflow:</strong> Identify one confirmed fake software domain → fetch its favicon → compute Murmur3 hash → query Shodan for all IPs/domains serving that hash → cross-reference with certificate transparency and passive DNS → blocklist the entire infrastructure cluster, not just the one known domain. This commonly surfaces 10–100× more infrastructure than the single observed sample.
-</div>
-
-<div class="cg-callout cg-callout--warn">
-  <strong>Hash collisions and legitimate hits:</strong> Popular favicons (browsers, Windows icons, common web framework defaults) will return thousands of results on Shodan, most legitimate. Focus on less common favicons — niche utilities like file archivers, codec packs, and specialized tools — where a high Shodan hit count against a brand favicon is a reliable signal that impersonation infrastructure is active.
-</div>
-
-<!-- ── Chokepoint chain ───────────────────────────────────────────────── -->
-<h2>Detection Chokepoint Framework</h2>
-<p>Perfect visual impersonation neutralizes every user-facing trust signal. These are the stages in the delivery chain where adversaries run out of room to maintain the illusion — prerequisites they cannot avoid regardless of how convincing the site looks.</p>
+<!-- ── Detection Chokepoints ──────────────────────────────────────────── -->
+<h2>Detection Chokepoints</h2>
+<p>Perfect visual impersonation neutralizes every user-facing trust signal. These are the stages where adversaries run out of room to maintain the illusion, with concrete rule examples and matched payload observations.</p>
 
 <div class="cg-chain" role="list" aria-label="Software impersonation delivery chain">
   <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
     <span class="cg-chain-label">SEO / ad delivers user</span>
-    <span class="cg-chain-sub">User arrives at fake site via search or malvertising</span>
+    <span class="cg-chain-sub">Search or malvertising</span>
     <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
     <span class="cg-chain-label">Visual trust satisfied</span>
-    <span class="cg-chain-sub">TLS cert, favicon, cloned UI — user convinced</span>
+    <span class="cg-chain-sub">TLS, favicon, cloned UI</span>
     <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
@@ -393,7 +597,7 @@ permalink: /trends/masq-infra/
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
     <span class="cg-chain-label">PE metadata exposed</span>
-    <span class="cg-chain-sub">OriginalFilename in PE header ≠ displayed name</span>
+    <span class="cg-chain-sub">OriginalFilename ≠ displayed name</span>
     <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
@@ -404,25 +608,56 @@ permalink: /trends/masq-infra/
   </div>
 </div>
 
-<p><strong>Tier 1 chokepoints are file download and user execution.</strong> The file must land on disk — providing a MotW tag and a detection window. The user must run it — from an unusual path (<code>%Downloads%</code>, <code>%Temp%</code>) rather than a managed software directory. These prerequisites do not change regardless of how convincing the impersonation is. See the <a href="{{ '/chokepoints/masquerading/' | relative_url }}">Masquerading chokepoint</a> for Sigma detection logic.</p>
-
-<!-- ── Detection recommendations ─────────────────────────────────────── -->
-<h2>Detection Recommendations</h2>
-<p>Prioritized by chokepoint tier. Tier 1 recommendations remain valid regardless of which software brand is being impersonated or which hosting provider is used.</p>
-
 <div class="cg-rec">
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
   <div class="cg-rec-body">
-    <strong>PE OriginalFilename mismatch at execution</strong>
-    Alert when a process's <code>OriginalFilename</code> (from PE version resource) does not match its running filename. Legitimate software installers are signed and ship with matching metadata. Masqueraded payloads almost universally have mismatching PE metadata because the adversary renamed an existing malicious binary — they rarely recompile with matching resources. This is T1036.005 and one of the most reliable signals in the framework.
+    <strong>PE OriginalFilename mismatch at execution (T1036.005)</strong>
+    <p>Alert when a process's <code>OriginalFilename</code> (from PE version resource) does not match its running filename. Adversaries rename existing malicious binaries — they rarely recompile with matching resources. This is one of the most reliable signals in the framework.</p>
+<pre><code># Sigma — PE OriginalFilename mismatch from download path
+detection:
+  selection:
+    Image|endswith:
+      - '\7-Zip.exe'
+      - '\VLC.exe'
+      - '\DiscordSetup.exe'
+      - '\NordVPN.exe'
+      - '\ZoomInstaller.exe'
+    CurrentDirectory|contains:
+      - '\Downloads\'
+      - '\AppData\Local\Temp\'
+  filter_legit:
+    OriginalFileName|contains:
+      - '7-Zip'
+      - 'VLC'
+      - 'Discord'
+      - 'NordVPN'
+      - 'Zoom'
+condition: selection and not filter_legit
+
+# Matched example: 7zip-download.com served 7-Zip.exe
+#   OriginalFileName: LummaC.exe  → ALERT</code></pre>
   </div>
 </div>
 
 <div class="cg-rec">
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
   <div class="cg-rec-body">
-    <strong>Execution from %Downloads% or %Temp% — especially signed binaries</strong>
-    Signed binaries executing from user download paths are an anomaly in managed environments where software is deployed through package managers or IT tooling. A <em>signed</em> binary running from <code>%USERPROFILE%\Downloads\</code> is more suspicious than an unsigned one — adversaries increasingly code-sign malware with stolen or purchased certificates specifically to bypass reputation checks. Correlate: signed binary + user download path + outbound network connection.
+    <strong>Signed binary executing from user download path</strong>
+    <p>Adversaries increasingly code-sign malware to bypass reputation checks. A <em>signed</em> binary running from <code>%Downloads%</code> is more anomalous than an unsigned one in managed environments — legitimate signed software is deployed via package manager or IT tooling, not user download directories.</p>
+<pre><code># Sigma — signed binary spawned by browser from Downloads
+detection:
+  selection:
+    ParentImage|contains:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\firefox.exe'
+    Image|endswith:
+      - '\setup.exe'
+      - '\installer.exe'
+      - '\install.exe'
+    CurrentDirectory|contains: '\Downloads\'
+    Signed: 'true'
+condition: selection</code></pre>
   </div>
 </div>
 
@@ -430,24 +665,55 @@ permalink: /trends/masq-infra/
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 2</span></div>
   <div class="cg-rec-body">
     <strong>Certificate transparency monitoring for brand typosquats</strong>
-    Subscribe to certificate issuance feeds (crt.sh, CertStream) and alert on certificates issued for domains containing your monitored brand names as substrings. New impersonation infrastructure almost always acquires a TLS certificate within hours of domain registration — certificate transparency gives you a detection window before the site is weaponized or before your users encounter it. Filter aggressively for your specific monitored terms; don't boil the ocean.
+    <p>Subscribe to crt.sh or CertStream and alert on certificates issued for domains containing monitored brand names. New impersonation infrastructure acquires a TLS certificate within hours of registration — cert transparency gives you a detection window before users encounter the site.</p>
+<pre><code># CertStream monitor (Python — certstream library)
+# Alert on: domain matches brand pattern AND Let's Encrypt AND issued &lt;48h
+
+WATCH_BRANDS = re.compile(
+    r'(7-?zip|winrar|vlc|notepad|discord|telegram|chatgpt|zoom|nordvpn)',
+    re.IGNORECASE
+)
+def on_cert(message, context):
+    domains = message['data']['leaf_cert']['all_domains']
+    for domain in domains:
+        if WATCH_BRANDS.search(domain):
+            alert(domain, message['data']['leaf_cert']['subject']['CN'])</code></pre>
   </div>
 </div>
 
 <div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 2</span></div>
-  <div class="cg-rec-body">
-    <strong>MotW enforcement at execution</strong>
-    Files downloaded through browsers receive a Zone.Identifier Alternate Data Stream marking them as internet-origin. Ensure MotW enforcement is active (SmartScreen, or equivalent EDR policy) and alert on attempts to strip the mark before execution — a common step in malicious installers that unpack and execute a payload without the parent MotW propagating.
-  </div>
-</div>
-
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-blind" style="display:block;text-align:center;padding:.25rem .5rem;">INFRA</span></div>
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">INFRA</span></div>
   <div class="cg-rec-body">
     <strong>Favicon hash pivoting for infrastructure clustering</strong>
-    When you identify a confirmed fake software domain, compute its favicon's Murmur3 hash and query Shodan (<code>http.favicon.hash:&lt;hash&gt;</code>). Campaigns reusing the same stolen favicon across dozens of domains will surface immediately. Add all discovered IPs and domains to your blocklist and passive DNS monitoring — you're blocking the entire campaign infrastructure, not just the one URL in the incident report. Automate this as a standard step in your phishing/malware domain investigation playbook.
+    <p>From one confirmed fake domain: fetch favicon → compute Murmur3 hash → query Shodan. Campaigns reusing the same stolen favicon across dozens of domains will surface immediately. Blocklist the entire cluster, not just the single known URL.</p>
+<pre><code># Known impersonator favicon hashes (Shodan)
+http.favicon.hash:-469815234   # Telegram favicon on non-Telegram infrastructure
+http.favicon.hash:991727625    # 7-Zip favicon
+http.favicon.hash:9732861      # VLC favicon
+http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
   </div>
 </div>
+
+<!-- ── Recent Samples ─────────────────────────────────────────────────── -->
+{% if site.data.masq_infra.meta.sample_size > 0 and site.data.masq_infra.recent_samples.size > 0 %}
+<h2>Recent Samples</h2>
+<table class="cg-table">
+  <thead>
+    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th></tr>
+  </thead>
+  <tbody>
+    {% for sample in site.data.masq_infra.recent_samples %}
+    <tr>
+      <td class="muted">{{ sample.first_seen | date: "%Y-%m-%d" }}</td>
+      <td class="mono">{{ sample.domain }}</td>
+      <td>{{ sample.lure_type | replace: "_", " " }}</td>
+      <td class="muted">{{ sample.traffic_source | default: "—" }}</td>
+      <td class="mono muted">{{ sample.payload_host | default: "—" }}</td>
+      <td>{{ sample.malware_family | default: "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 
 </div><!-- /.cg-page -->
