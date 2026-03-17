@@ -155,4 +155,4 @@ chokepoints:
 
 ## Related Attack Chains
 
-- [Infostealers](./infostealers.md) - Often precedes ransomware via IABs
+- [Infostealers]({{ '/attack-chains/infostealers/' | relative_url }}) - Often precedes ransomware via IABs

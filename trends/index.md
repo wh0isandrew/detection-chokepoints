@@ -191,22 +191,22 @@ permalink: /trends/
   <!-- What lives here -->
   <div class="tr-pillars">
     <div class="tr-pillar">
-      <div class="tr-pillar-icon">📊</div>
+      <div class="tr-pillar-icon" aria-hidden="true">📊</div>
       <div class="tr-pillar-title">Payload Prevalence</div>
       <div class="tr-pillar-desc">Which command lines, scripts, and file types are most common vs. rare across real-world campaigns</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon">🔀</div>
+      <div class="tr-pillar-icon" aria-hidden="true">🔀</div>
       <div class="tr-pillar-title">Technique Shifts</div>
       <div class="tr-pillar-desc">When adversaries pivot — new evasion methods emerging, old ones dying as defenders catch up</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon">🏗️</div>
+      <div class="tr-pillar-icon" aria-hidden="true">🏗️</div>
       <div class="tr-pillar-title">Malicious Infrastructure</div>
       <div class="tr-pillar-desc">Staging domains, CDN abuse, C2 hosting patterns, and reused infrastructure clusters</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon">📅</div>
+      <div class="tr-pillar-icon" aria-hidden="true">📅</div>
       <div class="tr-pillar-title">Time-Series Intel</div>
       <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline — not just point-in-time snapshots</div>
     </div>
