@@ -34,6 +34,11 @@ jobs:
             enrich-cache-
 
       - name: Ingest ClickGrab nightly reports
+        env:
+          # GITHUB_TOKEN passed for authenticated GitHub API + LFS Batch API access.
+          # This avoids the 60 req/hr unauthenticated limit and gives priority access
+          # when the ClickGrab repo's LFS bandwidth budget is available.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/ingest_clickgrab.py
 
       - name: Enrich infrastructure (IPinfo Lite + VirusTotal)
