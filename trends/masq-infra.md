@@ -716,4 +716,380 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 </table>
 {% endif %}
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Live Infrastructure Charts
+     Loaded from /_data/masq_infra.json via fetch() — rendered with Chart.js.
+     Data is written by the weekly enrichment pipeline (scripts/build_data.py).
+     ══════════════════════════════════════════════════════════════════════════ -->
+<h2>Live Infrastructure Charts</h2>
+<p class="muted" style="font-size:.82rem;margin-bottom:1.25rem;">
+  Sourced from the weekly ClickGrab enrichment pipeline.
+  Country data is country-level only (IPinfo Lite free tier — no city precision).
+</p>
+
+<style>
+.chart-grid      { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+.chart-card      { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+.chart-card h3   { font-size: .9rem; font-weight: 600; color: var(--text); margin: 0 0 1rem; }
+.chart-placeholder { color: var(--text-muted); font-size: .82rem; text-align: center; padding: 2rem 0; }
+.swimlane-wrap   { overflow-x: auto; }
+canvas { max-width: 100%; }
+</style>
+
+<div class="chart-grid">
+
+  <!-- Chart 1 — ASN/Hosting Distribution -->
+  <div class="chart-card">
+    <h3>ASN / Hosting Distribution <span style="font-weight:400;color:var(--text-muted)">(top 10)</span></h3>
+    <canvas id="chartAsn" height="280"></canvas>
+    <div id="chartAsnPlaceholder" class="chart-placeholder">Loading…</div>
+  </div>
+
+  <!-- Chart 2 — Country of Origin (bar, choropleth requires extra plugin) -->
+  <div class="chart-card">
+    <h3>Country of Origin <span style="font-weight:400;color:var(--text-muted)">(country-level)</span></h3>
+    <canvas id="chartCountry" height="280"></canvas>
+    <div id="chartCountryPlaceholder" class="chart-placeholder">Loading…</div>
+  </div>
+
+  <!-- Chart 3 — Domain Age at Observation -->
+  <div class="chart-card">
+    <h3>Domain Age at Observation</h3>
+    <canvas id="chartAge" height="220"></canvas>
+    <div id="chartAgePlaceholder" class="chart-placeholder">Loading…</div>
+  </div>
+
+  <!-- Chart 4 — Payload Family Breakdown -->
+  <div class="chart-card">
+    <h3>Payload Families <span style="font-weight:400;color:var(--text-muted)">(Triage)</span></h3>
+    <canvas id="chartFamily" height="220"></canvas>
+    <div id="chartFamilyPlaceholder" class="chart-placeholder">Loading…</div>
+  </div>
+
+  <!-- Chart 6 — TLS CA Distribution (full-width row) -->
+  <div class="chart-card">
+    <h3>TLS Certificate Authorities</h3>
+    <canvas id="chartTls" height="220"></canvas>
+    <div id="chartTlsPlaceholder" class="chart-placeholder">Loading…</div>
+  </div>
+
+</div><!-- /.chart-grid -->
+
+<!-- Chart 5 — Campaign Timeline (swimlane, full-width) -->
+<div class="chart-card" style="margin-bottom:1.5rem;">
+  <h3>Campaign Timeline</h3>
+  <div class="swimlane-wrap">
+    <canvas id="chartCampaign" height="200"></canvas>
+  </div>
+  <div id="chartCampaignPlaceholder" class="chart-placeholder">Loading…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha256-oVuCFVMwB7ZMZZnVcBIl5PtP6a5BrMzpLNB4KJXI5mU=" crossorigin="anonymous"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Colour palette ─────────────────────────────────────────────────── */
+  const PALETTE = [
+    '#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6',
+    '#ec4899','#14b8a6','#f97316','#8b5cf6','#84cc16',
+  ];
+  const CDN_ASNs  = ['AS13335','AS16509','AS14618','AS15169','AS8075'];  // CF, AWS, Google, MS
+  const BPROOF_KEYWORDS = ['frantech','combahton','serverius','M247','host1plus'];
+
+  function asnColor(asnOrOrg) {
+    const s = (asnOrOrg || '').toLowerCase();
+    if (CDN_ASNs.some(a => s.includes(a.toLowerCase()))) return '#f97316';
+    if (BPROOF_KEYWORDS.some(k => s.includes(k))) return '#ef4444';
+    return '#6366f1';
+  }
+
+  /* ── Helpers ────────────────────────────────────────────────────────── */
+  function hide(id)   { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+  function show(id)   { const el = document.getElementById(id); if (el) el.style.display = ''; }
+  function err(id, msg) {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = msg; el.style.display = ''; }
+  }
+
+  function darkMode() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function gridColor()  { return darkMode() ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.07)'; }
+  function textColor()  { return darkMode() ? '#c9d1d9' : '#374151'; }
+  function mutedColor() { return darkMode() ? '#8b949e' : '#6b7280'; }
+
+  const baseFont = { family: 'ui-monospace, monospace', size: 11 };
+
+  /* ── Chart 1 — ASN horizontal bar ──────────────────────────────────── */
+  function renderAsn(data) {
+    const items = (data.asn_distribution || []).slice(0, 10);
+    if (!items.length) { err('chartAsnPlaceholder', 'No ASN data available yet.'); return; }
+    hide('chartAsnPlaceholder');
+
+    const labels = items.map(d => (d.org || d.asn || '').substring(0, 30));
+    const counts = items.map(d => d.count);
+    const colors = items.map(d => asnColor((d.asn || '') + (d.org || '')));
+
+    new Chart(document.getElementById('chartAsn'), {
+      type: 'bar',
+      data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 3 }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.count} domains (${item.pct}%) — ${item.asn || ''}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: baseFont } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 2 — Country horizontal bar ──────────────────────────────── */
+  function renderCountry(data) {
+    const items = (data.country_distribution || []).slice(0, 12);
+    if (!items.length) { err('chartCountryPlaceholder', 'No country data available yet.'); return; }
+    hide('chartCountryPlaceholder');
+
+    new Chart(document.getElementById('chartCountry'), {
+      type: 'bar',
+      data: {
+        labels: items.map(d => d.country_code),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: '#3b82f6',
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.count} domains — ${item.country || item.country_code}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: baseFont } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 3 — Domain age histogram ────────────────────────────────── */
+  function renderAge(data) {
+    const items = data.domain_age_histogram || [];
+    if (!items.length || items.every(d => d.count === 0)) {
+      err('chartAgePlaceholder', 'No domain age data available yet.');
+      return;
+    }
+    hide('chartAgePlaceholder');
+
+    new Chart(document.getElementById('chartAge'), {
+      type: 'bar',
+      data: {
+        labels: items.map(d => d.bucket),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: '#8b5cf6',
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textColor(), font: baseFont } },
+          y: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 4 — Payload family doughnut ─────────────────────────────── */
+  function renderFamily(data) {
+    const items = data.payload_families || [];
+    if (!items.length) {
+      err('chartFamilyPlaceholder', 'No payload data yet — Triage sandbox pipeline has not run.');
+      return;
+    }
+    hide('chartFamilyPlaceholder');
+
+    new Chart(document.getElementById('chartFamily'), {
+      type: 'doughnut',
+      data: {
+        labels: items.map(d => d.family),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: PALETTE.slice(0, items.length),
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 5 — Campaign timeline (swimlane via bar) ────────────────── */
+  function renderCampaigns(data) {
+    const campaigns = (data.campaigns || []).filter(c => c.first_seen && c.last_seen);
+    if (!campaigns.length) {
+      err('chartCampaignPlaceholder', 'No campaign clusters identified this week.');
+      return;
+    }
+    hide('chartCampaignPlaceholder');
+
+    // Determine date range bounds
+    const allDates = campaigns.flatMap(c => [c.first_seen, c.last_seen]).sort();
+    const minDate = new Date(allDates[0]).getTime();
+    const maxDate = new Date(allDates[allDates.length - 1]).getTime();
+
+    const labels = campaigns.map(c => c.id.substring(0, 24));
+    const starts = campaigns.map(c => new Date(c.first_seen).getTime() - minDate);
+    const durations = campaigns.map(c =>
+      Math.max(1, new Date(c.last_seen).getTime() - new Date(c.first_seen).getTime())
+    );
+    const totalSpan = maxDate - minDate || 1;
+
+    new Chart(document.getElementById('chartCampaign'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          // Invisible offset bar
+          { data: starts, backgroundColor: 'transparent', borderWidth: 0 },
+          // Visible duration bar
+          {
+            data: durations,
+            backgroundColor: PALETTE.slice(0, campaigns.length),
+            borderRadius: 3,
+            label: 'Active span',
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.datasetIndex === 0) return null;
+                const c = campaigns[ctx.dataIndex];
+                return ` ${c.first_seen} → ${c.last_seen}  (${c.domain_count} domains)`;
+              },
+            },
+            filter: (item) => item.datasetIndex === 1,
+          },
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { color: gridColor() },
+            ticks: { display: false },
+          },
+          y: {
+            stacked: true,
+            grid: { display: false },
+            ticks: { color: textColor(), font: baseFont },
+          },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 6 — TLS CA pie ───────────────────────────────────────────── */
+  function renderTls(data) {
+    const items = data.tls_cert_authorities || [];
+    // Fall back to stats field from update_masq_infra.py
+    if (!items.length) {
+      const pct = data.stats && data.stats.tls_lets_encrypt_pct;
+      if (pct != null) {
+        const le = Math.round(pct);
+        const other = 100 - le;
+        hide('chartTlsPlaceholder');
+        new Chart(document.getElementById('chartTls'), {
+          type: 'pie',
+          data: {
+            labels: ["Let's Encrypt", 'Other'],
+            datasets: [{ data: [le, other], backgroundColor: ['#10b981', '#e5e7eb'] }],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
+              tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%` } },
+            },
+          },
+        });
+        return;
+      }
+      err('chartTlsPlaceholder', 'No TLS CA data available yet.');
+      return;
+    }
+    hide('chartTlsPlaceholder');
+
+    new Chart(document.getElementById('chartTls'), {
+      type: 'pie',
+      data: {
+        labels: items.map(d => d.ca),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: PALETTE.slice(0, items.length),
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
+        },
+      },
+    });
+  }
+
+  /* ── Bootstrap ─────────────────────────────────────────────────────────
+     Data is injected at Jekyll build time via Liquid — no runtime fetch
+     needed, so charts work on GitHub Pages without extra static files.
+  ─────────────────────────────────────────────────────────────────────── */
+  try {
+    const data = {{ site.data.masq_infra | jsonify }};
+    renderAsn(data);
+    renderCountry(data);
+    renderAge(data);
+    renderFamily(data);
+    renderCampaigns(data);
+    renderTls(data);
+  } catch (e) {
+    ['chartAsnPlaceholder','chartCountryPlaceholder','chartAgePlaceholder',
+     'chartFamilyPlaceholder','chartCampaignPlaceholder','chartTlsPlaceholder']
+      .forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = 'Chart data unavailable: ' + e.message; el.style.display = ''; }
+      });
+  }
+}());
+</script>
+
 </div><!-- /.cg-page -->
