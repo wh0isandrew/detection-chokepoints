@@ -48,12 +48,12 @@ jobs:
         run: python scripts/enrich_infra.py
 
       # Sandbox step is opt-in: set the ENABLE_SANDBOX Actions variable to 'true'
-      # in repo Settings → Variables to activate. All Triage submissions are
-      # permanently public — only enable for already-confirmed-public IOCs.
-      - name: Submit payloads to Triage sandbox
+      # in repo Settings → Variables to activate. All Hybrid Analysis submissions
+      # are permanently public — only enable for already-confirmed-public IOCs.
+      - name: Submit payloads to Hybrid Analysis sandbox
         if: vars.ENABLE_SANDBOX == 'true'
         env:
-          TRIAGE_TOKEN: ${{ secrets.TRIAGE_TOKEN }}
+          HA_API_KEY: ${{ secrets.HA_API_KEY }}
         run: python scripts/sandbox_submit.py
 
       - name: Cluster campaigns
@@ -82,7 +82,7 @@ jobs:
           git commit -m "chore: enrichment pipeline update [${DATE}]"
           git push --force -u origin "$BRANCH"
 
-          PR_BODY=$(printf 'Weekly ClickGrab enrichment pipeline update.\n\nAdds ASN/geo distribution, country choropleth data, domain age histogram, campaign clusters, and Triage payload families to `_data/masq_infra.json`.\n\nReview the stat changes below, then merge to publish to the live site.')
+          PR_BODY=$(printf 'Weekly ClickGrab enrichment pipeline update.\n\nAdds ASN/geo distribution, country choropleth data, domain age histogram, campaign clusters, and Hybrid Analysis payload families to `_data/masq_infra.json`.\n\nReview the stat changes below, then merge to publish to the live site.')
           if ! gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q "OPEN"; then
             gh pr create \
               --title "chore: enrichment pipeline update [${DATE}]" \
