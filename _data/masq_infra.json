@@ -1067,5 +1067,43 @@
       "first_seen": "2026-03-17T13:53:16.314Z",
       "urlhaus_tags": []
     }
-  ]
+  ],
+  "generated_at": "2026-03-18T00:55:16Z",
+  "date_range": {
+    "start": "2026-03-11",
+    "end": "2026-03-18"
+  },
+  "summary": {
+    "total_domains": 0,
+    "unique_asns": 0,
+    "unique_countries": 0,
+    "campaigns_identified": 0,
+    "payloads_sandboxed": 0
+  },
+  "asn_distribution": [],
+  "country_distribution": [],
+  "domain_age_histogram": [
+    {
+      "bucket": "0-1d",
+      "count": 0
+    },
+    {
+      "bucket": "1-7d",
+      "count": 0
+    },
+    {
+      "bucket": "7-30d",
+      "count": 0
+    },
+    {
+      "bucket": "30-90d",
+      "count": 0
+    },
+    {
+      "bucket": "90d+",
+      "count": 0
+    }
+  ],
+  "campaigns": [],
+  "tls_cert_authorities": []
 }

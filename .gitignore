@@ -14,3 +14,6 @@ _chokepoints/
 # Weekly TTP update script caches
 scripts/.mitre_cache.json
 scripts/__pycache__/
+
+# Enrichment pipeline intermediate cache (rebuilt each run)
+cache/
