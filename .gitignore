@@ -17,3 +17,6 @@ scripts/__pycache__/
 
 # Enrichment pipeline intermediate cache (rebuilt each run)
 cache/
+
+# Local environment — copy .env.example and fill in keys; never commit
+.env

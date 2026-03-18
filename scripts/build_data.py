@@ -23,31 +23,35 @@ import json
 import os
 import sys
 from datetime import datetime, date, timedelta, timezone
+from pathlib import Path
 from urllib.parse import urlparse
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE_DIR = os.path.join(REPO_ROOT, "cache")
-DATA_DIR = os.path.join(REPO_ROOT, "_data")
+REPO_ROOT = Path(__file__).parent.parent
+CACHE_DIR = REPO_ROOT / "cache"
+DATA_DIR  = REPO_ROOT / "_data"
 
-ENRICHED_PATH = os.path.join(CACHE_DIR, "enriched_infra.json")
-CLUSTERS_PATH = os.path.join(CACHE_DIR, "campaign_clusters.json")
-TRIAGE_PATH = os.path.join(CACHE_DIR, "triage_results.json")
-HA_LOOKUP_PATH = os.path.join(CACHE_DIR, "ha_lookup_results.json")
-OUTPUT_PATH = os.path.join(DATA_DIR, "masq_infra.json")
+ENRICHED_PATH  = CACHE_DIR / "enriched_infra.json"
+CLUSTERS_PATH  = CACHE_DIR / "campaign_clusters.json"
+TRIAGE_PATH    = CACHE_DIR / "triage_results.json"
+HA_LOOKUP_PATH = CACHE_DIR / "ha_lookup_results.json"
+OUTPUT_PATH    = DATA_DIR  / "masq_infra.json"
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _load_json(path, default=None):
-    if os.path.exists(path):
+def _load_json(path: Path, default=None):
+    if path.exists():
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+            return json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:
             print(f"  [WARN] Could not load {path}: {exc}", file=sys.stderr)
     return default if default is not None else {}
@@ -59,11 +63,9 @@ def _domain_age_bucket(creation_date):
         return None
     try:
         if isinstance(creation_date, (int, float)):
-            from datetime import datetime, timezone
             reg_date = datetime.fromtimestamp(creation_date, tz=timezone.utc).date()
         else:
-            s = str(creation_date).strip()[:10]
-            reg_date = date.fromisoformat(s)
+            reg_date = date.fromisoformat(str(creation_date).strip()[:10])
     except Exception:
         return None
 
@@ -192,15 +194,11 @@ def build_tls_cert_authorities(enriched_records):
     crt.sh data comes from update_masq_infra.py. Returns a placeholder here;
     the existing value is preserved during merge if already present.
     """
-    # This field is populated by update_masq_infra.py via crt.sh.
-    # We return an empty list as a safe default; the merge logic below
-    # preserves any existing value written by the other pipeline.
     return []
 
 
 def build_campaigns(clusters, triage_results):
     """Build campaign records from cluster data, enriched with Triage family tags."""
-    # Build lookup: domain → families from Triage
     domain_families = collections.defaultdict(set)
     for result in (triage_results or []):
         url = result.get("url", "")
@@ -216,14 +214,12 @@ def build_campaigns(clusters, triage_results):
     campaigns = []
     for cluster in (clusters or []):
         domains = cluster.get("domains", [])
-        # Collect families across all domains in the cluster
         all_families = sorted({
             fam
             for d in domains
             for fam in domain_families.get(d, set())
         })
 
-        # Derive org from ASN field (keep as-is; enriched org name is in asn_distribution)
         campaigns.append({
             "id": cluster.get("id", ""),
             "asn": cluster.get("asn", ""),
@@ -270,20 +266,18 @@ def build_summary(enriched_records, clusters, triage_results):
 # Run log
 # ---------------------------------------------------------------------------
 
-def _write_run_log(cache_dir, section, data):
+def _write_run_log(cache_dir: Path, section: str, data: dict) -> None:
     import datetime as _dt
-    path = os.path.join(cache_dir, "pipeline_run.json")
-    log = {}
-    if os.path.exists(path):
+    path = cache_dir / "pipeline_run.json"
+    log: dict = {}
+    if path.exists():
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                log = json.load(f)
+            log = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
             pass
     log.setdefault("run_date", _dt.date.today().isoformat())
     log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(log, f, indent=2)
+    path.write_text(json.dumps(log, indent=2), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -291,16 +285,15 @@ def _write_run_log(cache_dir, section, data):
 # ---------------------------------------------------------------------------
 
 def main():
-    # Check required inputs
-    if not os.path.exists(ENRICHED_PATH):
+    if not ENRICHED_PATH.exists():
         print(f"ERROR: {ENRICHED_PATH} not found. Run enrich_infra.py first.", file=sys.stderr)
         sys.exit(1)
 
     enriched_records = _load_json(ENRICHED_PATH, default=[])
-    clusters = _load_json(CLUSTERS_PATH, default=[])
-    triage_results = _load_json(TRIAGE_PATH, default=[])
+    clusters        = _load_json(CLUSTERS_PATH, default=[])
+    triage_results  = _load_json(TRIAGE_PATH, default=[])
     ha_lookup_results = _load_json(HA_LOOKUP_PATH, default={})
-    existing = _load_json(OUTPUT_PATH, default={})
+    existing        = _load_json(OUTPUT_PATH, default={})
 
     ha_hit_count = sum(len(v) for v in ha_lookup_results.values())
     print(f"Loaded {len(enriched_records)} enriched records")
@@ -308,16 +301,15 @@ def main():
     print(f"Loaded {len(triage_results)} sandbox results")
     print(f"Loaded {len(ha_lookup_results)} HA lookup terms ({ha_hit_count} report hits)")
 
-    today = date.today()
+    today    = date.today()
     week_ago = today - timedelta(days=7)
 
-    # Build new sections
-    asn_dist = build_asn_distribution(enriched_records)
-    country_dist = build_country_distribution(enriched_records)
-    age_hist = build_domain_age_histogram(enriched_records)
+    asn_dist        = build_asn_distribution(enriched_records)
+    country_dist    = build_country_distribution(enriched_records)
+    age_hist        = build_domain_age_histogram(enriched_records)
     payload_families = build_payload_families(triage_results, ha_lookup_results)
-    campaigns = build_campaigns(clusters, triage_results)
-    summary = build_summary(enriched_records, clusters, triage_results)
+    campaigns       = build_campaigns(clusters, triage_results)
+    summary         = build_summary(enriched_records, clusters, triage_results)
 
     print(f"  ASN distribution: {len(asn_dist)} entries")
     print(f"  Country distribution: {len(country_dist)} entries")
@@ -325,36 +317,28 @@ def main():
     print(f"  Payload families: {payload_families}")
     print(f"  Campaigns: {len(campaigns)}")
 
-    # Merge: start from existing to preserve all fields from update_masq_infra.py
     merged = dict(existing)
-
-    # Update / add new enrichment sections
     merged["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    merged["date_range"] = {
-        "start": week_ago.isoformat(),
-        "end": today.isoformat(),
-    }
-    merged["summary"] = summary
-    merged["asn_distribution"] = asn_dist
+    merged["date_range"] = {"start": week_ago.isoformat(), "end": today.isoformat()}
+    merged["summary"]            = summary
+    merged["asn_distribution"]   = asn_dist
     merged["country_distribution"] = country_dist
     merged["domain_age_histogram"] = age_hist
-    merged["campaigns"] = campaigns
+    merged["campaigns"]          = campaigns
 
-    # payload_families: only overwrite with new data if non-empty;
-    # otherwise preserve whatever update_masq_infra.py wrote
     if payload_families:
         merged["payload_families"] = payload_families
     elif "payload_families" not in merged:
         merged["payload_families"] = []
 
-    # tls_cert_authorities: preserve from update_masq_infra.py if already present
     if "tls_cert_authorities" not in merged:
         merged["tls_cert_authorities"] = build_tls_cert_authorities(enriched_records)
 
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(merged, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_PATH.write_text(
+        json.dumps(merged, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
     print(f"\nWritten: {OUTPUT_PATH}")
     print(f"Summary: {summary}")

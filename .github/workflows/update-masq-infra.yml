@@ -21,7 +21,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install requests mmh3 shodan python-dateutil
+        run: pip install requests httpx python-dotenv mmh3 shodan python-dateutil
 
       # Restore cached DNS lookups, VT responses, and HA submission state
       # across weekly runs so we don't re-query what we already know.
