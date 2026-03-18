@@ -10,8 +10,9 @@ hosting_providers, lure_types, traffic_sources, or urlhaus_tags fields.
 Reads:
   cache/enriched_infra.json
   cache/campaign_clusters.json
-  cache/triage_results.json   (optional — absent when sandbox step skipped)
-  _data/masq_infra.json       (existing; must be preserved)
+  cache/triage_results.json      (optional — absent when sandbox step skipped)
+  cache/ha_lookup_results.json   (optional — HA IOC search results)
+  _data/masq_infra.json          (existing; must be preserved)
 
 Writes:
   _data/masq_infra.json       (merged output)
@@ -35,6 +36,7 @@ DATA_DIR = os.path.join(REPO_ROOT, "_data")
 ENRICHED_PATH = os.path.join(CACHE_DIR, "enriched_infra.json")
 CLUSTERS_PATH = os.path.join(CACHE_DIR, "campaign_clusters.json")
 TRIAGE_PATH = os.path.join(CACHE_DIR, "triage_results.json")
+HA_LOOKUP_PATH = os.path.join(CACHE_DIR, "ha_lookup_results.json")
 OUTPUT_PATH = os.path.join(DATA_DIR, "masq_infra.json")
 
 # ---------------------------------------------------------------------------
@@ -165,15 +167,22 @@ def build_domain_age_histogram(enriched_records):
     return [{"bucket": b, "count": bucket_counts.get(b, 0)} for b in AGE_BUCKETS]
 
 
-def build_payload_families(triage_results):
-    """Aggregate family tags from Triage results."""
-    if not triage_results:
-        return []
+def build_payload_families(triage_results, ha_lookup_results):
+    """Aggregate family tags from sandbox submissions and HA IOC lookups."""
     family_counts = collections.Counter()
-    for result in triage_results:
+
+    for result in (triage_results or []):
         for fam in result.get("families", []):
             if fam:
                 family_counts[fam.lower()] += 1
+
+    # ha_lookup_results is a dict keyed by "domain:x" / "ip:x", values are lists of hits
+    for hits in (ha_lookup_results or {}).values():
+        for hit in (hits or []):
+            for fam in hit.get("families", []):
+                if fam:
+                    family_counts[fam.lower()] += 1
+
     return [{"family": fam, "count": count} for fam, count in family_counts.most_common()]
 
 
@@ -270,11 +279,14 @@ def main():
     enriched_records = _load_json(ENRICHED_PATH, default=[])
     clusters = _load_json(CLUSTERS_PATH, default=[])
     triage_results = _load_json(TRIAGE_PATH, default=[])
+    ha_lookup_results = _load_json(HA_LOOKUP_PATH, default={})
     existing = _load_json(OUTPUT_PATH, default={})
 
+    ha_hit_count = sum(len(v) for v in ha_lookup_results.values())
     print(f"Loaded {len(enriched_records)} enriched records")
     print(f"Loaded {len(clusters)} campaign clusters")
-    print(f"Loaded {len(triage_results)} Triage results")
+    print(f"Loaded {len(triage_results)} sandbox results")
+    print(f"Loaded {len(ha_lookup_results)} HA lookup terms ({ha_hit_count} report hits)")
 
     today = date.today()
     week_ago = today - timedelta(days=7)
@@ -283,7 +295,7 @@ def main():
     asn_dist = build_asn_distribution(enriched_records)
     country_dist = build_country_distribution(enriched_records)
     age_hist = build_domain_age_histogram(enriched_records)
-    payload_families = build_payload_families(triage_results)
+    payload_families = build_payload_families(triage_results, ha_lookup_results)
     campaigns = build_campaigns(clusters, triage_results)
     summary = build_summary(enriched_records, clusters, triage_results)
 
