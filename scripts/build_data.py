@@ -267,6 +267,26 @@ def build_summary(enriched_records, clusters, triage_results):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir, section, data):
+    import datetime as _dt
+    path = os.path.join(cache_dir, "pipeline_run.json")
+    log = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -338,6 +358,14 @@ def main():
 
     print(f"\nWritten: {OUTPUT_PATH}")
     print(f"Summary: {summary}")
+
+    _write_run_log(CACHE_DIR, "build_data", {
+        "records_merged": len(enriched_records),
+        "clusters_merged": len(clusters),
+        "payload_families": len(payload_families),
+        **summary,
+        "status": "ok",
+    })
 
 
 if __name__ == "__main__":

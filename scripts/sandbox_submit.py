@@ -272,6 +272,26 @@ def parse_ha_report(report, url, job_id):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir, section, data):
+    import datetime as _dt
+    path = os.path.join(cache_dir, "pipeline_run.json")
+    log = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -304,6 +324,15 @@ def main():
 
     if not new_submissions:
         print("Nothing new to submit.")
+        _write_run_log(CACHE_DIR, "sandbox_submit", {
+            "api_key_present": bool(api_key),
+            "candidates": len(candidates),
+            "submitted_new": 0,
+            "completed": 0,
+            "failed": 0,
+            "timed_out": 0,
+            "status": "ok",
+        })
         return
 
     with requests.Session() as session:
@@ -343,6 +372,19 @@ def main():
 
     _save_json(RESULTS_PATH, results)
     print(f"\nWritten: {RESULTS_PATH} ({len(results)} total results)")
+
+    completed_count = sum(1 for v in submitted.values() if v.get("status") == "completed")
+    failed_count = sum(1 for v in submitted.values() if v.get("status") == "submit_failed")
+    timed_out_count = sum(1 for v in submitted.values() if v.get("status") == "timeout_or_failed")
+    _write_run_log(CACHE_DIR, "sandbox_submit", {
+        "api_key_present": bool(api_key),
+        "candidates": len(candidates),
+        "submitted_new": len(new_submissions),
+        "completed": completed_count,
+        "failed": failed_count,
+        "timed_out": timed_out_count,
+        "status": "ok",
+    })
 
 
 if __name__ == "__main__":

@@ -133,6 +133,26 @@ def _parse_hit(hit, term_type, value):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir, section, data):
+    import datetime as _dt
+    path = os.path.join(cache_dir, "pipeline_run.json")
+    log = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -187,6 +207,14 @@ def main():
 
     print(f"\nWritten: {OUTPUT_PATH}")
     print(f"  New lookups: {new_count}  Total cached: {len(results)}  Reports found: {hit_count}")
+
+    _write_run_log(CACHE_DIR, "ha_lookup", {
+        "api_key_present": bool(api_key),
+        "new_lookups": new_count,
+        "reports_found": hit_count,
+        "total_cached": len(results),
+        "status": "ok",
+    })
 
 
 if __name__ == "__main__":

@@ -325,6 +325,26 @@ def _parse_report(data, report_date):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir, section, data):
+    import datetime as _dt
+    path = os.path.join(cache_dir, "pipeline_run.json")
+    log = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -353,6 +373,7 @@ def main():
 
     all_records = []
     seen = set()
+    lfs_skipped = 0
 
     for filename, file_date in recent_files:
         date_str = file_date.isoformat()
@@ -362,18 +383,21 @@ def main():
         oid, size = _fetch_lfs_pointer(session, filename)
         if not oid:
             print(f"    Skipping — could not read LFS pointer")
+            lfs_skipped += 1
             continue
 
         # Step 2: Resolve download URL via LFS Batch API
         download_url = _resolve_lfs_download_url(oid, size, session)
         if not download_url:
             print(f"    Skipping — LFS download URL unavailable (budget exceeded?)")
+            lfs_skipped += 1
             continue
 
         # Step 3: Download and parse
         data = _download_lfs_file(download_url, session)
         if data is None:
             print(f"    Skipping — download failed")
+            lfs_skipped += 1
             continue
 
         records = _parse_report(data, date_str)
@@ -403,6 +427,14 @@ def main():
             "Subsequent pipeline steps will run with empty input.",
             file=sys.stderr,
         )
+
+    _write_run_log(CACHE_DIR, "ingest_clickgrab", {
+        "files_found": len(all_files),
+        "files_in_window": len(recent_files),
+        "lfs_skipped": lfs_skipped,
+        "records_ingested": len(all_records),
+        "status": "ok" if all_records else "empty",
+    })
 
 
 if __name__ == "__main__":

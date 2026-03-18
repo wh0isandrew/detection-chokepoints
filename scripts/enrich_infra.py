@@ -306,6 +306,26 @@ def extract_hostnames(raw_records):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir, section, data):
+    import datetime as _dt
+    path = os.path.join(cache_dir, "pipeline_run.json")
+    log = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -344,6 +364,8 @@ def main():
     # Per-hostname enrichment
     limiter = RateLimiter(max_per_minute=VT_RATE_PER_MIN, daily_budget=VT_DAILY_BUDGET)
     enriched = {}
+    ipinfo_ok = 0
+    ipinfo_failed = 0
 
     with requests.Session() as session:
         session.headers["User-Agent"] = "detection-chokepoints/enrichment-pipeline"
@@ -356,6 +378,10 @@ def main():
             ipinfo_data = {}
             if ip:
                 ipinfo_data = enrich_ipinfo(ip, ipinfo_token, session)
+                if ipinfo_data.get("asn"):
+                    ipinfo_ok += 1
+                else:
+                    ipinfo_failed += 1
                 time.sleep(IPINFO_SLEEP)
 
             # VirusTotal
@@ -407,6 +433,22 @@ def main():
 
     print(f"\nWritten: {OUTPUT_PATH} ({len(output_records)} records)")
     print(f"VT requests used: {limiter.daily_count}/{VT_DAILY_BUDGET}")
+
+    _write_run_log(CACHE_DIR, "enrich_infra", {
+        "ipinfo": {
+            "token_present": bool(ipinfo_token),
+            "queried": ipinfo_ok + ipinfo_failed,
+            "enriched": ipinfo_ok,
+            "failed": ipinfo_failed,
+        },
+        "virustotal": {
+            "api_key_present": bool(vt_api_key),
+            "requests_used": limiter.daily_count,
+            "budget_exhausted": limiter.budget_exhausted,
+        },
+        "records_enriched": len(output_records),
+        "status": "ok",
+    })
 
 
 if __name__ == "__main__":
