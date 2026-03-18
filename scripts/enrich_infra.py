@@ -2,7 +2,10 @@
 """
 enrich_infra.py
 For each unique domain/IP extracted from cache/clickgrab_raw.json, fetch
-ASN + geo data via IPinfo Lite and reputation data via VirusTotal.
+ASN + geo data via IPinfo and reputation data via VirusTotal.
+
+All hostname enrichment runs concurrently via asyncio; VirusTotal calls are
+throttled to the free-tier limit (4 req/min, 500/day) by _VTThrottle.
 
 Reads:  cache/clickgrab_raw.json
 Writes: cache/enriched_infra.json
@@ -12,159 +15,142 @@ Caches: cache/dns_cache.json  — hostname → resolved IP
 Environment variables:
   IPINFO_TOKEN   — IPinfo API token (optional; unauthenticated gets 1000 req/day)
   VT_API_KEY     — VirusTotal API key (required for VT enrichment)
+
+Tunable via .env (see .env.example):
+  IPINFO_URL, IPINFO_SLEEP, VT_DOMAIN_URL, VT_IP_URL,
+  VT_RATE_PER_MIN, VT_DAILY_BUDGET, REQUEST_TIMEOUT
 """
 
+import asyncio
 import collections
 import json
 import os
+import re
 import socket
 import sys
 import time
+from pathlib import Path
 from urllib.parse import urlparse
 
-import requests
+import httpx
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE_DIR = os.path.join(REPO_ROOT, "cache")
-
-INPUT_PATH = os.path.join(CACHE_DIR, "clickgrab_raw.json")
-OUTPUT_PATH = os.path.join(CACHE_DIR, "enriched_infra.json")
-DNS_CACHE_PATH = os.path.join(CACHE_DIR, "dns_cache.json")
-VT_CACHE_PATH = os.path.join(CACHE_DIR, "vt_cache.json")
+REPO_ROOT      = Path(__file__).parent.parent
+CACHE_DIR      = REPO_ROOT / "cache"
+INPUT_PATH     = CACHE_DIR / "clickgrab_raw.json"
+OUTPUT_PATH    = CACHE_DIR / "enriched_infra.json"
+DNS_CACHE_PATH = CACHE_DIR / "dns_cache.json"
+VT_CACHE_PATH  = CACHE_DIR / "vt_cache.json"
 
 # ---------------------------------------------------------------------------
-# Constants
+# Constants (overridable via .env)
 # ---------------------------------------------------------------------------
 
-IPINFO_URL = "https://api.ipinfo.io/lite/{ip}"
-VT_DOMAIN_URL = "https://www.virustotal.com/api/v3/domains/{domain}"
-VT_IP_URL = "https://www.virustotal.com/api/v3/ip_addresses/{ip}"
+IPINFO_URL  = os.getenv("IPINFO_URL",     "https://ipinfo.io/{ip}/json")
+IPINFO_SLEEP = float(os.getenv("IPINFO_SLEEP", "0.05"))
 
-IPINFO_SLEEP = 0.05   # 50 ms between IPinfo requests
-REQUEST_TIMEOUT = 10
+VT_DOMAIN_URL  = os.getenv("VT_DOMAIN_URL", "https://www.virustotal.com/api/v3/domains/{domain}")
+VT_IP_URL      = os.getenv("VT_IP_URL",     "https://www.virustotal.com/api/v3/ip_addresses/{ip}")
+VT_RATE_PER_MIN = int(os.getenv("VT_RATE_PER_MIN",  "4"))
+VT_DAILY_BUDGET = int(os.getenv("VT_DAILY_BUDGET",  "500"))
+REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "10"))
 
-# VT free tier: 4 requests/minute, 500/day
-VT_RATE_PER_MIN = 4
-VT_DAILY_BUDGET = 500
+IPINFO_CONCURRENCY = 20   # soft cap on parallel IPinfo requests
 
-# IP address pattern
-_RE_IP = __import__("re").compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
+_RE_IP = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
 
 
-def _is_ip(host):
+def _is_ip(host: str) -> bool:
     return bool(_RE_IP.match(host))
 
 
 # ---------------------------------------------------------------------------
-# Rate limiter (sliding window)
+# VT async throttle (replaces the old blocking RateLimiter class)
 # ---------------------------------------------------------------------------
 
-class RateLimiter:
-    """Sliding-window rate limiter.
+class _VTThrottle:
+    """Async sliding-window throttle: 4 req/min + 500 req/day (free tier)."""
 
-    Tracks request timestamps in a deque. Before each request, drops timestamps
-    outside the window, then sleeps if the window is full.
-    """
+    def __init__(self, per_min: int, daily: int) -> None:
+        self._per_min = per_min
+        self._daily   = daily
+        self._lock    = asyncio.Lock()
+        self._window: collections.deque = collections.deque()
+        self._used    = 0
+        self.exhausted = False
 
-    def __init__(self, max_per_minute=4, daily_budget=500):
-        self.max_per_minute = max_per_minute
-        self.daily_budget = daily_budget
-        self.window = collections.deque()   # timestamps of recent requests
-        self.daily_count = 0
-        self.budget_exhausted = False
-
-    def acquire(self):
-        """Block until a request slot is available. Returns False if daily budget exceeded."""
-        if self.budget_exhausted:
-            return False
-
-        if self.daily_count >= self.daily_budget:
-            print(
-                f"  [WARN] VT daily budget of {self.daily_budget} requests exhausted. "
-                "Skipping remaining VT lookups.",
-                file=sys.stderr,
-            )
-            self.budget_exhausted = True
-            return False
-
-        now = time.monotonic()
-        # Drop timestamps older than 60 seconds
-        while self.window and now - self.window[0] > 60.0:
-            self.window.popleft()
-
-        if len(self.window) >= self.max_per_minute:
-            sleep_for = 60.0 - (now - self.window[0]) + 0.1
-            if sleep_for > 0:
-                print(f"  [VT] Rate limit: sleeping {sleep_for:.1f}s", file=sys.stderr)
-                time.sleep(sleep_for)
-            # Re-drop stale entries after sleep
+    async def acquire(self) -> bool:
+        async with self._lock:
+            if self.exhausted or self._used >= self._daily:
+                self.exhausted = True
+                return False
             now = time.monotonic()
-            while self.window and now - self.window[0] > 60.0:
-                self.window.popleft()
-
-        self.window.append(time.monotonic())
-        self.daily_count += 1
-        return True
+            while self._window and now - self._window[0] > 60.0:
+                self._window.popleft()
+            if len(self._window) >= self._per_min:
+                sleep_for = 60.0 - (now - self._window[0]) + 0.1
+                if sleep_for > 0:
+                    print(f"  [VT] Rate limit: sleeping {sleep_for:.1f}s", file=sys.stderr)
+                    await asyncio.sleep(sleep_for)
+                now = time.monotonic()
+                while self._window and now - self._window[0] > 60.0:
+                    self._window.popleft()
+            self._window.append(time.monotonic())
+            self._used += 1
+            return True
 
 
 # ---------------------------------------------------------------------------
 # Cache helpers
 # ---------------------------------------------------------------------------
 
-def _load_json_cache(path):
-    if os.path.exists(path):
+def _load_json_cache(path: Path) -> dict:
+    if path.exists():
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+            return json.loads(path.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
 
 
-def _save_json_cache(path, data):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+def _save_json_cache(path: Path, data: dict) -> None:
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
-# DNS resolution
+# DNS resolution (blocking — run via asyncio.to_thread)
 # ---------------------------------------------------------------------------
 
-def resolve_hostnames(hostnames, dns_cache):
-    """Resolve a list of hostnames to IPs. Updates dns_cache in place."""
-    updated = False
-    for host in hostnames:
-        if host in dns_cache:
-            continue
+async def resolve_hostnames(hostnames: list, dns_cache: dict) -> None:
+    """Resolve a list of hostnames to IPs concurrently. Updates dns_cache in place."""
+    unresolved = [h for h in hostnames if h not in dns_cache]
+
+    async def _resolve(host: str):
         if _is_ip(host):
-            dns_cache[host] = host
-            updated = True
-            continue
+            return host, host
         try:
-            ip = socket.gethostbyname(host)
-            dns_cache[host] = ip
+            ip = await asyncio.to_thread(socket.gethostbyname, host)
+            return host, ip
         except socket.gaierror:
-            dns_cache[host] = None
-        updated = True
+            return host, None
 
-    return updated
+    results = await asyncio.gather(*[_resolve(h) for h in unresolved])
+    for host, ip in results:
+        dns_cache[host] = ip
 
 
 # ---------------------------------------------------------------------------
-# IPinfo Lite enrichment
+# IPinfo enrichment
 # ---------------------------------------------------------------------------
 
-def enrich_ipinfo(ip, token, session):
-    """Query IPinfo Lite for ASN + country data.
-
-    Returns dict with keys: asn, as_name, as_domain, country_code, country,
-    continent_code. All may be None on failure.
-    Free tier fields only — city/region/lat/lon are NOT available without upgrade.
-    """
+async def enrich_ipinfo(ip: str, token: str, client: httpx.AsyncClient) -> dict:
+    """Query IPinfo for ASN + country data. Returns all-None dict on failure."""
     empty = {
         "asn": None, "as_name": None, "as_domain": None,
         "country_code": None, "country": None, "continent_code": None,
@@ -177,7 +163,7 @@ def enrich_ipinfo(ip, token, session):
         params["token"] = token
 
     try:
-        resp = session.get(
+        resp = await client.get(
             IPINFO_URL.format(ip=ip),
             params=params,
             timeout=REQUEST_TIMEOUT,
@@ -190,12 +176,13 @@ def enrich_ipinfo(ip, token, session):
         print(f"  [WARN] IPinfo error for {ip}: {exc}", file=sys.stderr)
         return empty
 
+    await asyncio.sleep(IPINFO_SLEEP)
     return {
-        "asn": data.get("asn") or None,
-        "as_name": data.get("as_name") or None,
-        "as_domain": data.get("as_domain") or None,
-        "country_code": data.get("country_code") or None,
-        "country": data.get("country") or None,
+        "asn":            data.get("asn")            or None,
+        "as_name":        data.get("as_name")        or None,
+        "as_domain":      data.get("as_domain")      or None,
+        "country_code":   data.get("country_code")   or None,
+        "country":        data.get("country")        or None,
         "continent_code": data.get("continent_code") or None,
     }
 
@@ -204,8 +191,10 @@ def enrich_ipinfo(ip, token, session):
 # VirusTotal enrichment
 # ---------------------------------------------------------------------------
 
-def enrich_vt_domain(domain, api_key, session, limiter, vt_cache):
-    """Query VT for domain reputation + creation date. Respects rate limiter."""
+async def enrich_vt_domain(
+    domain: str, api_key: str, client: httpx.AsyncClient,
+    throttle: _VTThrottle, vt_cache: dict,
+) -> dict:
     if domain in vt_cache:
         return vt_cache[domain]
 
@@ -214,11 +203,11 @@ def enrich_vt_domain(domain, api_key, session, limiter, vt_cache):
         "vt_creation_date": None, "vt_checked": True,
     }
 
-    if not api_key or not limiter.acquire():
+    if not api_key or not await throttle.acquire():
         return {"vt_checked": False}
 
     try:
-        resp = session.get(
+        resp = await client.get(
             VT_DOMAIN_URL.format(domain=domain),
             headers={"x-apikey": api_key},
             timeout=REQUEST_TIMEOUT,
@@ -227,14 +216,14 @@ def enrich_vt_domain(domain, api_key, session, limiter, vt_cache):
             result = empty
         else:
             resp.raise_for_status()
-            attrs = resp.json().get("data", {}).get("attributes", {})
-            stats = attrs.get("last_analysis_stats", {})
+            attrs  = resp.json().get("data", {}).get("attributes", {})
+            stats  = attrs.get("last_analysis_stats", {})
             result = {
-                "vt_malicious": stats.get("malicious", 0),
-                "vt_suspicious": stats.get("suspicious", 0),
-                "vt_harmless": stats.get("harmless", 0),
+                "vt_malicious":     stats.get("malicious", 0),
+                "vt_suspicious":    stats.get("suspicious", 0),
+                "vt_harmless":      stats.get("harmless", 0),
                 "vt_creation_date": attrs.get("creation_date"),
-                "vt_checked": True,
+                "vt_checked":       True,
             }
     except Exception as exc:
         print(f"  [WARN] VT domain error for {domain}: {exc}", file=sys.stderr)
@@ -244,8 +233,10 @@ def enrich_vt_domain(domain, api_key, session, limiter, vt_cache):
     return result
 
 
-def enrich_vt_ip(ip, api_key, session, limiter, vt_cache):
-    """Query VT for IP reputation. Respects rate limiter."""
+async def enrich_vt_ip(
+    ip: str, api_key: str, client: httpx.AsyncClient,
+    throttle: _VTThrottle, vt_cache: dict,
+) -> dict:
     cache_key = f"ip:{ip}"
     if cache_key in vt_cache:
         return vt_cache[cache_key]
@@ -255,11 +246,11 @@ def enrich_vt_ip(ip, api_key, session, limiter, vt_cache):
         "vt_creation_date": None, "vt_checked": True,
     }
 
-    if not api_key or not limiter.acquire():
+    if not api_key or not await throttle.acquire():
         return {"vt_checked": False}
 
     try:
-        resp = session.get(
+        resp = await client.get(
             VT_IP_URL.format(ip=ip),
             headers={"x-apikey": api_key},
             timeout=REQUEST_TIMEOUT,
@@ -268,14 +259,14 @@ def enrich_vt_ip(ip, api_key, session, limiter, vt_cache):
             result = empty
         else:
             resp.raise_for_status()
-            attrs = resp.json().get("data", {}).get("attributes", {})
-            stats = attrs.get("last_analysis_stats", {})
+            attrs  = resp.json().get("data", {}).get("attributes", {})
+            stats  = attrs.get("last_analysis_stats", {})
             result = {
-                "vt_malicious": stats.get("malicious", 0),
-                "vt_suspicious": stats.get("suspicious", 0),
-                "vt_harmless": stats.get("harmless", 0),
-                "vt_creation_date": None,   # IPs don't have a creation_date
-                "vt_checked": True,
+                "vt_malicious":     stats.get("malicious", 0),
+                "vt_suspicious":    stats.get("suspicious", 0),
+                "vt_harmless":      stats.get("harmless", 0),
+                "vt_creation_date": None,
+                "vt_checked":       True,
             }
     except Exception as exc:
         print(f"  [WARN] VT IP error for {ip}: {exc}", file=sys.stderr)
@@ -289,7 +280,7 @@ def enrich_vt_ip(ip, api_key, session, limiter, vt_cache):
 # Hostname extraction
 # ---------------------------------------------------------------------------
 
-def extract_hostnames(raw_records):
+def extract_hostnames(raw_records: list) -> list:
     """Return sorted list of unique hostnames from all URLs in raw records."""
     hostnames = set()
     for record in raw_records:
@@ -306,108 +297,130 @@ def extract_hostnames(raw_records):
 
 
 # ---------------------------------------------------------------------------
+# Run log
+# ---------------------------------------------------------------------------
+
+def _write_run_log(cache_dir: Path, section: str, data: dict) -> None:
+    import datetime as _dt
+    path = cache_dir / "pipeline_run.json"
+    log: dict = {}
+    if path.exists():
+        try:
+            log = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    log.setdefault("run_date", _dt.date.today().isoformat())
+    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
+    path.write_text(json.dumps(log, indent=2), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
-    os.makedirs(CACHE_DIR, exist_ok=True)
+async def main():
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Read environment
     ipinfo_token = os.environ.get("IPINFO_TOKEN", "").strip()
-    vt_api_key = os.environ.get("VT_API_KEY", "").strip()
+    vt_api_key   = os.environ.get("VT_API_KEY",   "").strip()
 
     if not vt_api_key:
         print("[WARN] VT_API_KEY not set — VirusTotal enrichment will be skipped.", file=sys.stderr)
     if not ipinfo_token:
         print("[INFO] IPINFO_TOKEN not set — using unauthenticated tier (1000 req/day).", file=sys.stderr)
 
-    # Load inputs
-    if not os.path.exists(INPUT_PATH):
+    if not INPUT_PATH.exists():
         print(f"ERROR: {INPUT_PATH} not found. Run ingest_clickgrab.py first.", file=sys.stderr)
         sys.exit(1)
 
-    with open(INPUT_PATH, "r", encoding="utf-8") as f:
-        raw_records = json.load(f)
+    raw_records = json.loads(INPUT_PATH.read_text(encoding="utf-8"))
+    dns_cache   = _load_json_cache(DNS_CACHE_PATH)
+    vt_cache    = _load_json_cache(VT_CACHE_PATH)
 
-    dns_cache = _load_json_cache(DNS_CACHE_PATH)
-    vt_cache = _load_json_cache(VT_CACHE_PATH)
-
-    # Collect unique hostnames
     hostnames = extract_hostnames(raw_records)
     print(f"Unique hostnames to enrich: {len(hostnames)}")
 
-    # DNS resolution
     print("Resolving hostnames...")
-    resolve_hostnames(hostnames, dns_cache)
+    await resolve_hostnames(hostnames, dns_cache)
     _save_json_cache(DNS_CACHE_PATH, dns_cache)
 
-    # Per-hostname enrichment
-    limiter = RateLimiter(max_per_minute=VT_RATE_PER_MIN, daily_budget=VT_DAILY_BUDGET)
-    enriched = {}
+    throttle = _VTThrottle(VT_RATE_PER_MIN, VT_DAILY_BUDGET)
+    ipinfo_sem = asyncio.Semaphore(IPINFO_CONCURRENCY)
+    enriched: dict = {}
+    ipinfo_ok = 0
+    ipinfo_failed = 0
 
-    with requests.Session() as session:
-        session.headers["User-Agent"] = "detection-chokepoints/enrichment-pipeline"
+    async def _enrich_host(host: str):
+        nonlocal ipinfo_ok, ipinfo_failed
+        ip = dns_cache.get(host)
 
-        for i, host in enumerate(hostnames, 1):
-            print(f"  [{i}/{len(hostnames)}] {host}", end=" ", flush=True)
-            ip = dns_cache.get(host)
-
-            # IPinfo Lite (country + ASN only on free tier)
-            ipinfo_data = {}
-            if ip:
-                ipinfo_data = enrich_ipinfo(ip, ipinfo_token, session)
-                time.sleep(IPINFO_SLEEP)
-
-            # VirusTotal
-            if _is_ip(host):
-                vt_data = enrich_vt_ip(host, vt_api_key, session, limiter, vt_cache)
+        ipinfo_data: dict = {}
+        if ip:
+            async with ipinfo_sem:
+                ipinfo_data = await enrich_ipinfo(ip, ipinfo_token, client)
+            if ipinfo_data.get("asn"):
+                ipinfo_ok += 1
             else:
-                vt_data = enrich_vt_domain(host, vt_api_key, session, limiter, vt_cache)
+                ipinfo_failed += 1
 
-            enriched[host] = {
-                "host": host,
-                "ip": ip,
-                "is_ip": _is_ip(host),
-                **ipinfo_data,
-                **vt_data,
-            }
-            print("✓" if vt_data.get("vt_checked") else "–")
+        if _is_ip(host):
+            vt_data = await enrich_vt_ip(host, vt_api_key, client, throttle, vt_cache)
+        else:
+            vt_data = await enrich_vt_domain(host, vt_api_key, client, throttle, vt_cache)
 
-            # Persist VT cache after every request so progress survives interruption
-            if vt_data.get("vt_checked"):
-                _save_json_cache(VT_CACHE_PATH, vt_cache)
+        status = "✓" if vt_data.get("vt_checked") else "–"
+        print(f"  {host} {status}")
+        enriched[host] = {"host": host, "ip": ip, "is_ip": _is_ip(host), **ipinfo_data, **vt_data}
 
-            # Stop VT lookups gracefully if budget is exhausted (IPinfo continues)
-            if limiter.budget_exhausted:
-                print(
-                    f"  VT budget exhausted after {limiter.daily_count} requests. "
-                    "Remaining hosts will have ipinfo data only.",
-                    file=sys.stderr,
-                )
+    async with httpx.AsyncClient(
+        headers={"User-Agent": "detection-chokepoints/enrichment-pipeline"}
+    ) as client:
+        await asyncio.gather(*[_enrich_host(h) for h in hostnames])
 
-    # Save final caches
-    _save_json_cache(DNS_CACHE_PATH, dns_cache)
     _save_json_cache(VT_CACHE_PATH, vt_cache)
+    _save_json_cache(DNS_CACHE_PATH, dns_cache)
 
-    # Build output: merge enrichment back onto raw URL records
+    if throttle.exhausted:
+        print(
+            f"  VT daily budget exhausted after {throttle._used} requests.",
+            file=sys.stderr,
+        )
+
+    # Merge enrichment back onto raw URL records
     output_records = []
     for record in raw_records:
-        url = record.get("url", "")
+        url  = record.get("url", "")
         host = ""
         try:
-            host = urlparse(url).hostname or ""
-            host = host.lower()
+            host = (urlparse(url).hostname or "").lower()
         except Exception:
             pass
-        enr = enriched.get(host, {})
-        output_records.append({**record, "enrichment": enr})
+        output_records.append({**record, "enrichment": enriched.get(host, {})})
 
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(output_records, f, indent=2, ensure_ascii=False)
+    OUTPUT_PATH.write_text(
+        json.dumps(output_records, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     print(f"\nWritten: {OUTPUT_PATH} ({len(output_records)} records)")
-    print(f"VT requests used: {limiter.daily_count}/{VT_DAILY_BUDGET}")
+    print(f"VT requests used: {throttle._used}/{VT_DAILY_BUDGET}")
+
+    _write_run_log(CACHE_DIR, "enrich_infra", {
+        "ipinfo": {
+            "token_present": bool(ipinfo_token),
+            "queried":  ipinfo_ok + ipinfo_failed,
+            "enriched": ipinfo_ok,
+            "failed":   ipinfo_failed,
+        },
+        "virustotal": {
+            "api_key_present": bool(vt_api_key),
+            "requests_used":   throttle._used,
+            "budget_exhausted": throttle.exhausted,
+        },
+        "records_enriched": len(output_records),
+        "status": "ok",
+    })
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
