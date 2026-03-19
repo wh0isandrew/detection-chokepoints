@@ -1472,3 +1472,45 @@ code.cg-family-tag {
   font-size: .75rem;
   color: var(--text-muted);
 }
+
+/* ── CSS-only IOK rule tabs ──────────────────────────────────────────── */
+.iok-tabs { margin: 1rem 0 1.5rem; }
+.iok-tabs input[type="radio"] { display: none; }
+.iok-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.iok-tab-bar label {
+  cursor: pointer;
+  padding: .45rem .9rem;
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+  user-select: none;
+}
+.iok-tab-bar label:hover { color: var(--text); }
+.iok-tab-panel {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+}
+.iok-tab-panel pre { margin: 0; }
+/* Active tab label */
+#iok-tab-1:checked ~ .iok-tab-bar label[for="iok-tab-1"],
+#iok-tab-2:checked ~ .iok-tab-bar label[for="iok-tab-2"],
+#iok-tab-3:checked ~ .iok-tab-bar label[for="iok-tab-3"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+/* Show active panel */
+#iok-tab-1:checked ~ .iok-panel-1,
+#iok-tab-2:checked ~ .iok-panel-2,
+#iok-tab-3:checked ~ .iok-panel-3 { display: block; }

@@ -407,6 +407,16 @@ https://crt.sh/?q=%25discord%25download%25&amp;output=json
 <h2>IOK Rules — Lure Page Fingerprinting</h2>
 <p>Indicators of Kit (IOK) rules identify lure pages by their structural patterns — URL shape, HTML content, and TLS signals — before a binary is ever downloaded. These rules can be applied to URLScan results, proxy logs, or crawl pipelines.</p>
 
+<div class="iok-tabs">
+  <input type="radio" name="iok-tab" id="iok-tab-1" checked>
+  <input type="radio" name="iok-tab" id="iok-tab-2">
+  <input type="radio" name="iok-tab" id="iok-tab-3">
+  <div class="iok-tab-bar" role="tablist">
+    <label for="iok-tab-1" role="tab">Generic download lure</label>
+    <label for="iok-tab-2" role="tab">Crypto wallet</label>
+    <label for="iok-tab-3" role="tab">Fast-deploy typosquat</label>
+  </div>
+  <div class="iok-tab-panel iok-panel-1">
 <pre><code># IOK rule: fake software download page (generic)
 rule: fake_software_download_lure
 meta:
@@ -422,7 +432,8 @@ indicators:
     - pattern: "(?:btn-download|download-btn|dl-button|downloadNow)"
   tls:
     - issuer_cn_contains: "Let's Encrypt"</code></pre>
-
+  </div>
+  <div class="iok-tab-panel iok-panel-2">
 <pre><code># IOK rule: crypto wallet impersonation
 rule: crypto_wallet_lure
 meta:
@@ -437,7 +448,8 @@ indicators:
     - pattern: "(?:connect-wallet|wallet-connect|seed-phrase)"
   tls:
     - not_before_age_hours_max: 72</code></pre>
-
+  </div>
+  <div class="iok-tab-panel iok-panel-3">
 <pre><code># IOK rule: fast-deployed brand typosquat (infrastructure signal)
 rule: fast_deploy_brand_typosquat
 meta:
@@ -450,6 +462,8 @@ indicators:
   url:
     - pattern: "(7-?zip|winrar|vlc|notepad|discord|telegram|chatgpt|zoom|nordvpn)"
     - tld_in: [".top", ".click", ".xyz", ".pw", ".cam", ".life", ".shop"]</code></pre>
+  </div>
+</div>
 
 <!-- ── Delivery Chain ──────────────────────────────────────────────────── -->
 <h2>Delivery Chain</h2>
@@ -707,9 +721,9 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 <!-- ── Recent Samples ─────────────────────────────────────────────────── -->
 {% if site.data.masq_infra.meta.sample_size > 0 and site.data.masq_infra.recent_samples.size > 0 %}
 <h2 id="samples">Recent Samples</h2>
-<table class="cg-table">
+<table class="cg-table cg-samples-table">
   <thead>
-    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th></tr>
+    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th><th>URLScan</th></tr>
   </thead>
   <tbody>
     {% for sample in site.data.masq_infra.recent_samples limit:10 %}
@@ -720,6 +734,7 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
       <td class="muted">{{ sample.traffic_source | default: "—" }}</td>
       <td class="mono muted">{{ sample.payload_host | default: "—" }}</td>
       <td>{{ sample.malware_family | default: "—" }}</td>
+      <td><a href="https://urlscan.io/search/#page.domain:{{ sample.domain }}" target="_blank" rel="noopener" class="muted" style="font-size:.78rem">search</a></td>
     </tr>
     {% endfor %}
   </tbody>
@@ -728,9 +743,9 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 {% if overflow_count > 0 %}
 <details>
   <summary>Show {{ overflow_count }} more samples</summary>
-  <table class="cg-table">
+  <table class="cg-table cg-samples-table">
     <thead>
-      <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th></tr>
+      <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th><th>URLScan</th></tr>
     </thead>
     <tbody>
       {% for sample in site.data.masq_infra.recent_samples offset:10 %}
@@ -741,6 +756,7 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
         <td class="muted">{{ sample.traffic_source | default: "—" }}</td>
         <td class="mono muted">{{ sample.payload_host | default: "—" }}</td>
         <td>{{ sample.malware_family | default: "—" }}</td>
+        <td><a href="https://urlscan.io/search/#page.domain:{{ sample.domain }}" target="_blank" rel="noopener" class="muted" style="font-size:.78rem">search</a></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -748,6 +764,31 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 </details>
 {% endif %}
 {% endif %}
+<script>
+(function () {
+  var tables = document.querySelectorAll('.cg-samples-table');
+  tables.forEach(function (table) {
+    var rows = Array.from(table.querySelectorAll('tbody tr'));
+    if (!rows.length) return;
+    var headers = Array.from(table.querySelectorAll('thead th'));
+    headers.forEach(function (th, colIdx) {
+      var label = th.textContent.trim().toLowerCase();
+      if (label !== 'payload host' && label !== 'family') return;
+      var emptyCount = rows.filter(function (row) {
+        var cell = row.cells[colIdx];
+        var text = cell ? cell.textContent.trim() : '';
+        return !text || text === '—';
+      }).length;
+      if (emptyCount / rows.length > 0.8) {
+        th.style.display = 'none';
+        rows.forEach(function (row) {
+          if (row.cells[colIdx]) row.cells[colIdx].style.display = 'none';
+        });
+      }
+    });
+  });
+})();
+</script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      Live Infrastructure Charts
