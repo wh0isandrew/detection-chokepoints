@@ -107,6 +107,18 @@ permalink: /trends/masq-infra/
   <strong>Page focus:</strong> Software impersonation is always the lure. A user must believe they are downloading legitimate software — the voluntary execution is required for the attack to succeed. This constraint makes the infrastructure fingerprint consistent and detectable. This page documents how to identify, cluster, and hunt that infrastructure, and what payloads it delivers.
 </div>
 
+<!-- ── Page anchor nav ───────────────────────────────────────────────── -->
+<nav class="page-anchors" aria-label="Page sections">
+  <ul>
+    <li><a href="#arrival">Arrival</a></li>
+    <li><a href="#fingerprinting">Fingerprinting</a></li>
+    <li><a href="#lure-payload">Lure→Payload</a></li>
+    <li><a href="#campaigns">Campaigns</a></li>
+    <li><a href="#chokepoints">Chokepoints</a></li>
+    <li><a href="#samples">Samples</a></li>
+  </ul>
+</nav>
+
 <!-- ── Stats ─────────────────────────────────────────────────────────── -->
 <div class="cg-stats">
   <div class="cg-stat">
@@ -127,6 +139,63 @@ permalink: /trends/masq-infra/
   </div>
 </div>
 
+<!-- ── How Users Arrive ───────────────────────────────────────────────── -->
+<h2 id="arrival">How Users Arrive: Traffic Sources</h2>
+<p>Understanding how users reach lure pages determines which detection layer can intercept them. The same fake download page may be delivered via four distinct vectors, each with different detection surface.</p>
+
+<table class="cg-table">
+  <thead>
+    <tr><th>Vector</th><th>Mechanism</th><th>Domain pattern</th><th>Detection surface</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>combosquat</strong></td>
+      <td class="muted">Brand name + action word in domain; ranks well for "download X free" queries</td>
+      <td class="mono">7zip-download.com · get-vlc.net</td>
+      <td class="muted">DNS / crt.sh monitoring for brand + action-word combos</td>
+    </tr>
+    <tr>
+      <td><strong>typosquat</strong></td>
+      <td class="muted">User mistyped URL or clicked near-miss from autocomplete</td>
+      <td class="mono">7-z1p.org · vIc-media.org</td>
+      <td class="muted">Unicode normalization check; edit-distance alerting on cert transparency</td>
+    </tr>
+    <tr>
+      <td><strong>seo_bait</strong></td>
+      <td class="muted">Brand buried in longer domain string; SEO-optimised content</td>
+      <td class="mono">free-discord-nitro24.top · best7zipalternative.click</td>
+      <td class="muted">URLScan / passive DNS monitoring for brand-substring domains with generic TLDs</td>
+    </tr>
+    <tr>
+      <td><strong>redirected</strong></td>
+      <td class="muted">Malvertising via Google/Bing Ads; submitted URL is ad-tracker, landing is lure</td>
+      <td class="muted">Landing domain differs from submitted URL (ad tracking redirect)</td>
+      <td class="muted">Browser proxy logs; URLScan task.url vs page.url mismatch</td>
+    </tr>
+  </tbody>
+</table>
+
+{% if site.data.masq_infra.traffic_sources.size > 0 %}
+<details>
+  <summary>Show: Observed Traffic Source Distribution</summary>
+<h3>Observed Traffic Source Distribution</h3>
+<table class="cg-table">
+  <thead>
+    <tr><th>Source</th><th>Domains</th><th>Share</th></tr>
+  </thead>
+  <tbody>
+    {% for src in site.data.masq_infra.traffic_sources %}
+    <tr>
+      <td>{{ src.source }}</td>
+      <td>{{ src.count }}</td>
+      <td class="muted">{{ src.pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</details>
+{% endif %}
+
 <!-- ── The Lure ───────────────────────────────────────────────────────── -->
 <h2>The Lure</h2>
 <p>Software impersonation is uniquely suited to drive-by malware delivery because the user must voluntarily execute the payload. That requirement means the attacker must maintain the illusion long enough for the user to click through a download prompt and run a file. No other lure type — phishing pages, document macros, browser exploits — imposes the same constraint. The result is a consistent infrastructure pattern: a convincing download page, a real-looking binary, and an execution moment the attacker can count on.</p>
@@ -134,6 +203,8 @@ permalink: /trends/masq-infra/
 <p>Other lure types exist but use different infrastructure patterns and are out of scope here. Document/macro lures and phishing pages don't need the download-page illusion. This page covers only software-impersonation download infrastructure.</p>
 
 <h3>Lure Taxonomy</h3>
+<details>
+  <summary>Show: Lure Taxonomy (7 categories)</summary>
 <table class="cg-table">
   <thead>
     <tr><th>Category</th><th>Targets</th><th>Typical payload</th></tr>
@@ -176,8 +247,11 @@ permalink: /trends/masq-infra/
     </tr>
   </tbody>
 </table>
+</details>
 
 {% if site.data.masq_infra.lure_types.size > 0 %}
+<details>
+  <summary>Show: Observed Lure Types ({{ site.data.masq_infra.meta.lookback_days }}-day window)</summary>
 <h3>Observed Lure Types ({{ site.data.masq_infra.meta.lookback_days }}-day window)</h3>
 <table class="cg-table">
   <thead>
@@ -193,64 +267,11 @@ permalink: /trends/masq-infra/
     {% endfor %}
   </tbody>
 </table>
-{% endif %}
-
-<!-- ── How Users Arrive ───────────────────────────────────────────────── -->
-<h2>How Users Arrive: Traffic Sources</h2>
-<p>Understanding how users reach lure pages determines which detection layer can intercept them. The same fake download page may be delivered via four distinct vectors, each with different detection surface.</p>
-
-<table class="cg-table">
-  <thead>
-    <tr><th>Vector</th><th>Mechanism</th><th>Domain pattern</th><th>Detection surface</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>combosquat</strong></td>
-      <td class="muted">Brand name + action word in domain; ranks well for "download X free" queries</td>
-      <td class="mono">7zip-download.com · get-vlc.net</td>
-      <td class="muted">DNS / crt.sh monitoring for brand + action-word combos</td>
-    </tr>
-    <tr>
-      <td><strong>typosquat</strong></td>
-      <td class="muted">User mistyped URL or clicked near-miss from autocomplete</td>
-      <td class="mono">7-z1p.org · vIc-media.org</td>
-      <td class="muted">Unicode normalization check; edit-distance alerting on cert transparency</td>
-    </tr>
-    <tr>
-      <td><strong>seo_bait</strong></td>
-      <td class="muted">Brand buried in longer domain string; SEO-optimised content</td>
-      <td class="mono">free-discord-nitro24.top · best7zipalternative.click</td>
-      <td class="muted">URLScan / passive DNS monitoring for brand-substring domains with generic TLDs</td>
-    </tr>
-    <tr>
-      <td><strong>redirected</strong></td>
-      <td class="muted">Malvertising via Google/Bing Ads; submitted URL is ad-tracker, landing is lure</td>
-      <td class="muted">Landing domain differs from submitted URL (ad tracking redirect)</td>
-      <td class="muted">Browser proxy logs; URLScan task.url vs page.url mismatch</td>
-    </tr>
-  </tbody>
-</table>
-
-{% if site.data.masq_infra.traffic_sources.size > 0 %}
-<h3>Observed Traffic Source Distribution</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>Source</th><th>Domains</th><th>Share</th></tr>
-  </thead>
-  <tbody>
-    {% for src in site.data.masq_infra.traffic_sources %}
-    <tr>
-      <td>{{ src.source }}</td>
-      <td>{{ src.count }}</td>
-      <td class="muted">{{ src.pct }}%</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+</details>
 {% endif %}
 
 <!-- ── Infrastructure Fingerprinting ─────────────────────────────────── -->
-<h2>Infrastructure Fingerprinting</h2>
+<h2 id="fingerprinting">Infrastructure Fingerprinting</h2>
 <p>Because the attacker's operational constraints don't change — fast deployment, low cost, abuse-resistant hosting — the infrastructure patterns are remarkably consistent across campaigns and operators. These signals survive tool rotation and can be queried proactively.</p>
 
 <!-- 3a. Domain naming patterns -->
@@ -281,6 +302,8 @@ permalink: /trends/masq-infra/
 </table>
 
 {% if site.data.masq_infra.domain_patterns.size > 0 %}
+<details>
+  <summary>Show: Observed Naming Patterns (live data)</summary>
 <h3>Observed Naming Patterns (live data)</h3>
 <p>Recurring structural skeletons across collected samples. <code>{brand}</code> = brand name substituted; <code>{N}</code> = digit sequence.</p>
 <table class="cg-table">
@@ -301,6 +324,7 @@ permalink: /trends/masq-infra/
 <p><strong>URLScan hunting query:</strong></p>
 <pre><code>page.domain:*7-zip*download* AND date:&gt;now-30d
 page.domain:*vlc*install* AND date:&gt;now-30d</code></pre>
+</details>
 {% endif %}
 
 <!-- 3b. TLS / Certificate signals -->
@@ -383,6 +407,16 @@ https://crt.sh/?q=%25discord%25download%25&amp;output=json
 <h2>IOK Rules — Lure Page Fingerprinting</h2>
 <p>Indicators of Kit (IOK) rules identify lure pages by their structural patterns — URL shape, HTML content, and TLS signals — before a binary is ever downloaded. These rules can be applied to URLScan results, proxy logs, or crawl pipelines.</p>
 
+<div class="iok-tabs">
+  <input type="radio" name="iok-tab" id="iok-tab-1" checked>
+  <input type="radio" name="iok-tab" id="iok-tab-2">
+  <input type="radio" name="iok-tab" id="iok-tab-3">
+  <div class="iok-tab-bar" role="tablist">
+    <label for="iok-tab-1" role="tab">Generic download lure</label>
+    <label for="iok-tab-2" role="tab">Crypto wallet</label>
+    <label for="iok-tab-3" role="tab">Fast-deploy typosquat</label>
+  </div>
+  <div class="iok-tab-panel iok-panel-1">
 <pre><code># IOK rule: fake software download page (generic)
 rule: fake_software_download_lure
 meta:
@@ -398,7 +432,8 @@ indicators:
     - pattern: "(?:btn-download|download-btn|dl-button|downloadNow)"
   tls:
     - issuer_cn_contains: "Let's Encrypt"</code></pre>
-
+  </div>
+  <div class="iok-tab-panel iok-panel-2">
 <pre><code># IOK rule: crypto wallet impersonation
 rule: crypto_wallet_lure
 meta:
@@ -413,7 +448,8 @@ indicators:
     - pattern: "(?:connect-wallet|wallet-connect|seed-phrase)"
   tls:
     - not_before_age_hours_max: 72</code></pre>
-
+  </div>
+  <div class="iok-tab-panel iok-panel-3">
 <pre><code># IOK rule: fast-deployed brand typosquat (infrastructure signal)
 rule: fast_deploy_brand_typosquat
 meta:
@@ -426,6 +462,8 @@ indicators:
   url:
     - pattern: "(7-?zip|winrar|vlc|notepad|discord|telegram|chatgpt|zoom|nordvpn)"
     - tld_in: [".top", ".click", ".xyz", ".pw", ".cam", ".life", ".shop"]</code></pre>
+  </div>
+</div>
 
 <!-- ── Delivery Chain ──────────────────────────────────────────────────── -->
 <h2>Delivery Chain</h2>
@@ -479,95 +517,81 @@ indicators:
 </table>
 {% endif %}
 
-<!-- ── Campaign Clustering ─────────────────────────────────────────────── -->
-<h2>Campaign Clustering</h2>
-<p>Shared observable signals link multiple lure domains to the same operator or campaign. Two signals are tracked:</p>
-<ul>
-  <li><strong>shared_payload</strong> — two or more domains serving the exact same binary (SHA256 match). Same operator reusing a compiled binary without recompiling between deployments.</li>
-  <li><strong>asn_cohort</strong> — three or more domains appearing on the same ASN within the same calendar month. Consistent with batch domain registration and bulk hosting account abuse.</li>
-</ul>
-
-{% if site.data.masq_infra.campaign_clusters.size > 0 %}
+<!-- ── Lure → Payload Analysis ────────────────────────────────────────── -->
+<h2 id="lure-payload">Lure→Payload Analysis</h2>
+{% if site.data.masq_infra.lure_payload_matrix.size > 0 %}
 <table class="cg-table">
   <thead>
-    <tr><th>Type</th><th>Signal</th><th>Brand</th><th>Domains</th><th>Payloads</th><th>Date range</th></tr>
+    <tr><th>Lure Type</th><th>Domains</th><th>Top Payload Families</th></tr>
   </thead>
   <tbody>
-    {% for cluster in site.data.masq_infra.campaign_clusters limit:10 %}
+    {% for row in site.data.masq_infra.lure_payload_matrix %}
     <tr>
-      <td>{{ cluster.cluster_type | replace: "_", " " }}</td>
-      <td class="mono muted">{{ cluster.signal }}</td>
-      <td>{{ cluster.brand }}</td>
-      <td>{{ cluster.domain_count }}</td>
-      <td class="muted">{{ cluster.payload_families | join: ", " | default: "—" }}</td>
-      <td class="muted">{% if cluster.date_range.first %}{{ cluster.date_range.first | date: "%Y-%m-%d" }}{% endif %}</td>
+      <td>{{ row.lure_type | replace: "_", " " }}</td>
+      <td>{{ row.domain_count }}</td>
+      <td>
+        {% if row.top_families.size > 0 %}
+          {% for fam in row.top_families %}<code class="cg-family-tag">{{ fam }}</code> {% endfor %}
+        {% else %}
+          <span class="muted">— enrichment pending</span>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<div class="cg-callout cg-callout--info">Campaign clustering data will populate after the next pipeline run collects payload SHA256 values or identifies ASN cohorts. Requires MalwareBazaar enrichment and at least 3 samples per ASN/month bucket.</div>
+<p class="muted">No lure–payload correlations yet — run the enrichment pipeline to populate.</p>
 {% endif %}
 
-<!-- ── Payload Inventory ───────────────────────────────────────────────── -->
-<h2>Payload Inventory</h2>
-<p>Software impersonation infrastructure almost exclusively delivers infostealers and RATs — malware families designed to extract credentials, crypto wallet seeds, session tokens, and system access without visible symptoms. The lure type strongly predicts the payload family.</p>
-
-{% if site.data.masq_infra.payload_families.size > 0 %}
-<h3>Payload Families</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>Family</th><th>Samples</th><th>Share</th></tr>
-  </thead>
-  <tbody>
-    {% for fam in site.data.masq_infra.payload_families %}
-    <tr>
-      <td>{{ fam.family }}</td>
-      <td>{{ fam.count }}</td>
-      <td class="muted">{{ fam.pct }}%</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-
-{% if site.data.masq_infra.payload_file_types.size > 0 %}
-<h3>Payload File Types</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>Type</th><th>Count</th><th>Share</th></tr>
-  </thead>
-  <tbody>
-    {% for ft in site.data.masq_infra.payload_file_types %}
-    <tr>
-      <td class="mono">{{ ft.type }}</td>
-      <td>{{ ft.count }}</td>
-      <td class="muted">{{ ft.pct }}%</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-
-{% if site.data.masq_infra.urlhaus_tags.size > 0 %}
-<h3>URLHaus Threat Tags</h3>
-<table class="cg-table">
-  <thead>
-    <tr><th>Tag</th><th>URLs</th></tr>
-  </thead>
-  <tbody>
-    {% for tag in site.data.masq_infra.urlhaus_tags limit:10 %}
-    <tr>
-      <td>{{ tag.tag }}</td>
-      <td>{{ tag.count }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<!-- ── Active Campaigns ───────────────────────────────────────────────── -->
+<h2 id="campaigns">Active Campaigns</h2>
+{% if site.data.masq_infra.campaigns.size > 0 %}
+{% assign sorted_camps = site.data.masq_infra.campaigns | sort: "domain_count" | reverse %}
+{% assign gen_ts = site.data.masq_infra.generated_at | date: "%s" | plus: 0 %}
+<div class="cg-campaign-list">
+  {% for camp in sorted_camps limit:10 %}
+  {% assign last_ts = camp.last_seen | date: "%s" | plus: 0 %}
+  {% assign age_days = gen_ts | minus: last_ts | divided_by: 86400 %}
+  <div class="cg-campaign-card">
+    <div class="cg-campaign-header">
+      <span class="cg-campaign-id mono">{{ camp.id }}</span>
+      {% if age_days <= 7 %}<span class="cg-badge cg-badge--active">ACTIVE</span>{% endif %}
+      <span class="cg-campaign-domains">{{ camp.domain_count }} domain{% if camp.domain_count != 1 %}s{% endif %}</span>
+    </div>
+    <div class="cg-campaign-meta">
+      {% if camp.lure_type %}<span class="cg-meta-item"><span class="muted">lure:</span> {{ camp.lure_type | replace: "_", " " }}</span>{% endif %}
+      {% if camp.brand %}<span class="cg-meta-item"><span class="muted">brand:</span> {{ camp.brand }}</span>{% endif %}
+      <span class="cg-meta-item"><span class="muted">asn:</span> {{ camp.asn }}</span>
+      {% if camp.countries.size > 0 %}<span class="cg-meta-item"><span class="muted">countries:</span> {{ camp.countries | join: ", " }}</span>{% endif %}
+      <span class="cg-meta-item"><span class="muted">first seen:</span> {{ camp.first_seen }}</span>
+      <span class="cg-meta-item"><span class="muted">last seen:</span> {{ camp.last_seen }}</span>
+      {% if camp.favicon_hash %}<span class="cg-meta-item"><span class="muted">favicon:</span> <a href="https://www.shodan.io/search?query=http.favicon.hash%3A{{ camp.favicon_hash }}" target="_blank" rel="noopener" class="mono">{{ camp.favicon_hash }}</a></span>{% endif %}
+    </div>
+    <div class="cg-campaign-families">
+      {% if camp.families.size > 0 %}
+        {% for fam in camp.families %}<code class="cg-family-tag">{{ fam }}</code> {% endfor %}
+      {% else %}
+        <span class="muted">payload: enrichment pending</span>
+      {% endif %}
+    </div>
+    {% if camp.domains.size > 0 %}
+    <details>
+      <summary>Show {{ camp.domains.size }} domain{% if camp.domains.size != 1 %}s{% endif %}</summary>
+      <ul class="cg-domain-list">
+        {% for d in camp.domains %}<li class="mono">{{ d }}</li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">No campaign clusters identified yet — run the enrichment pipeline to populate.</p>
 {% endif %}
 
 <!-- ── Detection Chokepoints ──────────────────────────────────────────── -->
-<h2>Detection Chokepoints</h2>
+<h2 id="chokepoints">Detection Chokepoints</h2>
 <p>Perfect visual impersonation neutralizes every user-facing trust signal. These are the stages where adversaries run out of room to maintain the illusion, with concrete rule examples and matched payload observations.</p>
 
 <div class="cg-chain" role="list" aria-label="Software impersonation delivery chain">
@@ -696,13 +720,13 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 
 <!-- ── Recent Samples ─────────────────────────────────────────────────── -->
 {% if site.data.masq_infra.meta.sample_size > 0 and site.data.masq_infra.recent_samples.size > 0 %}
-<h2>Recent Samples</h2>
-<table class="cg-table">
+<h2 id="samples">Recent Samples</h2>
+<table class="cg-table cg-samples-table">
   <thead>
-    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th></tr>
+    <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th><th>URLScan</th></tr>
   </thead>
   <tbody>
-    {% for sample in site.data.masq_infra.recent_samples %}
+    {% for sample in site.data.masq_infra.recent_samples limit:10 %}
     <tr>
       <td class="muted">{{ sample.first_seen | date: "%Y-%m-%d" }}</td>
       <td class="mono">{{ sample.domain }}</td>
@@ -710,11 +734,61 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
       <td class="muted">{{ sample.traffic_source | default: "—" }}</td>
       <td class="mono muted">{{ sample.payload_host | default: "—" }}</td>
       <td>{{ sample.malware_family | default: "—" }}</td>
+      <td><a href="https://urlscan.io/search/#page.domain:{{ sample.domain }}" target="_blank" rel="noopener" class="muted" style="font-size:.78rem">search</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+{% assign overflow_count = site.data.masq_infra.recent_samples.size | minus: 10 %}
+{% if overflow_count > 0 %}
+<details>
+  <summary>Show {{ overflow_count }} more samples</summary>
+  <table class="cg-table cg-samples-table">
+    <thead>
+      <tr><th>First seen</th><th>Domain</th><th>Lure type</th><th>Traffic source</th><th>Payload host</th><th>Family</th><th>URLScan</th></tr>
+    </thead>
+    <tbody>
+      {% for sample in site.data.masq_infra.recent_samples offset:10 %}
+      <tr>
+        <td class="muted">{{ sample.first_seen | date: "%Y-%m-%d" }}</td>
+        <td class="mono">{{ sample.domain }}</td>
+        <td>{{ sample.lure_type | replace: "_", " " }}</td>
+        <td class="muted">{{ sample.traffic_source | default: "—" }}</td>
+        <td class="mono muted">{{ sample.payload_host | default: "—" }}</td>
+        <td>{{ sample.malware_family | default: "—" }}</td>
+        <td><a href="https://urlscan.io/search/#page.domain:{{ sample.domain }}" target="_blank" rel="noopener" class="muted" style="font-size:.78rem">search</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
 {% endif %}
+{% endif %}
+<script>
+(function () {
+  var tables = document.querySelectorAll('.cg-samples-table');
+  tables.forEach(function (table) {
+    var rows = Array.from(table.querySelectorAll('tbody tr'));
+    if (!rows.length) return;
+    var headers = Array.from(table.querySelectorAll('thead th'));
+    headers.forEach(function (th, colIdx) {
+      var label = th.textContent.trim().toLowerCase();
+      if (label !== 'payload host' && label !== 'family') return;
+      var emptyCount = rows.filter(function (row) {
+        var cell = row.cells[colIdx];
+        var text = cell ? cell.textContent.trim() : '';
+        return !text || text === '—';
+      }).length;
+      if (emptyCount / rows.length > 0.8) {
+        th.style.display = 'none';
+        rows.forEach(function (row) {
+          if (row.cells[colIdx]) row.cells[colIdx].style.display = 'none';
+        });
+      }
+    });
+  });
+})();
+</script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      Live Infrastructure Charts

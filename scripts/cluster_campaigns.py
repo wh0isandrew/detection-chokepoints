@@ -111,7 +111,7 @@ def _iso_week(creation_date):
 
 
 def _extract_domains(enriched_records):
-    """Build a dict of domain → {asn, registration_week, date_first, date_last}."""
+    """Build a dict of domain → {asn, registration_week, date_first, date_last, lure_type, brand}."""
     domain_info = {}
     for record in enriched_records:
         url = record.get("url", "")
@@ -128,6 +128,18 @@ def _extract_domains(enriched_records):
         week         = _iso_week(creation_date)
         record_date  = record.get("date", "")
 
+        # Extract lure_type: try lure_type → category → tag, fall back to "unknown"
+        lure_type = (
+            record.get("lure_type")
+            or enr.get("lure_type")
+            or record.get("category")
+            or enr.get("category")
+            or record.get("tag")
+            or enr.get("tag")
+            or "unknown"
+        )
+        brand = record.get("brand") or enr.get("brand") or None
+
         if host not in domain_info:
             domain_info[host] = {
                 "asn": asn,
@@ -135,6 +147,8 @@ def _extract_domains(enriched_records):
                 "date_first": record_date,
                 "date_last": record_date,
                 "country_codes": set(),
+                "lure_type": lure_type,
+                "brand": brand,
             }
         else:
             existing = domain_info[host]
@@ -142,6 +156,11 @@ def _extract_domains(enriched_records):
                 existing["date_first"] = record_date
             if record_date and (not existing["date_last"] or record_date > existing["date_last"]):
                 existing["date_last"] = record_date
+            # Update lure_type if current is unknown and new value is not
+            if existing["lure_type"] == "unknown" and lure_type != "unknown":
+                existing["lure_type"] = lure_type
+            if existing["brand"] is None and brand is not None:
+                existing["brand"] = brand
         if enr.get("country_code"):
             domain_info[host]["country_codes"].add(enr["country_code"])
 
@@ -217,6 +236,13 @@ def cluster_domains(domain_info, favicon_hashes):
         rep_week = collections.Counter(weeks).most_common(1)[0][0] if weeks else "unknown"
         rep_fav  = collections.Counter(favs).most_common(1)[0][0] if favs else None
 
+        # Majority-vote lure_type, brand, and breakdown across cluster members
+        lure_types = [domain_info[d]["lure_type"] for d in members]
+        brands     = [domain_info[d]["brand"] for d in members if domain_info[d]["brand"]]
+        lure_type_breakdown = dict(collections.Counter(lure_types))
+        rep_lure_type = collections.Counter(lure_types).most_common(1)[0][0]
+        rep_brand     = collections.Counter(brands).most_common(1)[0][0] if brands else None
+
         cluster_id  = f"CLUSTER-{rep_week}-{rep_asn}"
         dates_first = [domain_info[d]["date_first"] for d in members if domain_info[d]["date_first"]]
         dates_last  = [domain_info[d]["date_last"]  for d in members if domain_info[d]["date_last"]]
@@ -231,6 +257,9 @@ def cluster_domains(domain_info, favicon_hashes):
             "first_seen": min(dates_first) if dates_first else None,
             "last_seen":  max(dates_last)  if dates_last  else None,
             "countries": countries,
+            "lure_type": rep_lure_type,
+            "brand": rep_brand,
+            "lure_type_breakdown": lure_type_breakdown,
             "domains": sorted(members),
         })
 

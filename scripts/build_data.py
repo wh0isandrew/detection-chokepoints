@@ -197,8 +197,8 @@ def build_tls_cert_authorities(enriched_records):
     return []
 
 
-def build_campaigns(clusters, triage_results):
-    """Build campaign records from cluster data, enriched with Triage family tags."""
+def build_campaigns(clusters, triage_results, ha_lookup_results=None):
+    """Build campaign records from cluster data, enriched with Triage and HA family tags."""
     domain_families = collections.defaultdict(set)
     for result in (triage_results or []):
         url = result.get("url", "")
@@ -210,6 +210,16 @@ def build_campaigns(clusters, triage_results):
         if host:
             for fam in families:
                 domain_families[host].add(fam)
+
+    # Join HA family hits keyed as "domain:{host}"
+    for host_key, hits in (ha_lookup_results or {}).items():
+        if not host_key.startswith("domain:"):
+            continue
+        host = host_key[len("domain:"):]
+        for hit in (hits or []):
+            for fam in hit.get("families", []):
+                if fam:
+                    domain_families[host].add(fam)
 
     campaigns = []
     for cluster in (clusters or []):
@@ -228,10 +238,30 @@ def build_campaigns(clusters, triage_results):
             "first_seen": cluster.get("first_seen"),
             "last_seen": cluster.get("last_seen"),
             "countries": cluster.get("countries", []),
+            "lure_type": cluster.get("lure_type", "unknown"),
+            "brand": cluster.get("brand"),
             "families": all_families,
             "domains": domains,
         })
     return campaigns
+
+
+def build_lure_payload_matrix(campaigns):
+    """Aggregate {lure_type, top_families, domain_count} across all campaigns."""
+    by_lure: dict = collections.defaultdict(lambda: {"domain_count": 0, "families": collections.Counter()})
+    for camp in (campaigns or []):
+        lt = camp.get("lure_type") or "unknown"
+        by_lure[lt]["domain_count"] += camp.get("domain_count", len(camp.get("domains", [])))
+        for fam in camp.get("families", []):
+            by_lure[lt]["families"][fam] += 1
+    return [
+        {
+            "lure_type": lt,
+            "top_families": [f for f, _ in data["families"].most_common(5)],
+            "domain_count": data["domain_count"],
+        }
+        for lt, data in sorted(by_lure.items(), key=lambda x: x[1]["domain_count"], reverse=True)
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +338,7 @@ def main():
     country_dist    = build_country_distribution(enriched_records)
     age_hist        = build_domain_age_histogram(enriched_records)
     payload_families = build_payload_families(triage_results, ha_lookup_results)
-    campaigns       = build_campaigns(clusters, triage_results)
+    campaigns       = build_campaigns(clusters, triage_results, ha_lookup_results)
     summary         = build_summary(enriched_records, clusters, triage_results)
 
     print(f"  ASN distribution: {len(asn_dist)} entries")
@@ -325,6 +355,7 @@ def main():
     merged["country_distribution"] = country_dist
     merged["domain_age_histogram"] = age_hist
     merged["campaigns"]          = campaigns
+    merged["lure_payload_matrix"] = build_lure_payload_matrix(campaigns)
 
     if payload_families:
         merged["payload_families"] = payload_families
