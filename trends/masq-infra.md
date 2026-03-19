@@ -116,6 +116,7 @@ permalink: /trends/masq-infra/
     <li><a href="#campaigns">Campaigns</a></li>
     <li><a href="#chokepoints">Chokepoints</a></li>
     <li><a href="#samples">Samples</a></li>
+    <li><a href="#trends">Trends</a></li>
   </ul>
 </nav>
 
@@ -833,6 +834,28 @@ canvas { max-width: 100%; }
   <canvas id="chartAge" height="180"></canvas>
 </div>
 
+{% assign mi_history_size = site.data.masq_infra_history | size %}
+{% if mi_history_size >= 4 %}
+
+<!-- ── Historical Trends ─────────────────────────────────────────────── -->
+<h2 id="trends">Weekly Volume &amp; Lure Mix Trends</h2>
+
+<p>Spikes in weekly domain count are early indicators of a new campaign wave — adversary operators register domains in batches, so a single-week surge followed by rapid infrastructure churn is the expected pattern. Monitor week-over-week delta rather than absolute count; a drop back to baseline does not mean the campaign is over, only that its infrastructure is rotating.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Total active domains observed per week (ISO week)</div>
+  <div id="mi-chart-volume"></div>
+</div>
+
+<p>Lure type composition reveals which software categories adversaries are impersonating most heavily. A rising share from a previously minor category — particularly <code>fake_update</code> or <code>game_crack</code> — correlates with retooling to evade brand-specific detections targeting the current dominant category. Crypto wallet and fake AI tool share are leading indicators of payload-family shifts toward stealers.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Lure type share over time — top 6 categories (stacked by count)</div>
+  <div id="mi-chart-lures"></div>
+</div>
+
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha256-oVuCFVMwB7ZMZZnVcBIl5PtP6a5BrMzpLNB4KJXI5mU=" crossorigin="anonymous"></script>
 <script>
 (function () {
@@ -1009,5 +1032,10 @@ canvas { max-width: 100%; }
   }
 }());
 </script>
+
+{% if mi_history_size >= 4 %}
+<script>window.MASQ_HISTORY = {{ site.data.masq_infra_history | jsonify }};</script>
+<script src="{{ '/assets/js/masq-infra-history.js' | relative_url }}" defer></script>
+{% endif %}
 
 </div><!-- /.cg-page -->
