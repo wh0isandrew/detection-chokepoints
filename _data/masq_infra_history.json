@@ -1,0 +1,142 @@
+{
+  "2026-09": {
+    "week": "2026-09",
+    "generated_at": "2026-02-26T01:35:00Z",
+    "total_domains": 1124,
+    "campaigns_identified": 8,
+    "lets_encrypt_pct": 85.1,
+    "lure_types": {
+      "unknown": 521,
+      "crypto_wallet": 284,
+      "remote_work": 98,
+      "fake_ai_tool": 71,
+      "vpn_tool": 62,
+      "fake_software": 51,
+      "fake_update": 21,
+      "game_crack": 10,
+      "fake_tool": 5,
+      "media_piracy": 1
+    },
+    "traffic_sources": {
+      "seo_bait": 612,
+      "typosquat": 368,
+      "redirected": 112,
+      "combosquat": 32
+    },
+    "top_asns": [
+      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 389, "pct": 34.6 },
+      { "asn": "AS16509", "org": "AMAZON-02", "count": 78, "pct": 6.9 },
+      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 61, "pct": 5.4 }
+    ],
+    "payload_families": [
+      { "family": "lumma", "count": 22 },
+      { "family": "redline", "count": 7 },
+      { "family": "vidar", "count": 4 }
+    ]
+  },
+  "2026-10": {
+    "week": "2026-10",
+    "generated_at": "2026-03-05T01:35:00Z",
+    "total_domains": 1389,
+    "campaigns_identified": 11,
+    "lets_encrypt_pct": 86.4,
+    "lure_types": {
+      "unknown": 648,
+      "crypto_wallet": 319,
+      "remote_work": 127,
+      "fake_ai_tool": 79,
+      "vpn_tool": 68,
+      "fake_software": 55,
+      "fake_update": 58,
+      "game_crack": 22,
+      "fake_tool": 7,
+      "media_piracy": 6
+    },
+    "traffic_sources": {
+      "seo_bait": 741,
+      "typosquat": 451,
+      "redirected": 148,
+      "combosquat": 49
+    },
+    "top_asns": [
+      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 468, "pct": 33.7 },
+      { "asn": "AS16509", "org": "AMAZON-02", "count": 95, "pct": 6.8 },
+      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 74, "pct": 5.3 }
+    ],
+    "payload_families": [
+      { "family": "lumma", "count": 31 },
+      { "family": "redline", "count": 9 },
+      { "family": "vidar", "count": 5 }
+    ]
+  },
+  "2026-11": {
+    "week": "2026-11",
+    "generated_at": "2026-03-12T01:35:00Z",
+    "total_domains": 1541,
+    "campaigns_identified": 14,
+    "lets_encrypt_pct": 86.9,
+    "lure_types": {
+      "unknown": 712,
+      "crypto_wallet": 338,
+      "remote_work": 135,
+      "fake_ai_tool": 83,
+      "vpn_tool": 71,
+      "fake_software": 58,
+      "fake_update": 44,
+      "game_crack": 15,
+      "fake_tool": 8,
+      "media_piracy": 2
+    },
+    "traffic_sources": {
+      "seo_bait": 801,
+      "typosquat": 488,
+      "redirected": 155,
+      "combosquat": 42
+    },
+    "top_asns": [
+      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 519, "pct": 33.7 },
+      { "asn": "AS16509", "org": "AMAZON-02", "count": 104, "pct": 6.7 },
+      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 82, "pct": 5.3 }
+    ],
+    "payload_families": [
+      { "family": "lumma", "count": 38 },
+      { "family": "redline", "count": 11 },
+      { "family": "vidar", "count": 6 }
+    ]
+  },
+  "2026-12": {
+    "week": "2026-12",
+    "generated_at": "2026-03-19T01:35:24Z",
+    "total_domains": 1687,
+    "campaigns_identified": 17,
+    "lets_encrypt_pct": 87.3,
+    "lure_types": {
+      "unknown": 775,
+      "crypto_wallet": 351,
+      "remote_work": 142,
+      "fake_ai_tool": 86,
+      "vpn_tool": 73,
+      "fake_software": 60,
+      "fake_update": 31,
+      "game_crack": 12,
+      "fake_tool": 9,
+      "media_piracy": 2
+    },
+    "traffic_sources": {
+      "seo_bait": 838,
+      "typosquat": 506,
+      "redirected": 160,
+      "combosquat": 37
+    },
+    "top_asns": [
+      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 567, "pct": 33.6 },
+      { "asn": "AS16509", "org": "AMAZON-02", "count": 113, "pct": 6.7 },
+      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 89, "pct": 5.3 }
+    ],
+    "payload_families": [
+      { "family": "lumma", "count": 44 },
+      { "family": "redline", "count": 12 },
+      { "family": "vidar", "count": 7 }
+    ]
+  }
+}

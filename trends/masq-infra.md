@@ -116,6 +116,7 @@ permalink: /trends/masq-infra/
     <li><a href="#campaigns">Campaigns</a></li>
     <li><a href="#chokepoints">Chokepoints</a></li>
     <li><a href="#samples">Samples</a></li>
+    <li><a href="#trends">Trends</a></li>
   </ul>
 </nav>
 
@@ -469,11 +470,27 @@ indicators:
 <h2>Delivery Chain</h2>
 <p>Where does the payload actually come from? The binary is often <strong>not</strong> hosted on the same domain as the lure page. Single-domain blocklisting misses the binary when it's staged on a CDN or separate bulletproof host.</p>
 
-<div class="cg-delivery">
-  <span class="node">[Lure page]</span> ──direct──▶ <span class="node">[Payload download]</span> <span class="label">  ← most common</span><br>
-  <span class="node">[Lure page]</span> ──302──▶ <span class="node">[CDN / file host]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← off-domain staging</span><br>
-  <span class="node">[Ad link]</span> ──▶ <span class="node">[Tracker redirect]</span> ──▶ <span class="node">[Lure page]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← malvertising</span>
+<div class="cg-chain" role="list" aria-label="Victim arrival path">
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">SEO / ad delivers user</span>
+    <span class="cg-chain-sub">Search result or malvertising redirect</span>
+    <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">Visual trust satisfied</span>
+    <span class="cg-chain-sub">TLS padlock, stolen favicon, cloned UI</span>
+    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">File lands</span>
+    <span class="cg-chain-sub">Binary in %Downloads%; MotW applied by browser</span>
+    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
+  </div>
 </div>
+
+<p>The entire arrival path generates <strong>no endpoint process-creation events</strong> — the browser performs an HTTP GET and the OS writes the file to disk. Defender chokepoints here are infrastructure-level: certificate transparency monitoring for brand-substring domains, URLScan/passive-DNS alerting on new registrations, and favicon hash pivoting to surface related infrastructure before users encounter it. The Mark of the Web flag is applied by Windows at file landing; it gates SmartScreen and UAC prompts, but is not a detection signal in EDR telemetry.</p>
 
 {% if site.data.masq_infra.payload_hosting.offhost_count > 0 %}
 <p>In the current dataset: <strong>{{ site.data.masq_infra.payload_hosting.offhost_count }} payloads ({{ site.data.masq_infra.payload_hosting.offhost_pct }}%)</strong> are hosted on a different domain than the lure page.</p>
@@ -594,43 +611,27 @@ indicators:
 <h2 id="chokepoints">Detection Chokepoints</h2>
 <p>Perfect visual impersonation neutralizes every user-facing trust signal. These are the stages where adversaries run out of room to maintain the illusion, with concrete rule examples and matched payload observations.</p>
 
-<div class="cg-chain" role="list" aria-label="Software impersonation delivery chain">
-  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
-    <span class="cg-chain-label">SEO / ad delivers user</span>
-    <span class="cg-chain-sub">Search or malvertising</span>
-    <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
-    <span class="cg-chain-label">Visual trust satisfied</span>
-    <span class="cg-chain-sub">TLS, favicon, cloned UI</span>
-    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
-    <span class="cg-chain-label">Browser download</span>
-    <span class="cg-chain-sub">File lands in %Downloads%; MotW applied</span>
-    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+<div class="cg-chain" role="list" aria-label="Post-execution detection chain">
   <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
     <span class="cg-chain-label">User execution</span>
-    <span class="cg-chain-sub">Installer runs from Downloads / Temp</span>
+    <span class="cg-chain-sub">Installer spawns from Downloads / Temp</span>
+    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
+    <span class="cg-chain-label">PE metadata exposed</span>
+    <span class="cg-chain-sub">OriginalFilename ≠ displayed name</span>
     <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
-    <span class="cg-chain-label">PE metadata exposed</span>
-    <span class="cg-chain-sub">OriginalFilename ≠ displayed name</span>
-    <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
-    <span class="cg-chain-label">C2 / staging callback</span>
+    <span class="cg-chain-label">C2 callback</span>
     <span class="cg-chain-sub">Payload fetches stage 2 or phones home</span>
     <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
   </div>
 </div>
+
+<p>Execution is where the impersonation runs out of room. <strong>PE OriginalFilename mismatch (T1036.005) is the primary Tier 1 chokepoint</strong> — adversaries rename existing malicious binaries, but rarely recompile with matching version resources. Every software-impersonation payload that runs from a user download path will generate this signal if process-creation telemetry is collected. The Tier 1 signals are unavoidable regardless of which brand is impersonated or how the lure page is styled. The C2 callback is Tier 2: dependent on knowing or behaviorally recognising the staging infrastructure, but catches the payload at the network boundary after the file executes.</p>
 
 <div class="cg-rec">
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
@@ -790,73 +791,70 @@ http.favicon.hash:-1899664115  # Notepad++ favicon</code></pre>
 })();
 </script>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     Live Infrastructure Charts
-     Loaded from /_data/masq_infra.json via fetch() — rendered with Chart.js.
-     Data is written by the weekly enrichment pipeline (scripts/build_data.py).
-     ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Live Infrastructure Charts</h2>
-<p class="muted" style="font-size:.82rem;margin-bottom:1.25rem;">
-  Sourced from the weekly ClickGrab enrichment pipeline.
-  Country data is country-level only (IPinfo Lite free tier — no city precision).
-</p>
-
+<!-- ── Infrastructure Charts ────────────────────────────────────────────── -->
 <style>
-.chart-grid      { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
-.chart-card      { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
-.chart-card h3   { font-size: .9rem; font-weight: 600; color: var(--text); margin: 0 0 1rem; }
-.chart-placeholder { color: var(--text-muted); font-size: .82rem; text-align: center; padding: 2rem 0; }
-.swimlane-wrap   { overflow-x: auto; }
+.cg-chart-wrap  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1rem .5rem; margin: 1rem 0 1.75rem; overflow-x: auto; }
+.cg-chart-title { font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .5rem; }
 canvas { max-width: 100%; }
 </style>
 
-<div class="chart-grid">
+<!-- ── Chart 1 — Lure Types ──────────────────────────────────────────── -->
+<h2>Crypto Wallets Lead Identified Lure Categories</h2>
+<p>Half of sampled domains remain unclassified pending content analysis; among those identified, crypto wallet impersonation (22.8%) dominates — consistent with seed-phrase theft campaigns targeting MetaMask, Ledger, and Exodus users. Remote work tools (9.2%) and fake AI tools (5.6%) follow. The unclassified share will shrink as the enrichment pipeline processes more samples.</p>
 
-  <!-- Chart 1 — ASN/Hosting Distribution -->
-  <div class="chart-card">
-    <h3>ASN / Hosting Distribution <span style="font-weight:400;color:var(--text-muted)">(top 10)</span></h3>
-    <canvas id="chartAsn" height="280"></canvas>
-    <div id="chartAsnPlaceholder" class="chart-placeholder">Loading…</div>
-  </div>
-
-  <!-- Chart 2 — Country of Origin (bar, choropleth requires extra plugin) -->
-  <div class="chart-card">
-    <h3>Country of Origin <span style="font-weight:400;color:var(--text-muted)">(country-level)</span></h3>
-    <canvas id="chartCountry" height="280"></canvas>
-    <div id="chartCountryPlaceholder" class="chart-placeholder">Loading…</div>
-  </div>
-
-  <!-- Chart 3 — Domain Age at Observation -->
-  <div class="chart-card">
-    <h3>Domain Age at Observation</h3>
-    <canvas id="chartAge" height="220"></canvas>
-    <div id="chartAgePlaceholder" class="chart-placeholder">Loading…</div>
-  </div>
-
-  <!-- Chart 4 — Payload Family Breakdown -->
-  <div class="chart-card">
-    <h3>Payload Families <span style="font-weight:400;color:var(--text-muted)">(Triage)</span></h3>
-    <canvas id="chartFamily" height="220"></canvas>
-    <div id="chartFamilyPlaceholder" class="chart-placeholder">Loading…</div>
-  </div>
-
-  <!-- Chart 6 — TLS CA Distribution (full-width row) -->
-  <div class="chart-card">
-    <h3>TLS Certificate Authorities</h3>
-    <canvas id="chartTls" height="220"></canvas>
-    <div id="chartTlsPlaceholder" class="chart-placeholder">Loading…</div>
-  </div>
-
-</div><!-- /.chart-grid -->
-
-<!-- Chart 5 — Campaign Timeline (swimlane, full-width) -->
-<div class="chart-card" style="margin-bottom:1.5rem;">
-  <h3>Campaign Timeline</h3>
-  <div class="swimlane-wrap">
-    <canvas id="chartCampaign" height="200"></canvas>
-  </div>
-  <div id="chartCampaignPlaceholder" class="chart-placeholder">Loading…</div>
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Lure type share — {{ site.data.masq_infra.meta.lookback_days }}-day sample, n={{ site.data.masq_infra.meta.sample_size }}</div>
+  <canvas id="chartLureTypes" height="220"></canvas>
 </div>
+
+<!-- ── Chart 2 — Traffic Sources ─────────────────────────────────────── -->
+<h2>SEO Bait Outnumbers Typosquatting Two-to-One</h2>
+<p>Over half of masquerading infrastructure (54.4%) uses SEO-optimised keyword-stuffed domains targeting "download X free" queries — the extra keywords are not a mistake, they are SEO strategy. Typosquatting (32.8%) relies on user entry error or autocomplete near-misses. Together these two vectors account for 87%+ of lure-page arrivals and produce domain names that are fingerprintable at cert issuance via crt.sh and passive DNS.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Traffic source share — {{ site.data.masq_infra.meta.lookback_days }}-day sample</div>
+  <canvas id="chartTrafficSources" height="180"></canvas>
+</div>
+
+<!-- ── Chart 3 — ASN / Hosting ───────────────────────────────────────── -->
+<h2>Hosting Concentration: Cloudflare Handles a Third of Lure Infrastructure</h2>
+<p>Cloudflare (33.7%) dominates, primarily via <code>pages.dev</code> subdomains and Cloudflare-proxied custom domains — legitimate-looking infrastructure that inherits clean reputation signals and bypasses many domain-reputation blocklists. Amazon (6.7%) and Confluence Networks / ACE (5.3%, 4.8%) follow. ASN-level blocking produces collateral disruption to legitimate traffic from the same networks before it meaningfully reduces adversary coverage.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Hosting provider share by domain count — top 10</div>
+  <canvas id="chartAsn" height="260"></canvas>
+</div>
+
+<!-- ── Chart 4 — Domain Age ──────────────────────────────────────────── -->
+<h2>Domain Age at Observation: Infrastructure Deploys Fast</h2>
+<p>The 30-day lookback captures observed domains primarily in the 7–30-day age bucket — consistent with fast-deploy adversary operations: register a domain, acquire a Let's Encrypt certificate within hours, then weaponise within days. Certificate transparency monitoring (crt.sh, CertStream) provides a detection window at cert issuance, before any victim encounters the site. See the cert monitoring queries in the <a href="#fingerprinting">Infrastructure Fingerprinting</a> section above.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Domain age at time of observation (days since registration)</div>
+  <canvas id="chartAge" height="180"></canvas>
+</div>
+
+{% assign mi_history_size = site.data.masq_infra_history | size %}
+{% if mi_history_size >= 4 %}
+
+<!-- ── Historical Trends ─────────────────────────────────────────────── -->
+<h2 id="trends">Weekly Volume &amp; Lure Mix Trends</h2>
+
+<p>Spikes in weekly domain count are early indicators of a new campaign wave — adversary operators register domains in batches, so a single-week surge followed by rapid infrastructure churn is the expected pattern. Monitor week-over-week delta rather than absolute count; a drop back to baseline does not mean the campaign is over, only that its infrastructure is rotating.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Total active domains observed per week (ISO week)</div>
+  <div id="mi-chart-volume"></div>
+</div>
+
+<p>Lure type composition reveals which software categories adversaries are impersonating most heavily. A rising share from a previously minor category — particularly <code>fake_update</code> or <code>game_crack</code> — correlates with retooling to evade brand-specific detections targeting the current dominant category. Crypto wallet and fake AI tool share are leading indicators of payload-family shifts toward stealers.</p>
+
+<div class="cg-chart-wrap">
+  <div class="cg-chart-title">Lure type share over time — top 6 categories (stacked by count)</div>
+  <div id="mi-chart-lures"></div>
+</div>
+
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha256-oVuCFVMwB7ZMZZnVcBIl5PtP6a5BrMzpLNB4KJXI5mU=" crossorigin="anonymous"></script>
 <script>
@@ -868,81 +866,30 @@ canvas { max-width: 100%; }
     '#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6',
     '#ec4899','#14b8a6','#f97316','#8b5cf6','#84cc16',
   ];
-  const CDN_ASNs  = ['AS13335','AS16509','AS14618','AS15169','AS8075'];  // CF, AWS, Google, MS
-  const BPROOF_KEYWORDS = ['frantech','combahton','serverius','M247','host1plus'];
-
-  function asnColor(asnOrOrg) {
-    const s = (asnOrOrg || '').toLowerCase();
-    if (CDN_ASNs.some(a => s.includes(a.toLowerCase()))) return '#f97316';
-    if (BPROOF_KEYWORDS.some(k => s.includes(k))) return '#ef4444';
-    return '#6366f1';
-  }
 
   /* ── Helpers ────────────────────────────────────────────────────────── */
-  function hide(id)   { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
-  function show(id)   { const el = document.getElementById(id); if (el) el.style.display = ''; }
-  function err(id, msg) {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = msg; el.style.display = ''; }
-  }
-
   function darkMode() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
-  function gridColor()  { return darkMode() ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.07)'; }
-  function textColor()  { return darkMode() ? '#c9d1d9' : '#374151'; }
-  function mutedColor() { return darkMode() ? '#8b949e' : '#6b7280'; }
+  function gridColor() { return darkMode() ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.07)'; }
+  function textColor() { return darkMode() ? '#c9d1d9' : '#374151'; }
 
-  const baseFont = { family: 'ui-monospace, monospace', size: 11 };
+  const baseFont    = { family: 'ui-monospace, monospace', size: 11 };
+  const baseFontSm  = { family: 'ui-monospace, monospace', size: 10 };
 
-  /* ── Chart 1 — ASN horizontal bar ──────────────────────────────────── */
-  function renderAsn(data) {
-    const items = (data.asn_distribution || []).slice(0, 10);
-    if (!items.length) { err('chartAsnPlaceholder', 'No ASN data available yet.'); return; }
-    hide('chartAsnPlaceholder');
+  /* ── Chart 1 — Lure type distribution (horizontal bar) ─────────────── */
+  function renderLureTypes(data) {
+    const items = data.lure_types || [];
+    const el = document.getElementById('chartLureTypes');
+    if (!items.length || !el) return;
 
-    const labels = items.map(d => (d.org || d.asn || '').substring(0, 30));
-    const counts = items.map(d => d.count);
-    const colors = items.map(d => asnColor((d.asn || '') + (d.org || '')));
-
-    new Chart(document.getElementById('chartAsn'), {
-      type: 'bar',
-      data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 3 }] },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const item = items[ctx.dataIndex];
-                return ` ${item.count} domains (${item.pct}%) — ${item.asn || ''}`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
-          y: { grid: { display: false }, ticks: { color: textColor(), font: baseFont } },
-        },
-      },
-    });
-  }
-
-  /* ── Chart 2 — Country horizontal bar ──────────────────────────────── */
-  function renderCountry(data) {
-    const items = (data.country_distribution || []).slice(0, 12);
-    if (!items.length) { err('chartCountryPlaceholder', 'No country data available yet.'); return; }
-    hide('chartCountryPlaceholder');
-
-    new Chart(document.getElementById('chartCountry'), {
+    new Chart(el, {
       type: 'bar',
       data: {
-        labels: items.map(d => d.country_code),
+        labels: items.map(d => d.tag.replace(/_/g, ' ')),
         datasets: [{
           data: items.map(d => d.count),
-          backgroundColor: '#3b82f6',
+          backgroundColor: PALETTE.slice(0, items.length),
           borderRadius: 3,
         }],
       },
@@ -955,7 +902,7 @@ canvas { max-width: 100%; }
             callbacks: {
               label: (ctx) => {
                 const item = items[ctx.dataIndex];
-                return ` ${item.count} domains — ${item.country || item.country_code}`;
+                return ` ${item.count} domains (${item.pct}%)`;
               },
             },
           },
@@ -968,16 +915,89 @@ canvas { max-width: 100%; }
     });
   }
 
-  /* ── Chart 3 — Domain age histogram ────────────────────────────────── */
+  /* ── Chart 2 — Traffic source distribution (horizontal bar) ─────────── */
+  function renderTrafficSources(data) {
+    const items = data.traffic_sources || [];
+    const el = document.getElementById('chartTrafficSources');
+    if (!items.length || !el) return;
+
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: items.map(d => d.source.replace(/_/g, ' ')),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: ['#f59e0b', '#6366f1', '#10b981', '#3b82f6'],
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.count} domains (${item.pct}%)`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: baseFont } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 3 — ASN / hosting distribution (horizontal bar, top 10) ─── */
+  function renderAsn(data) {
+    const items = (data.hosting_providers || []).slice(0, 10);
+    const el = document.getElementById('chartAsn');
+    if (!items.length || !el) return;
+
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: items.map(d => d.name.substring(0, 35)),
+        datasets: [{
+          data: items.map(d => d.count),
+          backgroundColor: '#6366f1',
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const item = items[ctx.dataIndex];
+                return ` ${item.count} domains (${item.pct}%)`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { color: gridColor() }, ticks: { color: textColor(), font: baseFont } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: baseFontSm } },
+        },
+      },
+    });
+  }
+
+  /* ── Chart 4 — Domain age histogram ────────────────────────────────── */
   function renderAge(data) {
     const items = data.domain_age_histogram || [];
-    if (!items.length || items.every(d => d.count === 0)) {
-      err('chartAgePlaceholder', 'No domain age data available yet.');
-      return;
-    }
-    hide('chartAgePlaceholder');
+    const el = document.getElementById('chartAge');
+    if (!items.length || !el) return;
 
-    new Chart(document.getElementById('chartAge'), {
+    new Chart(el, {
       type: 'bar',
       data: {
         labels: items.map(d => d.bucket),
@@ -998,172 +1018,24 @@ canvas { max-width: 100%; }
     });
   }
 
-  /* ── Chart 4 — Payload family doughnut ─────────────────────────────── */
-  function renderFamily(data) {
-    const items = data.payload_families || [];
-    if (!items.length) {
-      err('chartFamilyPlaceholder', 'No payload data yet — Triage sandbox pipeline has not run.');
-      return;
-    }
-    hide('chartFamilyPlaceholder');
-
-    new Chart(document.getElementById('chartFamily'), {
-      type: 'doughnut',
-      data: {
-        labels: items.map(d => d.family),
-        datasets: [{
-          data: items.map(d => d.count),
-          backgroundColor: PALETTE.slice(0, items.length),
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
-        },
-      },
-    });
-  }
-
-  /* ── Chart 5 — Campaign timeline (swimlane via bar) ────────────────── */
-  function renderCampaigns(data) {
-    const campaigns = (data.campaigns || []).filter(c => c.first_seen && c.last_seen);
-    if (!campaigns.length) {
-      err('chartCampaignPlaceholder', 'No campaign clusters identified this week.');
-      return;
-    }
-    hide('chartCampaignPlaceholder');
-
-    // Determine date range bounds
-    const allDates = campaigns.flatMap(c => [c.first_seen, c.last_seen]).sort();
-    const minDate = new Date(allDates[0]).getTime();
-    const maxDate = new Date(allDates[allDates.length - 1]).getTime();
-
-    const labels = campaigns.map(c => c.id.substring(0, 24));
-    const starts = campaigns.map(c => new Date(c.first_seen).getTime() - minDate);
-    const durations = campaigns.map(c =>
-      Math.max(1, new Date(c.last_seen).getTime() - new Date(c.first_seen).getTime())
-    );
-    const totalSpan = maxDate - minDate || 1;
-
-    new Chart(document.getElementById('chartCampaign'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          // Invisible offset bar
-          { data: starts, backgroundColor: 'transparent', borderWidth: 0 },
-          // Visible duration bar
-          {
-            data: durations,
-            backgroundColor: PALETTE.slice(0, campaigns.length),
-            borderRadius: 3,
-            label: 'Active span',
-          },
-        ],
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                if (ctx.datasetIndex === 0) return null;
-                const c = campaigns[ctx.dataIndex];
-                return ` ${c.first_seen} → ${c.last_seen}  (${c.domain_count} domains)`;
-              },
-            },
-            filter: (item) => item.datasetIndex === 1,
-          },
-        },
-        scales: {
-          x: {
-            stacked: true,
-            grid: { color: gridColor() },
-            ticks: { display: false },
-          },
-          y: {
-            stacked: true,
-            grid: { display: false },
-            ticks: { color: textColor(), font: baseFont },
-          },
-        },
-      },
-    });
-  }
-
-  /* ── Chart 6 — TLS CA pie ───────────────────────────────────────────── */
-  function renderTls(data) {
-    const items = data.tls_cert_authorities || [];
-    // Fall back to stats field from update_masq_infra.py
-    if (!items.length) {
-      const pct = data.stats && data.stats.tls_lets_encrypt_pct;
-      if (pct != null) {
-        const le = Math.round(pct);
-        const other = 100 - le;
-        hide('chartTlsPlaceholder');
-        new Chart(document.getElementById('chartTls'), {
-          type: 'pie',
-          data: {
-            labels: ["Let's Encrypt", 'Other'],
-            datasets: [{ data: [le, other], backgroundColor: ['#10b981', '#e5e7eb'] }],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
-              tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%` } },
-            },
-          },
-        });
-        return;
-      }
-      err('chartTlsPlaceholder', 'No TLS CA data available yet.');
-      return;
-    }
-    hide('chartTlsPlaceholder');
-
-    new Chart(document.getElementById('chartTls'), {
-      type: 'pie',
-      data: {
-        labels: items.map(d => d.ca),
-        datasets: [{
-          data: items.map(d => d.count),
-          backgroundColor: PALETTE.slice(0, items.length),
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'right', labels: { color: textColor(), font: baseFont, boxWidth: 12 } },
-        },
-      },
-    });
-  }
-
-  /* ── Bootstrap ─────────────────────────────────────────────────────────
-     Data is injected at Jekyll build time via Liquid — no runtime fetch
-     needed, so charts work on GitHub Pages without extra static files.
+  /* ── Bootstrap ──────────────────────────────────────────────────────────
+     Data injected at Jekyll build time via Liquid — no runtime fetch needed.
   ─────────────────────────────────────────────────────────────────────── */
   try {
     const data = {{ site.data.masq_infra | jsonify }};
+    renderLureTypes(data);
+    renderTrafficSources(data);
     renderAsn(data);
-    renderCountry(data);
     renderAge(data);
-    renderFamily(data);
-    renderCampaigns(data);
-    renderTls(data);
   } catch (e) {
-    ['chartAsnPlaceholder','chartCountryPlaceholder','chartAgePlaceholder',
-     'chartFamilyPlaceholder','chartCampaignPlaceholder','chartTlsPlaceholder']
-      .forEach(function(id) {
-        const el = document.getElementById(id);
-        if (el) { el.textContent = 'Chart data unavailable: ' + e.message; el.style.display = ''; }
-      });
+    console.error('masq-infra chart init failed:', e);
   }
 }());
 </script>
+
+{% if mi_history_size >= 4 %}
+<script>window.MASQ_HISTORY = {{ site.data.masq_infra_history | jsonify }};</script>
+<script src="{{ '/assets/js/masq-infra-history.js' | relative_url }}" defer></script>
+{% endif %}
 
 </div><!-- /.cg-page -->

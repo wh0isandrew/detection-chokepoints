@@ -75,13 +75,16 @@ jobs:
       - name: Build merged data file
         run: python scripts/build_data.py
 
+      - name: Append weekly history snapshot
+        run: python scripts/append_history.py
+
       - name: Open PR with updated data
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add _data/masq_infra.json
+          git add _data/masq_infra.json _data/masq_infra_history.json
 
           if git diff --staged --quiet; then
             echo "No changes to masq_infra.json — skipping PR"
