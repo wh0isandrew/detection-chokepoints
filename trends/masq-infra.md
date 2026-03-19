@@ -469,11 +469,27 @@ indicators:
 <h2>Delivery Chain</h2>
 <p>Where does the payload actually come from? The binary is often <strong>not</strong> hosted on the same domain as the lure page. Single-domain blocklisting misses the binary when it's staged on a CDN or separate bulletproof host.</p>
 
-<div class="cg-delivery">
-  <span class="node">[Lure page]</span> ──direct──▶ <span class="node">[Payload download]</span> <span class="label">  ← most common</span><br>
-  <span class="node">[Lure page]</span> ──302──▶ <span class="node">[CDN / file host]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← off-domain staging</span><br>
-  <span class="node">[Ad link]</span> ──▶ <span class="node">[Tracker redirect]</span> ──▶ <span class="node">[Lure page]</span> ──▶ <span class="node">[Payload]</span> <span class="label">  ← malvertising</span>
+<div class="cg-chain" role="list" aria-label="Victim arrival path">
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">SEO / ad delivers user</span>
+    <span class="cg-chain-sub">Search result or malvertising redirect</span>
+    <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">Visual trust satisfied</span>
+    <span class="cg-chain-sub">TLS padlock, stolen favicon, cloned UI</span>
+    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
+    <span class="cg-chain-label">File lands</span>
+    <span class="cg-chain-sub">Binary in %Downloads%; MotW applied by browser</span>
+    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
+  </div>
 </div>
+
+<p>The entire arrival path generates <strong>no endpoint process-creation events</strong> — the browser performs an HTTP GET and the OS writes the file to disk. Defender chokepoints here are infrastructure-level: certificate transparency monitoring for brand-substring domains, URLScan/passive-DNS alerting on new registrations, and favicon hash pivoting to surface related infrastructure before users encounter it. The Mark of the Web flag is applied by Windows at file landing; it gates SmartScreen and UAC prompts, but is not a detection signal in EDR telemetry.</p>
 
 {% if site.data.masq_infra.payload_hosting.offhost_count > 0 %}
 <p>In the current dataset: <strong>{{ site.data.masq_infra.payload_hosting.offhost_count }} payloads ({{ site.data.masq_infra.payload_hosting.offhost_pct }}%)</strong> are hosted on a different domain than the lure page.</p>
@@ -594,43 +610,27 @@ indicators:
 <h2 id="chokepoints">Detection Chokepoints</h2>
 <p>Perfect visual impersonation neutralizes every user-facing trust signal. These are the stages where adversaries run out of room to maintain the illusion, with concrete rule examples and matched payload observations.</p>
 
-<div class="cg-chain" role="list" aria-label="Software impersonation delivery chain">
-  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
-    <span class="cg-chain-label">SEO / ad delivers user</span>
-    <span class="cg-chain-sub">Search or malvertising</span>
-    <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
-    <span class="cg-chain-label">Visual trust satisfied</span>
-    <span class="cg-chain-sub">TLS, favicon, cloned UI</span>
-    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
-    <span class="cg-chain-label">Browser download</span>
-    <span class="cg-chain-sub">File lands in %Downloads%; MotW applied</span>
-    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+<div class="cg-chain" role="list" aria-label="Post-execution detection chain">
   <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
     <span class="cg-chain-label">User execution</span>
-    <span class="cg-chain-sub">Installer runs from Downloads / Temp</span>
+    <span class="cg-chain-sub">Installer spawns from Downloads / Temp</span>
+    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
+  </div>
+  <span class="cg-chain-arrow" aria-hidden="true">›</span>
+  <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
+    <span class="cg-chain-label">PE metadata exposed</span>
+    <span class="cg-chain-sub">OriginalFilename ≠ displayed name</span>
     <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
-    <span class="cg-chain-label">PE metadata exposed</span>
-    <span class="cg-chain-sub">OriginalFilename ≠ displayed name</span>
-    <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
-  </div>
-  <span class="cg-chain-arrow" aria-hidden="true">›</span>
-  <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
-    <span class="cg-chain-label">C2 / staging callback</span>
+    <span class="cg-chain-label">C2 callback</span>
     <span class="cg-chain-sub">Payload fetches stage 2 or phones home</span>
     <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
   </div>
 </div>
+
+<p>Execution is where the impersonation runs out of room. <strong>PE OriginalFilename mismatch (T1036.005) is the primary Tier 1 chokepoint</strong> — adversaries rename existing malicious binaries, but rarely recompile with matching version resources. Every software-impersonation payload that runs from a user download path will generate this signal if process-creation telemetry is collected. The Tier 1 signals are unavoidable regardless of which brand is impersonated or how the lure page is styled. The C2 callback is Tier 2: dependent on knowing or behaviorally recognising the staging infrastructure, but catches the payload at the network boundary after the file executes.</p>
 
 <div class="cg-rec">
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
