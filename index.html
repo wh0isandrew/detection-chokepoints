@@ -76,10 +76,12 @@ description: "Community resource for detection engineering: high-signal chokepoi
 <main id="chokepoints-grid"
       class="max-w-[1280px] mx-auto px-6 mt-5 mb-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       aria-label="Chokepoints">
+  {% if site.data.chokepoints %}
   {% assign sorted = site.data.chokepoints | sort: "DetectionPriority" %}
   {% for cp in sorted %}
     {% include chokepoint-card.html cp=cp %}
   {% endfor %}
+  {% endif %}
 </main>
 
 <div id="no-results" class="no-results max-w-[1280px] mx-auto px-6 my-12 text-center" hidden>
