@@ -88,6 +88,43 @@ a:hover { text-decoration: underline; }
 .nav-github { color: var(--text-muted); }
 .nav-github:hover { color: var(--text); text-decoration: none; }
 
+/* ─── Page-local anchor nav ──────────────────────────────────────────────── */
+.page-anchors {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 90;
+  background: var(--bg-nav);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  margin: 0 -1.5rem 2rem;
+  padding: 0 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.page-anchors::-webkit-scrollbar { display: none; }
+.page-anchors ul {
+  display: flex;
+  gap: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+.page-anchors a {
+  display: block;
+  padding: .5rem .85rem;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.page-anchors a:hover {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom-color: var(--accent);
+}
+
 /* ─── Hero ───────────────────────────────────────────────────────────────── */
 .hero {
   background: linear-gradient(160deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
@@ -1349,3 +1386,27 @@ pre .hljs { padding: 0 !important; }
   .af-stage-rect,
   .af-status-dot { transition: none; }
 }
+
+/* ─── Collapsible reference tables ───────────────────────────────────────── */
+.cg-page details { margin: .75rem 0 1.5rem; }
+.cg-page details > summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--text-muted);
+  font-size: .82rem;
+  font-weight: 500;
+  padding: .35rem 0;
+  user-select: none;
+  list-style: none;
+}
+.cg-page details > summary::-webkit-details-marker { display: none; }
+.cg-page details > summary::before {
+  content: "▶";
+  font-size: .65rem;
+  display: inline-block;
+  transition: transform .15s;
+}
+.cg-page details[open] > summary::before { transform: rotate(90deg); }
+.cg-page details > summary:hover { color: var(--text); }
