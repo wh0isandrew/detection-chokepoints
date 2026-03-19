@@ -505,19 +505,76 @@ indicators:
 
 <!-- ── Lure → Payload Analysis ────────────────────────────────────────── -->
 <h2 id="lure-payload">Lure→Payload Analysis</h2>
-<div class="cg-callout cg-callout--info">
-  <strong>Coming next pipeline run:</strong> Lure-type → malware family matrix derived from
-  <code>masq_infra.lure_payload_matrix</code>. Shows which lure categories correlate with
-  which payload families across active campaigns.
-</div>
+{% if site.data.masq_infra.lure_payload_matrix.size > 0 %}
+<table class="cg-table">
+  <thead>
+    <tr><th>Lure Type</th><th>Domains</th><th>Top Payload Families</th></tr>
+  </thead>
+  <tbody>
+    {% for row in site.data.masq_infra.lure_payload_matrix %}
+    <tr>
+      <td>{{ row.lure_type | replace: "_", " " }}</td>
+      <td>{{ row.domain_count }}</td>
+      <td>
+        {% if row.top_families.size > 0 %}
+          {% for fam in row.top_families %}<code class="cg-family-tag">{{ fam }}</code> {% endfor %}
+        {% else %}
+          <span class="muted">— enrichment pending</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No lure–payload correlations yet — run the enrichment pipeline to populate.</p>
+{% endif %}
 
 <!-- ── Active Campaigns ───────────────────────────────────────────────── -->
 <h2 id="campaigns">Active Campaigns</h2>
-<div class="cg-callout cg-callout--info">
-  <strong>Coming next pipeline run:</strong> Campaign records from
-  <code>masq_infra.campaigns</code> — each cluster with its lure type, brand,
-  domain count, date range, and observed payload families.
+{% if site.data.masq_infra.campaigns.size > 0 %}
+{% assign sorted_camps = site.data.masq_infra.campaigns | sort: "domain_count" | reverse %}
+{% assign gen_ts = site.data.masq_infra.generated_at | date: "%s" | plus: 0 %}
+<div class="cg-campaign-list">
+  {% for camp in sorted_camps limit:10 %}
+  {% assign last_ts = camp.last_seen | date: "%s" | plus: 0 %}
+  {% assign age_days = gen_ts | minus: last_ts | divided_by: 86400 %}
+  <div class="cg-campaign-card">
+    <div class="cg-campaign-header">
+      <span class="cg-campaign-id mono">{{ camp.id }}</span>
+      {% if age_days <= 7 %}<span class="cg-badge cg-badge--active">ACTIVE</span>{% endif %}
+      <span class="cg-campaign-domains">{{ camp.domain_count }} domain{% if camp.domain_count != 1 %}s{% endif %}</span>
+    </div>
+    <div class="cg-campaign-meta">
+      {% if camp.lure_type %}<span class="cg-meta-item"><span class="muted">lure:</span> {{ camp.lure_type | replace: "_", " " }}</span>{% endif %}
+      {% if camp.brand %}<span class="cg-meta-item"><span class="muted">brand:</span> {{ camp.brand }}</span>{% endif %}
+      <span class="cg-meta-item"><span class="muted">asn:</span> {{ camp.asn }}</span>
+      {% if camp.countries.size > 0 %}<span class="cg-meta-item"><span class="muted">countries:</span> {{ camp.countries | join: ", " }}</span>{% endif %}
+      <span class="cg-meta-item"><span class="muted">first seen:</span> {{ camp.first_seen }}</span>
+      <span class="cg-meta-item"><span class="muted">last seen:</span> {{ camp.last_seen }}</span>
+      {% if camp.favicon_hash %}<span class="cg-meta-item"><span class="muted">favicon:</span> <a href="https://www.shodan.io/search?query=http.favicon.hash%3A{{ camp.favicon_hash }}" target="_blank" rel="noopener" class="mono">{{ camp.favicon_hash }}</a></span>{% endif %}
+    </div>
+    <div class="cg-campaign-families">
+      {% if camp.families.size > 0 %}
+        {% for fam in camp.families %}<code class="cg-family-tag">{{ fam }}</code> {% endfor %}
+      {% else %}
+        <span class="muted">payload: enrichment pending</span>
+      {% endif %}
+    </div>
+    {% if camp.domains.size > 0 %}
+    <details>
+      <summary>Show {{ camp.domains.size }} domain{% if camp.domains.size != 1 %}s{% endif %}</summary>
+      <ul class="cg-domain-list">
+        {% for d in camp.domains %}<li class="mono">{{ d }}</li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+  {% endfor %}
 </div>
+{% else %}
+<p class="muted">No campaign clusters identified yet — run the enrichment pipeline to populate.</p>
+{% endif %}
 
 <!-- ── Detection Chokepoints ──────────────────────────────────────────── -->
 <h2 id="chokepoints">Detection Chokepoints</h2>
