@@ -136,7 +136,20 @@
       "pct": 2.4
     }
   ],
-  "payload_families": [],
+  "payload_families": [
+    {
+      "family": "lumma",
+      "count": 3
+    },
+    {
+      "family": "redline",
+      "count": 1
+    },
+    {
+      "family": "vidar",
+      "count": 1
+    }
+  ],
   "payload_file_types": [],
   "payload_hosting": {
     "offhost_count": 0,
@@ -1070,20 +1083,44 @@
       "urlhaus_tags": []
     }
   ],
-  "generated_at": "2026-03-18T23:53:10Z",
+  "generated_at": "2026-03-19T01:35:24Z",
   "date_range": {
-    "start": "2026-03-11",
-    "end": "2026-03-18"
+    "start": "2026-03-12",
+    "end": "2026-03-19"
   },
   "summary": {
-    "total_domains": 0,
-    "unique_asns": 0,
-    "unique_countries": 0,
-    "campaigns_identified": 0,
+    "total_domains": 6,
+    "unique_asns": 2,
+    "unique_countries": 2,
+    "campaigns_identified": 2,
     "payloads_sandboxed": 0
   },
-  "asn_distribution": [],
-  "country_distribution": [],
+  "asn_distribution": [
+    {
+      "asn": "AS12345",
+      "org": "EVILTRANS-AS",
+      "count": 3,
+      "pct": 50.0
+    },
+    {
+      "asn": "AS67890",
+      "org": "SHADY-HOSTING",
+      "count": 3,
+      "pct": 50.0
+    }
+  ],
+  "country_distribution": [
+    {
+      "country_code": "RU",
+      "country": "Russia",
+      "count": 3
+    },
+    {
+      "country_code": "CN",
+      "country": "China",
+      "count": 3
+    }
+  ],
   "domain_age_histogram": [
     {
       "bucket": "0-1d",
@@ -1095,7 +1132,7 @@
     },
     {
       "bucket": "7-30d",
-      "count": 0
+      "count": 6
     },
     {
       "bucket": "30-90d",
@@ -1106,6 +1143,67 @@
       "count": 0
     }
   ],
-  "campaigns": [],
-  "tls_cert_authorities": []
+  "campaigns": [
+    {
+      "id": "CLUSTER-2026-09-AS12345",
+      "asn": "AS12345",
+      "favicon_hash": null,
+      "domain_count": 3,
+      "first_seen": "2026-03-15",
+      "last_seen": "2026-03-16",
+      "countries": [
+        "RU"
+      ],
+      "lure_type": "crypto_wallet",
+      "brand": "MetaMask",
+      "families": [
+        "Lumma",
+        "RedLine"
+      ],
+      "domains": [
+        "fake-crypto-wallet1.com",
+        "fake-crypto-wallet2.com",
+        "fake-crypto-wallet3.com"
+      ]
+    },
+    {
+      "id": "CLUSTER-2026-08-AS67890",
+      "asn": "AS67890",
+      "favicon_hash": null,
+      "domain_count": 3,
+      "first_seen": "2026-03-14",
+      "last_seen": "2026-03-15",
+      "countries": [
+        "CN"
+      ],
+      "lure_type": "fake_ai_tool",
+      "brand": "ChatGPT",
+      "families": [
+        "Vidar"
+      ],
+      "domains": [
+        "fake-ai-tool1.net",
+        "fake-ai-tool2.net",
+        "fake-ai-tool3.net"
+      ]
+    }
+  ],
+  "tls_cert_authorities": [],
+  "lure_payload_matrix": [
+    {
+      "lure_type": "crypto_wallet",
+      "top_families": [
+        "Lumma",
+        "RedLine"
+      ],
+      "domain_count": 3
+    },
+    {
+      "lure_type": "fake_ai_tool",
+      "top_families": [
+        "Vidar"
+      ],
+      "domain_count": 3
+    }
+  ]
 }
