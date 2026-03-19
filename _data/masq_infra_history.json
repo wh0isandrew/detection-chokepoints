@@ -1,0 +1,55 @@
+{
+  "2026-12": {
+    "week": "2026-12",
+    "generated_at": "2026-03-19T01:35:24Z",
+    "total_domains": 6,
+    "campaigns_identified": 2,
+    "lets_encrypt_pct": 87.3,
+    "lure_types": {
+      "unknown": 775,
+      "crypto_wallet": 351,
+      "remote_work": 142,
+      "fake_ai_tool": 86,
+      "vpn_tool": 73,
+      "fake_software": 60,
+      "fake_update": 31,
+      "game_crack": 12,
+      "fake_tool": 9,
+      "media_piracy": 2
+    },
+    "traffic_sources": {
+      "seo_bait": 838,
+      "typosquat": 506,
+      "redirected": 160,
+      "combosquat": 37
+    },
+    "top_asns": [
+      {
+        "asn": "AS12345",
+        "org": "EVILTRANS-AS",
+        "count": 3,
+        "pct": 50.0
+      },
+      {
+        "asn": "AS67890",
+        "org": "SHADY-HOSTING",
+        "count": 3,
+        "pct": 50.0
+      }
+    ],
+    "payload_families": [
+      {
+        "family": "lumma",
+        "count": 3
+      },
+      {
+        "family": "redline",
+        "count": 1
+      },
+      {
+        "family": "vidar",
+        "count": 1
+      }
+    ]
+  }
+}
