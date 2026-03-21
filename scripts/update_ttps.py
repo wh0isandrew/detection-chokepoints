@@ -152,6 +152,42 @@ _CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
 _DC_NS = "http://purl.org/dc/elements/1.1/"
 
 
+def fetch_full_article(url: str, fallback: str) -> str:
+    """GET the article URL, strip HTML, return text truncated to MAX_ARTICLE_CHARS.
+
+    Returns fallback (also truncated) if the fetch fails for any reason.
+    """
+    try:
+        from html.parser import HTMLParser
+
+        class _TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._parts = []
+                self._skip = False
+
+            def handle_starttag(self, tag, attrs):
+                if tag in ("script", "style"):
+                    self._skip = True
+
+            def handle_endtag(self, tag):
+                if tag in ("script", "style"):
+                    self._skip = False
+
+            def handle_data(self, data):
+                if not self._skip:
+                    self._parts.append(data)
+
+        resp = requests.get(url, timeout=LINK_TIMEOUT, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        parser = _TextExtractor()
+        parser.feed(resp.text)
+        words = " ".join(parser._parts).split()
+        return " ".join(words)[:MAX_ARTICLE_CHARS]
+    except Exception:
+        return fallback[:MAX_ARTICLE_CHARS]
+
+
 def fetch_rss_articles(feeds: list, lookback_days: int, seen: set) -> list:
     """Fetch and filter recent articles from RSS/Atom feeds using stdlib XML parsing."""
     articles = []
@@ -198,7 +234,7 @@ def fetch_rss_articles(feeds: list, lookback_days: int, seen: set) -> list:
             if aid in seen:
                 continue
 
-            text = f"{title}\n\n{body}"[:MAX_ARTICLE_CHARS]
+            text = f"{title}\n\n{fetch_full_article(url, body)}"
             if len(text.strip()) < 100:
                 continue
 
