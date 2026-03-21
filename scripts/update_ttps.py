@@ -152,6 +152,42 @@ _CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
 _DC_NS = "http://purl.org/dc/elements/1.1/"
 
 
+def fetch_full_article(url: str, fallback: str) -> str:
+    """GET the article URL, strip HTML, return text truncated to MAX_ARTICLE_CHARS.
+
+    Returns fallback (also truncated) if the fetch fails for any reason.
+    """
+    try:
+        from html.parser import HTMLParser
+
+        class _TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._parts = []
+                self._skip = False
+
+            def handle_starttag(self, tag, attrs):
+                if tag in ("script", "style"):
+                    self._skip = True
+
+            def handle_endtag(self, tag):
+                if tag in ("script", "style"):
+                    self._skip = False
+
+            def handle_data(self, data):
+                if not self._skip:
+                    self._parts.append(data)
+
+        resp = requests.get(url, timeout=LINK_TIMEOUT, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        parser = _TextExtractor()
+        parser.feed(resp.text)
+        words = " ".join(parser._parts).split()
+        return " ".join(words)[:MAX_ARTICLE_CHARS]
+    except Exception:
+        return fallback[:MAX_ARTICLE_CHARS]
+
+
 def fetch_rss_articles(feeds: list, lookback_days: int, seen: set) -> list:
     """Fetch and filter recent articles from RSS/Atom feeds using stdlib XML parsing."""
     articles = []
@@ -198,7 +234,7 @@ def fetch_rss_articles(feeds: list, lookback_days: int, seen: set) -> list:
             if aid in seen:
                 continue
 
-            text = f"{title}\n\n{body}"[:MAX_ARTICLE_CHARS]
+            text = f"{title}\n\n{fetch_full_article(url, body)}"
             if len(text.strip()) < 100:
                 continue
 
@@ -331,17 +367,18 @@ def build_chokepoint_context(chokepoints: list) -> str:
     """Compact chokepoint summary for Claude's system prompt."""
     sections = []
     for cp in chokepoints:
-        variant_names = [
-            v.get("Name", "") for v in (cp.get("Variations") or [])
-            if isinstance(v, dict)
-        ]
+        variations = [v for v in (cp.get("Variations") or []) if isinstance(v, dict)]
+        variant_names = [v.get("Name", "") for v in variations]
         prereqs = "; ".join(str(p) for p in (cp.get("Prerequisites") or []))
+        first_notes = variations[0].get("Notes", "") if variations else ""
         sections.append(
             f"ID: {cp.get('Id')}\n"
             f"Name: {cp.get('Name')}\n"
+            f"Description: {cp.get('Description', '')}\n"
             f"MITRE: {', '.join(cp.get('MitreIds', []))}\n"
             f"Prerequisites (invariants): {prereqs}\n"
             f"Existing variants (do NOT re-add): {', '.join(variant_names)}"
+            + (f"\nFirst variant notes: {first_notes}" if first_notes else "")
         )
     return "\n\n---\n\n".join(sections)
 
@@ -494,8 +531,13 @@ Return ONLY valid JSON."""
         f"Review this chokepoint for accuracy:\n\n"
         f"{cp_yaml}\n\n"
         f"RECENT THREAT INTEL (this week):\n{corpus}\n\n"
-        f"Are there factual inaccuracies in the chokepoint data above, "
-        f"based on the recent intel provided?"
+        f"Based on the recent intel above, answer these three questions:\n"
+        f"1. Is each listed Prerequisite still required for ALL known variants, "
+        f"or has a variant emerged that bypasses it?\n"
+        f"2. Should any Variation Status be changed from Active to Disrupted, "
+        f"Retired, or Patched based on recent intel?\n"
+        f"3. Has a new evasion technique emerged that invalidates the detection "
+        f"logic implied by existing Sigma rules for this chokepoint?"
     )
 
     try:
