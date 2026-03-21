@@ -44,3 +44,18 @@ rss_feeds:
 
   - name: "Unit 42 (Palo Alto)"
     url: "https://unit42.paloaltonetworks.com/feed/"
+
+  - name: "The DFIR Report"
+    url: "https://thedfirreport.com/feed/"
+
+  - name: "Elastic Security Labs"
+    url: "https://www.elastic.co/security-labs/rss/feed.xml"
+
+  - name: "Red Canary Blog"
+    url: "https://redcanary.com/blog/feed/"
+
+  - name: "Mandiant"
+    url: "https://www.mandiant.com/resources/blog/rss.xml"
+
+  - name: "SentinelOne Labs"
+    url: "https://www.sentinelone.com/blog/feed/"
