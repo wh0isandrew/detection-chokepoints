@@ -367,17 +367,18 @@ def build_chokepoint_context(chokepoints: list) -> str:
     """Compact chokepoint summary for Claude's system prompt."""
     sections = []
     for cp in chokepoints:
-        variant_names = [
-            v.get("Name", "") for v in (cp.get("Variations") or [])
-            if isinstance(v, dict)
-        ]
+        variations = [v for v in (cp.get("Variations") or []) if isinstance(v, dict)]
+        variant_names = [v.get("Name", "") for v in variations]
         prereqs = "; ".join(str(p) for p in (cp.get("Prerequisites") or []))
+        first_notes = variations[0].get("Notes", "") if variations else ""
         sections.append(
             f"ID: {cp.get('Id')}\n"
             f"Name: {cp.get('Name')}\n"
+            f"Description: {cp.get('Description', '')}\n"
             f"MITRE: {', '.join(cp.get('MitreIds', []))}\n"
             f"Prerequisites (invariants): {prereqs}\n"
             f"Existing variants (do NOT re-add): {', '.join(variant_names)}"
+            + (f"\nFirst variant notes: {first_notes}" if first_notes else "")
         )
     return "\n\n---\n\n".join(sections)
 
