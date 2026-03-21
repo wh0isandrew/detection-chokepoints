@@ -531,8 +531,13 @@ Return ONLY valid JSON."""
         f"Review this chokepoint for accuracy:\n\n"
         f"{cp_yaml}\n\n"
         f"RECENT THREAT INTEL (this week):\n{corpus}\n\n"
-        f"Are there factual inaccuracies in the chokepoint data above, "
-        f"based on the recent intel provided?"
+        f"Based on the recent intel above, answer these three questions:\n"
+        f"1. Is each listed Prerequisite still required for ALL known variants, "
+        f"or has a variant emerged that bypasses it?\n"
+        f"2. Should any Variation Status be changed from Active to Disrupted, "
+        f"Retired, or Patched based on recent intel?\n"
+        f"3. Has a new evasion technique emerged that invalidates the detection "
+        f"logic implied by existing Sigma rules for this chokepoint?"
     )
 
     try:
