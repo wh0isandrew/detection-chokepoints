@@ -59,6 +59,20 @@ BRAND_FAVICON_SEEDS = {
     "telegram":   "https://telegram.org/favicon.ico",
 }
 
+BRAND_CANONICAL_DOMAINS: frozenset[str] = frozenset({
+    "7-zip.org",
+    "win-rar.com",
+    "videolan.org",
+    "notepad-plus-plus.org",
+    "obsproject.com",
+    "audacityteam.org",
+    "putty.org",
+    "winscp.net",
+    "gimp.org",
+    "discord.com",
+    "telegram.org",
+})
+
 LURE_PATTERNS = {
     "fake_ai_tool":  ["chatgpt", "gpt", "midjourney", "claude", "gemini", "copilot"],
     "crypto_wallet": ["metamask", "phantom", "ledger", "exodus", "electrum", "coinbase", "trezor", "trustwallet"],
@@ -984,6 +998,15 @@ def main() -> None:
     # --- Collect ---
     print("[1/6] Collecting URLScan results ...", file=sys.stderr)
     raw_records = collect_urlscan(urlscan_key)
+
+    # Exact or subdomain match — prevents notdiscord.com false exclusions from endswith-only matching.
+    raw_records = [
+        r for r in raw_records
+        if not any(
+            r["domain"] == d or r["domain"].endswith("." + d)
+            for d in BRAND_CANONICAL_DOMAINS
+        )
+    ]
 
     if not raw_records:
         print(
