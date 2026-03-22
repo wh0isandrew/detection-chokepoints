@@ -24,14 +24,38 @@
       "combosquat": 32
     },
     "top_asns": [
-      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 389, "pct": 34.6 },
-      { "asn": "AS16509", "org": "AMAZON-02", "count": 78, "pct": 6.9 },
-      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 61, "pct": 5.4 }
+      {
+        "asn": "AS13335",
+        "org": "CLOUDFLARENET",
+        "count": 389,
+        "pct": 34.6
+      },
+      {
+        "asn": "AS16509",
+        "org": "AMAZON-02",
+        "count": 78,
+        "pct": 6.9
+      },
+      {
+        "asn": "AS12345",
+        "org": "EVILTRANS-AS",
+        "count": 61,
+        "pct": 5.4
+      }
     ],
     "payload_families": [
-      { "family": "lumma", "count": 22 },
-      { "family": "redline", "count": 7 },
-      { "family": "vidar", "count": 4 }
+      {
+        "family": "lumma",
+        "count": 22
+      },
+      {
+        "family": "redline",
+        "count": 7
+      },
+      {
+        "family": "vidar",
+        "count": 4
+      }
     ]
   },
   "2026-10": {
@@ -59,14 +83,38 @@
       "combosquat": 49
     },
     "top_asns": [
-      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 468, "pct": 33.7 },
-      { "asn": "AS16509", "org": "AMAZON-02", "count": 95, "pct": 6.8 },
-      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 74, "pct": 5.3 }
+      {
+        "asn": "AS13335",
+        "org": "CLOUDFLARENET",
+        "count": 468,
+        "pct": 33.7
+      },
+      {
+        "asn": "AS16509",
+        "org": "AMAZON-02",
+        "count": 95,
+        "pct": 6.8
+      },
+      {
+        "asn": "AS12345",
+        "org": "EVILTRANS-AS",
+        "count": 74,
+        "pct": 5.3
+      }
     ],
     "payload_families": [
-      { "family": "lumma", "count": 31 },
-      { "family": "redline", "count": 9 },
-      { "family": "vidar", "count": 5 }
+      {
+        "family": "lumma",
+        "count": 31
+      },
+      {
+        "family": "redline",
+        "count": 9
+      },
+      {
+        "family": "vidar",
+        "count": 5
+      }
     ]
   },
   "2026-11": {
@@ -94,49 +142,65 @@
       "combosquat": 42
     },
     "top_asns": [
-      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 519, "pct": 33.7 },
-      { "asn": "AS16509", "org": "AMAZON-02", "count": 104, "pct": 6.7 },
-      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 82, "pct": 5.3 }
+      {
+        "asn": "AS13335",
+        "org": "CLOUDFLARENET",
+        "count": 519,
+        "pct": 33.7
+      },
+      {
+        "asn": "AS16509",
+        "org": "AMAZON-02",
+        "count": 104,
+        "pct": 6.7
+      },
+      {
+        "asn": "AS12345",
+        "org": "EVILTRANS-AS",
+        "count": 82,
+        "pct": 5.3
+      }
     ],
     "payload_families": [
-      { "family": "lumma", "count": 38 },
-      { "family": "redline", "count": 11 },
-      { "family": "vidar", "count": 6 }
+      {
+        "family": "lumma",
+        "count": 38
+      },
+      {
+        "family": "redline",
+        "count": 11
+      },
+      {
+        "family": "vidar",
+        "count": 6
+      }
     ]
   },
   "2026-12": {
     "week": "2026-12",
-    "generated_at": "2026-03-19T01:35:24Z",
-    "total_domains": 1687,
-    "campaigns_identified": 17,
-    "lets_encrypt_pct": 87.3,
+    "generated_at": "2026-03-22T06:12:06Z",
+    "total_domains": 0,
+    "campaigns_identified": 0,
+    "lets_encrypt_pct": 91.2,
     "lure_types": {
-      "unknown": 775,
-      "crypto_wallet": 351,
-      "remote_work": 142,
-      "fake_ai_tool": 86,
+      "unknown": 814,
+      "crypto_wallet": 319,
+      "remote_work": 161,
+      "fake_ai_tool": 89,
+      "fake_software": 73,
       "vpn_tool": 73,
-      "fake_software": 60,
-      "fake_update": 31,
-      "game_crack": 12,
-      "fake_tool": 9,
-      "media_piracy": 2
+      "fake_update": 16,
+      "game_crack": 15,
+      "fake_tool": 8,
+      "media_piracy": 1
     },
     "traffic_sources": {
-      "seo_bait": 838,
-      "typosquat": 506,
-      "redirected": 160,
-      "combosquat": 37
+      "seo_bait": 894,
+      "typosquat": 447,
+      "redirected": 175,
+      "combosquat": 53
     },
-    "top_asns": [
-      { "asn": "AS13335", "org": "CLOUDFLARENET", "count": 567, "pct": 33.6 },
-      { "asn": "AS16509", "org": "AMAZON-02", "count": 113, "pct": 6.7 },
-      { "asn": "AS12345", "org": "EVILTRANS-AS", "count": 89, "pct": 5.3 }
-    ],
-    "payload_families": [
-      { "family": "lumma", "count": 44 },
-      { "family": "redline", "count": 12 },
-      { "family": "vidar", "count": 7 }
-    ]
+    "top_asns": [],
+    "payload_families": []
   }
 }
