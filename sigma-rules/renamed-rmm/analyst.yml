@@ -73,14 +73,3 @@ falsepositives:
   - Legitimate tax or invoice software that happens to have RMM integration
   - IT staff downloading RMM tools with descriptive names for asset tracking
 level: high
-# ─── Response Actions ──────────────────────────────────────────────────────────
-# 1. Preserve the executable (hash, submit to VT, check OriginalFilename vs. actual)
-# 2. Pull network connections (Sysmon EID 3) — what RMM infrastructure did it contact?
-# 3. Check if the RMM session is still active (immediate threat if session open)
-# 4. Identify what actions were taken during the RMM session via EDR telemetry
-# 5. Notify the user — social engineering pretext tells you the campaign theme
-# 6. Check other endpoints for the same file hash or RMM infrastructure connections
-#
-# Note: OriginalFileName field requires Sysmon configured to capture file version info
-# or EDR enrichment. If unavailable, use the Hunt rule as a starting point and enrich
-# results with manual file metadata analysis.

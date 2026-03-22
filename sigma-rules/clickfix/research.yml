@@ -63,10 +63,3 @@ falsepositives:
   - Developer tooling (npm, pip, curl wrappers, build scripts)
   - Security scanning tools
 level: low
-# ─── Usage Notes ────────────────────────────────────────────────────────────────
-# This is a RESEARCH-level rule. Do not deploy in a SOC alerting context without
-# significant tuning. Use it to:
-#   1. Understand your baseline of scripting interpreter network activity
-#   2. Identify unexpected process/destination combinations for refinement
-#   3. Feed into the Hunt and Analyst level rules
-# Expected volume: Very high in most environments

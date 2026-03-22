@@ -45,13 +45,3 @@ falsepositives:
   - Some legitimate monitoring agents that run from non-standard paths
   - Custom IT deployment scripts that create temporary services
 level: medium
-# ─── Hunt Notes ──────────────────────────────────────────────────────────────────
-# When a hit fires, pivot to:
-#   1. Event ID 4624 (same host, within 60 seconds before service install):
-#      - LogonType 3 (network logon)?
-#      - What account? Is it a service account, admin, or user account?
-#      - What source IP? Is it from a known admin workstation?
-#   2. Event ID 4624 with LogonType 3 from the SAME source IP to OTHER hosts
-#      within the same time window → spray pattern = lateral movement campaign
-#   3. Sysmon EID 1: Look for processes spawned from the service binary
-#   4. Event ID 5145 (IPC$ share access) from the same source IP

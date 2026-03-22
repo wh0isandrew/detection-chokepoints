@@ -61,21 +61,3 @@ falsepositives:
     match against these specific keywords in combination with a browser process)
   - Code snippet managers or password managers with keyboard shortcut triggers
 level: high
-# ─── ETW Detection Notes ─────────────────────────────────────────────────────────
-# Kill chain position: PRE-EXECUTION — fires when the malicious site writes to the
-# clipboard, before the user pastes. This is the earliest on-host detection point.
-#
-# Pivot workflow:
-#   1. Alert fires on ClipboardContent keyword match from browser ProcessId X
-#   2. Check Sysmon EID 1 for processes spawned within the next 60–120 seconds
-#      with ParentProcessId X or from the same user session
-#   3. If powershell.exe / cmd.exe / mshta.exe spawned → user pasted and executed
-#   4. Check Sysmon EID 3 from that child process for outbound network connection
-#
-# Coverage map (all variants detected at this layer):
-#   ClickFix (original)     — browser writes PS/cmd payload to clipboard
-#   FileFix                 — browser writes PS payload; user pastes into File Explorer
-#   WebDAV ClickFix         — browser writes mshta UNC path to clipboard
-#   Windows Terminal ClickFix — browser writes hex-encoded PS to clipboard
-#   DNS-based ClickFix      — browser writes nslookup command to clipboard
-#   InstallFix              — browser writes mshta/curl command to clipboard
