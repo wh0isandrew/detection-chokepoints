@@ -3,7 +3,7 @@ layout: default
 ---
 
 <style>
-/* ── Detection Chain ────────────────────────────────────────────── */
+/* ── Attack Chokepoints ─────────────────────────────────────────── */
 .chain-stages { position: relative; display: flex; flex-direction: column; gap: 0; }
 
 .chain-stage { position: relative; display: flex; flex-direction: column; gap: 0; }
@@ -353,20 +353,20 @@ layout: default
   </section>
   {% endif %}
 
-  <!-- ── Detection Chain ────────────────────────────────────────── -->
+  <!-- ── Attack Chokepoints ───────────────────────────────────────── -->
   {% if cp.Chokepoints %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
         aria-expanded="false"
-        aria-controls="chain-body"
-        data-target="chain-body">
+        aria-controls="attack-chokepoints-body"
+        data-target="attack-chokepoints-body">
       <span class="collapsible-chevron">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </span>
-      Detection Chain
-      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.Chokepoints.size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %} — click to expand)</span>
+      Attack Chokepoints
+      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %} — click to expand)</span>
     </h2>
-    <div class="collapsible-body collapsed mt-5" id="chain-body">
+    <div class="collapsible-body collapsed mt-5" id="attack-chokepoints-body">
       <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
       <div class="chain-stages">
         {% for stage in cp.Chokepoints %}
