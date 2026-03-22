@@ -227,6 +227,10 @@ Intel:
     URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
     Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$ access correlation
     LinkedFrom: ["Remote Execution Primitive"]
+  - Name: "hunt.io — C2 Infrastructure Tracking"
+    Tier: supporting
+    URL: "https://hunt.io"
+    Description: "Real-time C2 infrastructure map; AttackCapture feed tags Cobalt Strike, Sliver, Havoc, and Metasploit servers by banner and certificate fingerprint."
 
 RelatedChokepoints:
   - ransomware-service-manipulation
@@ -235,19 +239,15 @@ OsintSources:
   - Platform: Shodan
     Query: 'port:5985 product:"Microsoft HTTPAPI"'
     URL: "https://www.shodan.io/search?query=port%3A5985+product%3A%22Microsoft+HTTPAPI%22"
-    Notes: "Finds internet-exposed WinRM endpoints (Evil-WinRM targets). Use as an exposure audit to identify unintentionally exposed WinRM in your own IP ranges (narrow with 'org:' or 'net:' filters). Port 5986 is the HTTPS variant — run a second query substituting 5986. Note: searching for exposed ports finds your attack surface, not attacker infrastructure — for hunting attacker C2, use the JARM query below."
+    Notes: "Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface — run a second query on port 5986 for the HTTPS variant."
   - Platform: Shodan
     Query: 'ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5 port:443'
     URL: "https://www.shodan.io/search?query=ssl.jarm%3A07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5"
-    Notes: "Default Cobalt Strike JARM fingerprint. Clusters of hosts sharing this fingerprint are likely Cobalt Strike team servers — the most common C2 framework used alongside Impacket/NetExec in lateral movement chains. JARM fingerprints are more resilient to infrastructure rotation than IP/domain blocklists. Also search for Sliver C2 (ssl.jarm:29d29d00029d29d00042d41d00041d2aa5ce6a70de7ba95aef77a77b00a0af) and check hunt.io for current Havoc signatures."
+    Notes: "Clusters of hosts sharing this default Cobalt Strike JARM fingerprint are likely team servers; more resilient to infrastructure rotation than IP/domain blocklists."
   - Platform: GitHub Code Search
     Query: '"wmiexec" OR "smbexec" OR "atexec" path:*.py'
     URL: "https://github.com/search?q=%22wmiexec%22+OR+%22smbexec%22+OR+%22atexec%22+path%3A*.py&type=code"
-    Notes: "Finds community tools and forks built on Impacket execution primitives. Monitor for new modules that extend the execution surface beyond the known chokepoint. This is a tool-tracking query (defender awareness), not infrastructure hunting — results are researcher repos, not attacker infrastructure."
-  - Platform: hunt.io
-    URL: "https://hunt.io"
-    Notes: "Specialized threat hunting platform that maps active C2 infrastructure in real time. Use to search for Cobalt Strike, Sliver, Havoc, and Metasploit infrastructure — the C2 frameworks most commonly paired with Impacket/NetExec lateral movement. The AttackCapture feed tags servers by framework based on banner, certificate, and behavioral fingerprints."
-
+    Notes: "Finds community tools built on Impacket execution primitives; use for defender awareness of new modules extending the execution surface."
 KnownBypasses:
   - Bypass: Using legitimate service names that blend in with existing services
     Mitigation: Maintain a baseline of approved services; alert on any new service creation.

@@ -357,22 +357,22 @@ OsintSources:
   - Platform: URLScan
     Query: "filename:tax*.exe OR filename:invoice*.exe OR filename:ssn*.exe OR filename:support*.exe OR filename:verify*.exe"
     URL: "https://urlscan.io/search/#filename%3Atax*.exe%20OR%20filename%3Ainvoice*.exe%20OR%20filename%3Assn*.exe"
-    Notes: "Finds download pages serving tax/invoice/support-themed executables — the most common RMM masquerade pretexts. Extend with seasonal pretexts (W2, refund, enrollment) during relevant periods."
+    Notes: "Finds download pages serving tax/invoice/support-themed executables; extend with seasonal pretexts during relevant periods."
   - Platform: Shodan
     Query: 'product:"ScreenConnect"'
     URL: "https://www.shodan.io/search?query=product%3A%22ScreenConnect%22"
-    Notes: "Find internet-exposed ScreenConnect instances; cross-reference against known legitimate MSP infrastructure to identify attacker-controlled instances. Also run product:\"SimpleHelp\" to cover the actively exploited CVE-2024-57727 vector (CISA AA25-163A)."
+    Notes: "Find internet-exposed ScreenConnect instances; cross-reference against known legitimate MSP infrastructure to identify attacker-controlled deployments."
   - Platform: Censys
     Query: 'services.tls.certificate.parsed.subject.common_name: "SimpleHelp"'
     URL: "https://search.censys.io/search?resource=hosts&q=services.tls.certificate.parsed.subject.common_name%3A+%22SimpleHelp%22"
-    Notes: "Finds infrastructure presenting SimpleHelp TLS certificates — currently the most actively exploited RMM platform per CISA AA25-163A (June 2025). For AnyDesk: its certificates were revoked following the February 2024 production server breach, making cert-based hunting less reliable — pivot to the VT PE metadata query below for AnyDesk binary identification instead."
+    Notes: "Finds infrastructure presenting SimpleHelp TLS certificates — currently the most actively exploited RMM platform per CISA AA25-163A."
   - Platform: VirusTotal Intelligence
     Query: 'have:itw tag:peexe (metadata:"AnyDesk" OR metadata:"ScreenConnect" OR metadata:"SimpleHelp" OR metadata:"NetSupport")'
     URL: "https://www.virustotal.com/gui/search/have%3Aitw%20tag%3Apeexe%20metadata%3A%22AnyDesk%22"
-    Notes: "Requires VT Intelligence subscription. Finds PE executables observed in the wild whose internal metadata (OriginalFilename, Company, Product fields) references known RMM vendors. These are renamed or repackaged RMM binaries — the core delivery mechanism. Pivot to Details > PE Info to confirm metadata mismatch between submitted filename and OriginalFilename."
+    Notes: "Requires VT Intelligence subscription; finds PE executables in the wild whose internal metadata references known RMM vendors — the core renamed-binary delivery mechanism."
   - Platform: LOLRMM
     URL: "https://lolrmm.io"
-    Notes: "Community-maintained catalog of every known RMM tool with file metadata, network indicators, and detection heuristics. Use to extract OriginalFilename values and network destinations for any RMM tool to feed into VT metadata searches and network-based detection rules. Essential reference for keeping the renamed-binary analyst rule current as new tools emerge."
+    Notes: "Community-maintained catalog of every known RMM tool with file metadata, network indicators, and detection heuristics for building renamed-binary analyst rules."
 
 KnownBypasses:
   - Bypass: Legitimate business use of the same RMM tool
