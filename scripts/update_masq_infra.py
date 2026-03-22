@@ -59,6 +59,20 @@ BRAND_FAVICON_SEEDS = {
     "telegram":   "https://telegram.org/favicon.ico",
 }
 
+BRAND_CANONICAL_DOMAINS: frozenset[str] = frozenset({
+    "7-zip.org",
+    "win-rar.com",
+    "videolan.org",
+    "notepad-plus-plus.org",
+    "obsproject.com",
+    "audacityteam.org",
+    "putty.org",
+    "winscp.net",
+    "gimp.org",
+    "discord.com",
+    "telegram.org",
+})
+
 LURE_PATTERNS = {
     "fake_ai_tool":  ["chatgpt", "gpt", "midjourney", "claude", "gemini", "copilot"],
     "crypto_wallet": ["metamask", "phantom", "ledger", "exodus", "electrum", "coinbase", "trezor", "trustwallet"],
@@ -70,6 +84,8 @@ LURE_PATTERNS = {
     "fake_tool":     ["tool", "cleaner", "booster", "optimizer", "driver", "fix"],
     "fake_software": ["install", "setup", "download", "free", "portable", "official", "get"],
 }
+
+REPO_ROOT = Path(__file__).parent.parent
 
 LOOKBACK_DAYS             = 30
 URLSCAN_RATE_LIMIT_SLEEP  = 2    # seconds between brand queries
@@ -935,7 +951,6 @@ def aggregate(
         "payload_hosting":   payload_hosting,
         "urlhaus_tags":      urlhaus_tags,
         "favicon_clusters":  favicon_clusters,
-        "campaign_clusters": fingerprint_campaigns(records),
         "domain_patterns":   extract_domain_patterns([r["domain"] for r in records]),
         "delivery_chains":   _build_delivery_chains(records),
         "recent_samples":    recent_samples,
@@ -984,6 +999,15 @@ def main() -> None:
     # --- Collect ---
     print("[1/6] Collecting URLScan results ...", file=sys.stderr)
     raw_records = collect_urlscan(urlscan_key)
+
+    # Exact or subdomain match — prevents notdiscord.com false exclusions from endswith-only matching.
+    raw_records = [
+        r for r in raw_records
+        if not any(
+            r["domain"] == d or r["domain"].endswith("." + d)
+            for d in BRAND_CANONICAL_DOMAINS
+        )
+    ]
 
     if not raw_records:
         print(
@@ -1042,6 +1066,9 @@ def main() -> None:
 
     # --- Aggregate and write ---
     output = aggregate(enriched, crt_stats, shodan_clusters, validin_stats, urlhaus_records, mb_brand_samples)
+
+    payload_clusters = fingerprint_campaigns(enriched)
+    (REPO_ROOT / "cache" / "payload_clusters.json").write_text(json.dumps(payload_clusters, indent=2))
 
     try:
         output_path.write_text(json.dumps(output, indent=2, default=str))

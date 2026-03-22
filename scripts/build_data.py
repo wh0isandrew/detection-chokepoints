@@ -38,11 +38,12 @@ REPO_ROOT = Path(__file__).parent.parent
 CACHE_DIR = REPO_ROOT / "cache"
 DATA_DIR  = REPO_ROOT / "_data"
 
-ENRICHED_PATH  = CACHE_DIR / "enriched_infra.json"
-CLUSTERS_PATH  = CACHE_DIR / "campaign_clusters.json"
-TRIAGE_PATH    = CACHE_DIR / "triage_results.json"
-HA_LOOKUP_PATH = CACHE_DIR / "ha_lookup_results.json"
-OUTPUT_PATH    = DATA_DIR  / "masq_infra.json"
+ENRICHED_PATH         = CACHE_DIR / "enriched_infra.json"
+CLUSTERS_PATH         = CACHE_DIR / "campaign_clusters.json"
+PAYLOAD_CLUSTERS_PATH = CACHE_DIR / "payload_clusters.json"
+TRIAGE_PATH           = CACHE_DIR / "triage_results.json"
+HA_LOOKUP_PATH        = CACHE_DIR / "ha_lookup_results.json"
+OUTPUT_PATH           = DATA_DIR  / "masq_infra.json"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -162,7 +163,19 @@ def build_domain_age_histogram(enriched_records):
             continue
         seen_hosts.add(host)
 
-        bucket = _domain_age_bucket(enr.get("vt_creation_date"))
+        # Three-level fallback for registration date (best-effort approximation):
+        #   1. vt_creation_date — WHOIS date from VirusTotal (most accurate)
+        #   2. record["date"]   — URLScan scan date; proxy when WHOIS is absent
+        #                         (privacy-protected registrars, ~40% of domains)
+        #   3. record["first_seen"] — alternative field name in some pipeline records
+        # Note: WHOIS data is absent for ~40% of privacy-protected registrar domains;
+        # the resulting age histogram is a best-effort approximation.
+        creation_date = (
+            enr.get("vt_creation_date")
+            or record.get("date")
+            or record.get("first_seen", "")
+        )
+        bucket = _domain_age_bucket(creation_date)
         if bucket:
             bucket_counts[bucket] += 1
 
@@ -197,7 +210,105 @@ def build_tls_cert_authorities(enriched_records):
     return []
 
 
-def build_campaigns(clusters, triage_results, ha_lookup_results=None):
+def score_cluster(cluster: dict, cluster_type: str) -> dict:
+    """
+    Three-category confidence scoring for campaign clusters.
+
+    Methodology: heuristic_v1
+
+    Category 1 — Payload/lure signal:
+      Infra:   lure_type present and not "unknown" (30 pts).
+               Payload family and file type are not available on infra clusters;
+               these signals are reserved as placeholders for future enrichment.
+      Payload: payload_families non-empty (20 pts) + file_type present (20 pts).
+
+    Category 2 — Infrastructure signal:
+      Infra:   favicon_hash present (30 pts) + asn present (20 pts).
+      Payload: cluster_type == "asn_cohort" (40 pts); no favicon available on
+               payload clusters.
+
+    Category 3 — Temporal signal:
+      Infra:   registration_week present (20 pts).
+      Payload: date_range width ≤ 7 days (20 pts), ≤ 30 days (10 pts);
+               narrower range signals coordinated deployment.
+
+    Confidence labels: high ≥ 70, medium ≥ 40, low < 40.
+    """
+    if cluster_type == "infra":
+        # Category 1: lure signal
+        # Payload family and file type are not available on infra clusters —
+        # placeholder for future enrichment when these signals can be joined.
+        has_lure = bool(cluster.get("lure_type") and cluster.get("lure_type") != "unknown")
+        cat1 = 30 if has_lure else 0
+
+        # Category 2: infrastructure signal
+        has_favicon = bool(cluster.get("favicon_hash"))
+        has_asn = bool(cluster.get("asn"))
+        cat2 = (30 if has_favicon else 0) + (20 if has_asn else 0)
+
+        # Category 3: temporal signal
+        has_reg_week = bool(cluster.get("registration_week"))
+        cat3 = 20 if has_reg_week else 0
+
+        signal_breakdown = {
+            "cat1_lure_type": cat1,
+            "cat2_favicon_hash": 30 if has_favicon else 0,
+            "cat2_asn": 20 if has_asn else 0,
+            "cat3_registration_week": cat3,
+            "methodology": "heuristic_v1",
+        }
+
+    else:  # payload
+        # Category 1: payload signal
+        has_families = bool(cluster.get("payload_families"))
+        has_file_type = bool(cluster.get("file_type"))
+        cat1 = (20 if has_families else 0) + (20 if has_file_type else 0)
+
+        # Category 2: infrastructure signal (no favicon on payload clusters)
+        is_asn_cohort = cluster.get("cluster_type") == "asn_cohort"
+        cat2 = 40 if is_asn_cohort else 0
+
+        # Category 3: temporal signal — narrow date range = coordinated deployment
+        cat3 = 0
+        date_range = cluster.get("date_range", {})
+        first = date_range.get("first", "")
+        last  = date_range.get("last", "")
+        if first and last:
+            try:
+                delta = (
+                    date.fromisoformat(last[:10]) - date.fromisoformat(first[:10])
+                ).days
+                if delta <= 7:
+                    cat3 = 20
+                elif delta <= 30:
+                    cat3 = 10
+            except Exception:
+                pass
+
+        signal_breakdown = {
+            "cat1_payload_families": 20 if has_families else 0,
+            "cat1_file_type": 20 if has_file_type else 0,
+            "cat2_asn_cohort": cat2,
+            "cat3_date_range_width": cat3,
+            "methodology": "heuristic_v1",
+        }
+
+    score = cat1 + cat2 + cat3
+    if score >= 70:
+        label = "high"
+    elif score >= 40:
+        label = "medium"
+    else:
+        label = "low"
+
+    return {
+        "confidence": score,
+        "confidence_label": label,
+        "signal_breakdown": signal_breakdown,
+    }
+
+
+def build_campaigns(clusters, triage_results, ha_lookup_results=None, cluster_type="infra"):
     """Build campaign records from cluster data, enriched with Triage and HA family tags."""
     domain_families = collections.defaultdict(set)
     for result in (triage_results or []):
@@ -242,8 +353,17 @@ def build_campaigns(clusters, triage_results, ha_lookup_results=None):
             "brand": cluster.get("brand"),
             "families": all_families,
             "domains": domains,
+            **score_cluster(cluster, cluster_type),
         })
     return campaigns
+
+
+def build_payload_campaigns(payload_clusters):
+    """Re-emit payload clusters from fingerprint_campaigns() with heuristic_v1 confidence scoring."""
+    result = []
+    for cluster in (payload_clusters or []):
+        result.append({**cluster, **score_cluster(cluster, "payload")})
+    return result
 
 
 def build_lure_payload_matrix(campaigns):
@@ -334,18 +454,21 @@ def main():
     today    = date.today()
     week_ago = today - timedelta(days=7)
 
-    asn_dist        = build_asn_distribution(enriched_records)
-    country_dist    = build_country_distribution(enriched_records)
-    age_hist        = build_domain_age_histogram(enriched_records)
+    asn_dist         = build_asn_distribution(enriched_records)
+    country_dist     = build_country_distribution(enriched_records)
+    age_hist         = build_domain_age_histogram(enriched_records)
     payload_families = build_payload_families(triage_results, ha_lookup_results)
-    campaigns       = build_campaigns(clusters, triage_results, ha_lookup_results)
-    summary         = build_summary(enriched_records, clusters, triage_results)
+    payload_clusters_data = _load_json(PAYLOAD_CLUSTERS_PATH, default=[])
+    campaigns             = build_campaigns(clusters, triage_results, ha_lookup_results)
+    payload_campaigns     = build_payload_campaigns(payload_clusters_data)
+    summary               = build_summary(enriched_records, clusters, triage_results)
 
     print(f"  ASN distribution: {len(asn_dist)} entries")
     print(f"  Country distribution: {len(country_dist)} entries")
     print(f"  Age histogram: {age_hist}")
     print(f"  Payload families: {payload_families}")
-    print(f"  Campaigns: {len(campaigns)}")
+    print(f"  Infra clusters: {len(campaigns)}")
+    print(f"  Payload clusters: {len(payload_campaigns)}")
 
     merged = dict(existing)
     merged["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -354,7 +477,10 @@ def main():
     merged["asn_distribution"]   = asn_dist
     merged["country_distribution"] = country_dist
     merged["domain_age_histogram"] = age_hist
-    merged["campaigns"]          = campaigns
+    merged["infra_clusters"]      = campaigns
+    merged["payload_clusters"]    = payload_campaigns
+    merged.pop("campaigns", None)
+    merged.pop("campaign_clusters", None)
     merged["lure_payload_matrix"] = build_lure_payload_matrix(campaigns)
 
     if payload_families:
