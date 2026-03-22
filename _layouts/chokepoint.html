@@ -223,6 +223,74 @@ layout: default
 }
 
 .var-notes-full.hidden { display: none; }
+
+/* ── Intel cards ────────────────────────────────────────────────── */
+.intel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: .75rem;
+}
+
+.intel-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .9rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s;
+}
+.intel-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+.intel-card-name {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: .35rem;
+  line-height: 1.4;
+}
+
+.intel-card-desc {
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  flex: 1;
+  margin-bottom: .4rem;
+}
+
+.intel-linked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  margin-top: auto;
+}
+
+.intel-link-tag {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-sidebar, rgba(255,255,255,.04));
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .1rem .4rem;
+}
+
+.intel-supporting-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.intel-supporting-toggle:hover { color: var(--text); }
 </style>
 
 {% assign cp = site.data.chokepoints | where: "_slug", page.slug | first %}
@@ -596,14 +664,13 @@ layout: default
     <div class="table-wrapper rounded-lg overflow-hidden">
       <table class="data-table">
         <thead>
-          <tr><th>Bypass Method</th><th>Mitigation</th><th>Detection</th></tr>
+          <tr><th>Bypass Method</th><th>Mitigation</th></tr>
         </thead>
         <tbody>
           {% for b in cp.KnownBypasses %}
           <tr>
             <td>{{ b.Bypass }}</td>
             <td>{{ b.Mitigation }}</td>
-            <td>{{ b.Detection }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -730,14 +797,44 @@ layout: default
   {% if cp.Intel %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Intel Resources</h2>
-    <ul class="intel-list flex flex-col gap-2">
-      {% for intel in cp.Intel %}
-      <li class="flex items-start gap-2">
-        <a href="{{ intel.URL }}" target="_blank" rel="noopener">{{ intel.Name }}</a>
-        {% if intel.Description %}&mdash; <span style="color:var(--text-dim);font-size:.9rem">{{ intel.Description | truncate: 120 }}</span>{% endif %}
-      </li>
+
+    {% assign primary_intel = cp.Intel | where: "Tier", "primary" %}
+    {% assign supporting_intel = cp.Intel | where: "Tier", "supporting" %}
+
+    {% if primary_intel.size > 0 %}
+    <div class="intel-grid mb-4">
+      {% for intel in primary_intel %}
+      <a class="intel-card rounded-lg p-4" href="{{ intel.URL }}" target="_blank" rel="noopener">
+        <span class="intel-card-name">{{ intel.Name }}</span>
+        {% if intel.Description %}<p class="intel-card-desc">{{ intel.Description | truncate: 100 }}</p>{% endif %}
+        {% if intel.LinkedFrom %}
+        <div class="intel-linked">
+          {% for link in intel.LinkedFrom %}
+          <span class="intel-link-tag">{{ link }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </a>
       {% endfor %}
-    </ul>
+    </div>
+    {% endif %}
+
+    {% if supporting_intel.size > 0 %}
+    <div>
+      <button class="intel-supporting-toggle" data-expanded="false" aria-expanded="false">
+        Supporting Resources ({{ supporting_intel.size }}) ▾
+      </button>
+      <ul class="intel-supporting-list intel-list flex flex-col gap-2 mt-2" style="display:none">
+        {% for intel in supporting_intel %}
+        <li class="flex items-start gap-2">
+          <a href="{{ intel.URL }}" target="_blank" rel="noopener">{{ intel.Name }}</a>
+          {% if intel.Description %}&mdash; <span style="color:var(--text-dim);font-size:.9rem">{{ intel.Description | truncate: 120 }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
   </section>
   {% endif %}
 
@@ -833,6 +930,19 @@ document.querySelectorAll('.var-expand-btn').forEach(btn => {
     btn.dataset.expanded = String(!expanded);
     btn.textContent = expanded ? 'More ▾' : 'Less ▴';
     full.classList.toggle('hidden', expanded);
+  });
+});
+
+/* Intel supporting resources toggle */
+document.querySelectorAll('.intel-supporting-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const expanded = btn.dataset.expanded === 'true';
+    const list = btn.nextElementSibling;
+    btn.dataset.expanded = String(!expanded);
+    btn.setAttribute('aria-expanded', String(!expanded));
+    const name = btn.textContent.replace(/[▾▴]/, '').trim();
+    btn.textContent = (expanded ? name + ' ▾' : name.replace('▾','').trim() + ' ▴');
+    list.style.display = expanded ? 'none' : 'flex';
   });
 });
 </script>

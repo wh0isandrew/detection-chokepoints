@@ -194,29 +194,39 @@ Detections:
 
 Intel:
   - Name: MITRE ATT&CK — Impacket Software S0357
+    Tier: primary
     URL: https://attack.mitre.org/software/S0357/
     Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful to a defender than the raw GitHub repo for understanding real-world prevalence
   - Name: MITRE ATT&CK — T1021.003 DCOM
+    Tier: supporting
     URL: https://attack.mitre.org/techniques/T1021/003/
     Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
   - Name: MITRE ATT&CK — T1569.002 Service Execution
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1569/002/
     Description: Technique definition for service-based remote execution (psexec/smbexec pattern); the primary detection signal in this chokepoint's hunt and analyst rules
   - Name: Microsoft — Storm-0501 Ransomware Hybrid Cloud Attacks
+    Tier: primary
     URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
     Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete example of Impacket use in a 2024 ransomware campaign
+    LinkedFrom: ["Impacket"]
   - Name: ThreatLocker — Top 10 Post-Exploitation Tools Threat Actors Use
+    Tier: primary
     URL: https://www.threatlocker.com/blog/top-post-exploitation-tools-threat-actors-use
     Description: Real-world prevalence data for post-exploitation tooling including Impacket, NetExec, and C2 frameworks observed across actual intrusions
   - Name: Impacket GitHub
+    Tier: supporting
     URL: https://github.com/fortra/impacket
     Description: Monitor releases and PRs for new execution modules; source of truth for what capabilities the suite currently covers
   - Name: NetExec GitHub
+    Tier: supporting
     URL: https://github.com/Pennyw0rth/NetExec
     Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
   - Name: SOC Investigation — Event ID 5145 Threat Hunting
+    Tier: supporting
     URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
     Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$ access correlation
+    LinkedFrom: ["Remote Execution Primitive"]
 
 RelatedChokepoints:
   - ransomware-service-manipulation
@@ -240,23 +250,15 @@ OsintSources:
 
 KnownBypasses:
   - Bypass: Using legitimate service names that blend in with existing services
-    Mitigation: Maintain baseline of approved services; alert on new service creation
-    Detection: Correlate service creation with the binary path and network logon context
-  - Bypass: Delayed execution after service creation
-    Mitigation: N/A
-    Detection: Extend correlation window; focus on IPC$ + service creation regardless of timing
+    Mitigation: Maintain a baseline of approved services; alert on any new service creation.
   - Bypass: NTLM relay attacks instead of direct credential use
-    Mitigation: Enable SMB signing and LDAP signing; disable NTLM where possible
-    Detection: Detect relay patterns (source relays to destination within seconds of receiving auth)
+    Mitigation: Enable SMB signing and LDAP signing; disable NTLM where operationally feasible.
   - Bypass: Using legitimate admin tools (psexec.exe from Sysinternals)
-    Mitigation: Software allowlisting; monitor hash for known-good vs. impersonated versions
-    Detection: Same IPC$ + service creation pattern applies; tool-agnostic detection covers this
-  - Bypass: Living Off the Land (LOTL) — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command)
-    Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW (Privileged Access Workstation) for remote admin; log and alert on PowerShell remoting to non-standard targets
-    Detection: "These tools produce identical event telemetry to Impacket/NetExec (4624 LogonType 3, 4688 wmiprvse.exe child, 7045 service install) but with signed Microsoft binaries — no tool signature to match. Detection must be purely behavioral: network logon + protocol + execution primitive, regardless of which binary produced it. A 2024 analysis found 84% of high-severity attacks now use LOTL techniques."
+    Mitigation: Enforce software allowlisting and monitor hash for known-good vs. impersonated versions.
+  - Bypass: Living Off the Land — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
+    Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW for remote administration.
   - Bypass: Kerberos-based lateral movement (Overpass-the-Hash, Pass-the-Ticket, Silver/Golden Tickets)
-    Mitigation: Enable AES encryption for Kerberos; protect krbtgt account; monitor for anomalous TGS requests
-    Detection: "Bypasses NTLM-relay mitigations and NTLM-focused detection entirely. Detect via Kerberos anomalies: Event ID 4769 (TGS request) with RC4 encryption when AES is expected; Event ID 4768 (TGT request) from non-DC hosts; unusual ticket lifetime or service name patterns. Impacket's getST.py and Rubeus are common tools for ticket forging."
+    Mitigation: Enable AES encryption for Kerberos; protect the krbtgt account; monitor for anomalous TGS requests.
 
 YaraRules:
   - yara-rules/impacket-indicators.yar

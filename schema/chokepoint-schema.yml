@@ -97,8 +97,11 @@ Detections:
 # Free intel resources tied to this chokepoint
 Intel:
   - Name: string
+    Tier: string          # primary | supporting — primary renders as card, supporting as link list
     URL: string
     Description: string
+    LinkedFrom:           # (optional) names of variations/stages that reference this resource
+      - string
 
 # Cross-references to other chokepoints in this repo
 # Use the filename stem (no path, no extension)
@@ -119,9 +122,8 @@ OsintSources:
 
 # Known bypass methods and corresponding mitigations/detections
 KnownBypasses:
-  - Bypass: string          # How attackers evade detection
-    Mitigation: string      # How to prevent or harden
-    Detection: string       # How to detect the bypass anyway
+  - Bypass: string          # How attackers evade detection or harden against mitigation
+    Mitigation: string      # One sentence — how to prevent or harden against this bypass
 
 # YARA rules for memory/file-based detection (in addition to Sigma)
 YaraRules:

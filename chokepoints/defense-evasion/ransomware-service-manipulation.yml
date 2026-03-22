@@ -164,27 +164,39 @@ Detections:
 
 Intel:
   - Name: Kaspersky Common TTPs of Modern Ransomware
+    Tier: primary
     URL: https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf
     Description: Comprehensive analysis of service kill lists across major ransomware families
   - Name: CISA StopRansomware — ALPHV Blackcat (AA23-353A)
+    Tier: primary
     URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
     Description: Official advisory detailing ALPHV/BlackCat TTPs including service manipulation and EDR bypass techniques
+    LinkedFrom: ["Alphv/BlackCat"]
   - Name: Trend Micro — Operation Cronos Aftermath
+    Tier: supporting
     URL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
     Description: Post-disruption analysis of LockBit operations, affiliate structure, and residual activity following February 2024 law enforcement action
+    LinkedFrom: ["LockBit 3.0"]
   - Name: ReliaQuest — Black Basta Decline and Legacy
+    Tier: primary
     URL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
     Description: Detailed TTP breakdown drawn from leaked Black Basta chat logs; covers service kill sequences and tooling
+    LinkedFrom: ["BlackBasta"]
   - Name: Talos — BYOVD Loader Behind DeadLock Ransomware
+    Tier: primary
     URL: https://blog.talosintelligence.com/byovd-loader-deadlock-ransomware/
     Description: Technical analysis of purpose-built EDR-kill tooling bundled with ransomware; covers driver weaponization and service termination via kernel calls
+    LinkedFrom: ["Service Stop and Disable"]
   - Name: "MITRE ATT&CK — T1562.001 Impair Defenses: Disable or Modify Tools"
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1562/001/
     Description: Technique definition, procedure examples, and detection guidance for disabling or modifying security tools
   - Name: MITRE ATT&CK — T1489 Service Stop
+    Tier: supporting
     URL: https://attack.mitre.org/techniques/T1489/
     Description: Technique definition, procedure examples, and detection guidance for stopping services to impair system recovery
   - Name: Mandiant M-Trends
+    Tier: supporting
     URL: https://www.mandiant.com/m-trends
     Description: Annual threat report covering ransomware dwell times, TTPs, and service manipulation trends observed across incident response engagements
 
@@ -210,23 +222,15 @@ OsintSources:
 
 KnownBypasses:
   - Bypass: Tamper protection enabled on EDR (requires kernel-level access to disable)
-    Mitigation: Enable tamper protection on all EDR products; require kernel driver to disable
-    Detection: Detect kernel driver loading (BYOVD) before service manipulation
-  - Bypass: Booting to Safe Mode (security services don't start)
-    Mitigation: N/A — services genuinely not running in Safe Mode
-    Detection: "Detect Safe Mode boot on servers (registry: HKLM\\SYSTEM\\CurrentControlSet\\Control\\SafeBoot)"
+    Mitigation: Enable tamper protection on all EDR products; require a signed kernel driver to disable it.
   - Bypass: Renaming service before stopping (evades name-based filters)
-    Mitigation: Allowlist by service binary path, not service name
-    Detection: Monitor service configuration changes (sc config); service rename before stop is itself suspicious
+    Mitigation: Allowlist by service binary path rather than service name; alert on service config changes before stop.
   - Bypass: Process termination (taskkill /F) instead of service stop
-    Mitigation: Protected Process Light (PPL) for EDR processes
-    Detection: Monitor process termination events targeting security tool executables
+    Mitigation: Enable Protected Process Light (PPL) for EDR processes.
   - Bypass: WMI or PowerShell-based service stop (evades sc.exe/net.exe process-creation detections)
-    Mitigation: Monitor WMI activity broadly; restrict WMI remoting via host firewall where not operationally required
-    Detection: "Detect WMI calls to StopService method (Sysmon EID 19/20/21 for WMI subscriptions; EID 1 for wmic.exe with 'service' and 'call stopservice'; PowerShell script block logging for Stop-Service or Invoke-WmiMethod targeting security services)"
+    Mitigation: Monitor WMI activity broadly and restrict WMI remoting via host firewall where not operationally required.
   - Bypass: Purpose-built EDR killer tools (EDRKillShifter, weaponized drivers bundled with ransomware)
-    Mitigation: Enable HVCI (Hypervisor-Protected Code Integrity) and Microsoft Vulnerable Driver Blocklist; enforce driver signing policy
-    Detection: "Detect kernel driver loading (Sysmon EID 6) for drivers with newly issued or untrusted certificates immediately preceding bulk service termination; alert on loading of drivers matching Microsoft's blocklist"
+    Mitigation: Enable HVCI and the Microsoft Vulnerable Driver Blocklist; enforce driver signing policy.
 
 
 RawLogs:

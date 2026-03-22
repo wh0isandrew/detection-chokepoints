@@ -103,8 +103,10 @@ Detections:
 
 Intel:
   - Name: "[Resource name]"
+    Tier: primary          # primary | supporting
     URL: "https://example.com"
     Description: "How to use this resource for hunting this chokepoint"
+    # LinkedFrom: ["Variation or Stage name"]   # optional
 
 RelatedChokepoints:
   - "other-chokepoint-filename-stem"  # No path, no extension
@@ -119,8 +121,7 @@ OsintSources:
 
 KnownBypasses:
   - Bypass: "How attackers evade this detection"
-    Mitigation: "How defenders can harden against the bypass"
-    Detection: "How to detect the bypass method itself"
+    Mitigation: "One sentence — how to harden against this bypass"
 
 References:
   - "https://attack.mitre.org/techniques/T0000/"
