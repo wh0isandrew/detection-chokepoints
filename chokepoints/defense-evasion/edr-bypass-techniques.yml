@@ -34,6 +34,7 @@ Variations:
 - Name: BYOVD — EDRKillShifter
   FirstSeen: 2024-Q3
   Status: Active
+  SourceURL: https://www.sophos.com/en-us/blog/edr-kill-shifter
   Notes: 'Deployed by RansomHub (August 2024); Go-based loader that decrypts an embedded
     payload and exploits multiple vulnerable kernel drivers in sequence to remove
     EDR callbacks. Subsequently adopted by Play, Medusa, and BianLian. Requires admin
@@ -43,6 +44,7 @@ Variations:
 - Name: BYOVD — Terminator (Spyboy)
   FirstSeen: 2023-Q1
   Status: Active
+  SourceURL: https://www.sentinelone.com/blog/terminator-edr-killer-spyboy-detecting-and-preventing-a-windows-byovd-attack/
   Notes: 'Sold on Russian forum RAMP for $300-$3,000; exploits vulnerable Zemana antimalware
     drivers (zam64.sys CVE-2022-42045, CVE-2023-36204) to kill 23+ EDR/AV products
     including CrowdStrike, Sophos, Defender, ESET, and Kaspersky. Open-source clones
@@ -64,6 +66,7 @@ Variations:
 - Name: Kernel Callback Removal (EDRSandblast)
   FirstSeen: 2022-Q1
   Status: Active
+  SourceURL: https://github.com/wavestone-cdt/EDRSandblast
   Notes: 'Directly removes registered kernel callbacks (PsSetCreateProcessNotifyRoutine,
     PsSetLoadImageNotifyRoutine) from the kernel callback array, blinding EDRs at
     the kernel level without killing their processes. EDRSandblast (Wavestone) documented

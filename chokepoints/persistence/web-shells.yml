@@ -76,6 +76,7 @@ Variations:
   - Name: "LEMURLOOT (MOVEit)"
     FirstSeen: "2023-Q2"
     Status: Active
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a
     Notes: >
       C# ASP.NET webshell deployed by CL0P (TA505) via MOVEit Transfer CVE-2023-34362
       SQL injection zero-day (May 2023). Named human2.aspx to masquerade as a legitimate
@@ -85,6 +86,7 @@ Variations:
   - Name: "GLASSTOKEN / BUSHWALK (Ivanti)"
     FirstSeen: "2024-Q1"
     Status: Active
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-060b
     Notes: >
       Webshells deployed against Ivanti Connect Secure appliances via CVE-2023-46805
       (auth bypass) and CVE-2024-21887 (command injection). GLASSTOKEN was the initial
@@ -95,6 +97,7 @@ Variations:
   - Name: "SALTWATER / SEASPY (Barracuda ESG)"
     FirstSeen: "2023-Q2"
     Status: Active
+    SourceURL: https://cloud.google.com/blog/topics/threat-intelligence/barracuda-esg-exploited-globally/
     Notes: >
       Webshell-style implants deployed by UNC4841 (China-nexus) against Barracuda Email
       Security Gateway appliances via CVE-2023-2868 (remote command injection via TAR
@@ -104,6 +107,7 @@ Variations:
   - Name: Fileless IIS Native Modules
     FirstSeen: "2022-Q1"
     Status: Active
+    SourceURL: https://www.microsoft.com/en-us/security/blog/2022/12/12/iis-modules-the-evolution-of-web-shells-and-how-to-detect-them/
     Notes: >
       Malicious IIS native modules (.DLL) that act as request handlers, intercepting all
       HTTP traffic to the server. Documented by Microsoft in December 2022; avoids writing

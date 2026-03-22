@@ -28,11 +28,13 @@ Variations:
   - Name: BlackBasta
     FirstSeen: "2022"
     Status: Inactive
+    SourceURL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
     NotesShort: "Collapsed February 2025 after internal chat logs leaked; members migrated to CACTUS and SafePay"
     Notes: "Targets AV, EDR, Veeam backup, SQL databases; avg TTR 6-12 hours; collapsed February 2025 after internal Matrix chat logs (196k messages) leaked by disgruntled member; former members migrated to CACTUS and SafePay"
   - Name: Alphv/BlackCat
     FirstSeen: "2021"
     Status: Defunct
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
     NotesShort: "FBI-disrupted December 2023; exited via scam after $22M Change Healthcare ransom"
     Notes: "Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure"
   - Name: Akira
@@ -48,6 +50,7 @@ Variations:
   - Name: LockBit 3.0
     FirstSeen: "2022"
     Status: Severely Disrupted
+    SourceURL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
     NotesShort: "Operation Cronos seized 28 servers and 1,000+ decryption keys; significantly disrupted"
     Notes: "Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February 2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity"
 

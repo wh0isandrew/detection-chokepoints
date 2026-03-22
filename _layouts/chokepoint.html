@@ -224,6 +224,23 @@ layout: default
 
 .var-notes-full.hidden { display: none; }
 
+.variant-source-link {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid rgba(88, 166, 255, .25);
+  border-radius: 4px;
+  padding: .15rem .5rem;
+  margin-top: .5rem;
+}
+.variant-source-link:hover {
+  text-decoration: underline;
+  border-color: var(--accent);
+}
+
 /* ── Intel cards ────────────────────────────────────────────────── */
 .intel-grid {
   display: grid;
@@ -447,6 +464,9 @@ layout: default
         {% if v.Notes and v.Notes != v.NotesShort %}
         <button class="var-expand-btn" data-expanded="false">More ▾</button>
         <div class="var-notes-full hidden">{{ v.Notes }}</div>
+        {% endif %}
+        {% if v.SourceURL %}
+        <a href="{{ v.SourceURL }}" target="_blank" rel="noopener" class="variant-source-link">Source →</a>
         {% endif %}
       </div>
       {% endfor %}

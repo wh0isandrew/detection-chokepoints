@@ -37,6 +37,7 @@ Variations:
   - Name: ScreenConnect (ConnectWise)
     FirstSeen: "2022"
     Status: Active
+    SourceURL: https://unit42.paloaltonetworks.com/connectwise-threat-brief-cve-2024-1708-cve-2024-1709/
     NotesShort: "Primary renamed-binary choice; CVE-2024-1709 also enables direct server exploitation"
     Notes: "Common masquerade names: support_tool.exe, IT_access.exe; now primary choice for renamed-binary delivery; February 2024 CVE-2024-1709 (auth bypass) + CVE-2024-1708 (path traversal) enabled direct server exploitation by LockBit, Black Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct server exploitation"
   - Name: UltraViewer
@@ -52,6 +53,7 @@ Variations:
   - Name: SimpleHelp
     FirstSeen: "2025-Q1"
     Status: Active
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-163a
     NotesShort: "Three critical CVEs exploited as ransomware initial access since January 2025"
     Notes: "CVE-2024-57727 (path traversal), CVE-2024-57726 (privilege escalation), CVE-2024-57728 (arbitrary file upload) disclosed January 2025; exploited in the wild since January 22, 2025 as ransomware initial access vector; DragonForce deployed via it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025"
   - Name: NetSupport Manager

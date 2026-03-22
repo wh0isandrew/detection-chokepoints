@@ -26,11 +26,13 @@ Variations:
   - Name: ClickFix
     FirstSeen: "2024-Q1"
     Status: Active
+    SourceURL: https://www.proofpoint.com/us/blog/threat-insight/security-brief-clickfix-social-engineering-technique-floods-threat-landscape
     NotesShort: "Original variant; fake CAPTCHA or browser-fix prompts user to paste PowerShell into Run dialog"
     Notes: "Original variant; first documented by Proofpoint in March 2024 via TA571; fake CAPTCHA or browser fix prompts user to paste PowerShell into Run dialog or terminal"
   - Name: FileFix
     FirstSeen: "2025-Q2"
     Status: Active
+    SourceURL: https://mrd0x.com/filefix-clickfix-alternative/
     NotesShort: "Shifts attack surface to Windows File Explorer address bar; weaponized within two weeks of public disclosure"
     Notes: "Published by researcher mr.d0x on June 23, 2025; shifts attack surface from Run dialog to Windows File Explorer address bar; in-the-wild campaigns observed within two weeks of public disclosure"
   - Name: TerminalFix
@@ -46,26 +48,31 @@ Variations:
   - Name: JackFix / GlitchFix / ConsentFix
     FirstSeen: "2025"
     Status: Active
+    SourceURL: https://huntress.com/blog/dont-sweat-clickfix-techniques
     NotesShort: "Family of variants using clipboard-paste-execute with different social engineering pretexts"
     Notes: "Expanding family of named variants using the same clipboard-paste-execute primitive with different social engineering pretexts (consent dialogs, glitch/error UIs); same chokepoint applies"
   - Name: WebDAV ClickFix
     FirstSeen: "2025-Q1"
     Status: Active
+    SourceURL: https://securityboulevard.com/2026/02/abusing-windows-file-explorer-and-webdav-for-malware-delivery/
     NotesShort: "Victims paste UNC paths into Run dialog; mshta.exe executes JScript from attacker WebDAV share"
     Notes: "Hosts payloads on attacker-controlled WebDAV shares; victims paste UNC paths (\\\\server\\share\\payload.hta) into Run dialog, or receive .url/.lnk shortcut files that silently mount WebDAV via File Explorer; mshta.exe executes JScript/HTA from the share in a fileless chain that loads a .NET assembly into memory and injects shellcode into explorer.exe; steganography used to hide shellcode in PNG images; payloads include LummaStealer, Xworm, AsyncRAT, NetSupport, and a modified r77 rootkit; tactics first observed February 2024, campaign volume spiked September 2024, detailed analysis published February 2026"
   - Name: InstallFix
     FirstSeen: "2026-Q1"
     Status: Active
+    SourceURL: https://www.bleepingcomputer.com/news/security/installfix-fake-claude-code-install-page-delivers-amatera-infostealer/
     NotesShort: "Clones AI/developer tool install pages; distributed via Google Ads malvertising"
     Notes: "Clones legitimate software installation pages — particularly AI/developer tools such as Claude Code CLI — distributed via Google Ads malvertising; swaps the legitimate curl-to-bash install one-liner with a malicious equivalent pointing to an attacker-controlled server; exploits developer trust in official-looking documentation; Windows chain: mshta.exe → conhost.exe → Amatera infostealer; also targets macOS; documented by PushSecurity and BleepingComputer, February–March 2026"
   - Name: Windows Terminal ClickFix
     FirstSeen: "2026-Q1"
     Status: Active
+    SourceURL: https://thehackernews.com/2026/03/microsoft-reveals-clickfix-campaign.html
     NotesShort: "Lure uses Win+X→I shortcut; hex/XOR-encoded PowerShell in wt.exe bypasses Run-dialog detections"
     Notes: "Disclosed by Microsoft Defender Experts, March 6, 2026; lure page instructs users to open Windows Terminal via Win+X→I shortcut and paste a hex-encoded XOR-compressed PowerShell payload; bypasses Run-dialog detections since the parent process is wt.exe (WindowsTerminal.exe) rather than explorer.exe; execution chain: wt.exe → powershell.exe → cmd.exe → MSBuild.exe (LOLBin); final payload is Lumma Stealer delivered via renamed 7-Zip binary extracting a malicious ZIP; uses QueueUserAPC injection into chrome.exe and msedge.exe for credential harvesting"
   - Name: DNS-based ClickFix
     FirstSeen: "2026-Q1"
     Status: Active
+    SourceURL: https://www.bleepingcomputer.com/news/security/new-clickfix-attack-abuses-nslookup-to-retrieve-powershell-payload-via-dns/
     NotesShort: "Payload embedded in DNS Name field response; nslookup retrieval evades URL-based web filtering"
     Notes: "Disclosed by Microsoft February 2026; attributed to KongTuke targeting domain-joined corporate machines; user pastes cmd.exe command into Run dialog that invokes nslookup against an attacker-controlled DNS IP; PowerShell payload is embedded in the DNS Name field response (not a TXT record — bypasses TXT-record monitoring); cmd.exe extracts and executes the payload, which downloads a ZIP, drops a Python-based RAT (ModeloRAT) via VBScript, and persists via a Startup folder shortcut; evades URL-based web filtering entirely"
 
