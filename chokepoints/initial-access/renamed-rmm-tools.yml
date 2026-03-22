@@ -37,6 +37,7 @@ Variations:
   - Name: ScreenConnect (ConnectWise)
     FirstSeen: "2022"
     Status: Active
+    SourceURL: https://unit42.paloaltonetworks.com/connectwise-threat-brief-cve-2024-1708-cve-2024-1709/
     NotesShort: "Primary renamed-binary choice; CVE-2024-1709 also enables direct server exploitation"
     Notes: "Common masquerade names: support_tool.exe, IT_access.exe; now primary choice for renamed-binary delivery; February 2024 CVE-2024-1709 (auth bypass) + CVE-2024-1708 (path traversal) enabled direct server exploitation by LockBit, Black Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct server exploitation"
   - Name: UltraViewer
@@ -52,6 +53,7 @@ Variations:
   - Name: SimpleHelp
     FirstSeen: "2025-Q1"
     Status: Active
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-163a
     NotesShort: "Three critical CVEs exploited as ransomware initial access since January 2025"
     Notes: "CVE-2024-57727 (path traversal), CVE-2024-57726 (privilege escalation), CVE-2024-57728 (arbitrary file upload) disclosed January 2025; exploited in the wild since January 22, 2025 as ransomware initial access vector; DragonForce deployed via it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025"
   - Name: NetSupport Manager
@@ -199,17 +201,9 @@ Prerequisites:
   - RMM binary carries a valid vendor code-signing certificate — hash-based detection does not fire
 
 Chokepoints:
-  - Stage: Payload Hosting
-    Invariant: Attacker-controlled or compromised site serves a legitimately-signed RMM binary to the victim's browser
-    WhyCantBypass: The file must be hosted and reachable before the browser can download it — delivery cannot be skipped in any variant including TOAD phone-assisted delivery
-    LogSources:
-      - "Web proxy / network traffic logs"
-      - "URLScan.io domain scan"
-    DetectionTier: Research
-    SigmaRef: ""
   - Stage: Browser Download
     Invariant: Browser process creates an executable in a user-writable path (Downloads, Temp, AppData) with a campaign-themed or generic filename masking RMM software
-    WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of a standalone RMM installer
+    WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of a standalone RMM installer; the file must be hosted on an attacker-controlled or compromised site reachable by the victim's browser, so delivery cannot be skipped in any variant including TOAD phone-assisted delivery
     LogSources:
       - "Sysmon Event ID 11 (File Creation)"
       - "Browser download telemetry"
@@ -320,16 +314,6 @@ Intel:
     Tier: primary
     URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
     Description: Foundational joint advisory from CISA, NSA, and MS-ISAC documenting malicious RMM use; specifically covers portable executable delivery bypassing software installation controls, AnyDesk and ScreenConnect campaign mechanics
-  - Name: CISA AA25-163A — Ransomware Actors Exploit SimpleHelp RMM
-    Tier: primary
-    URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-163a
-    Description: June 2025 advisory covering CVE-2024-57727 exploitation by ransomware actors as initial access vector since January 2025; includes IOCs and detection guidance
-    LinkedFrom: ["SimpleHelp"]
-  - Name: Unit 42 — ConnectWise ScreenConnect CVE-2024-1709 Threat Brief
-    Tier: primary
-    URL: https://unit42.paloaltonetworks.com/connectwise-threat-brief-cve-2024-1708-cve-2024-1709/
-    Description: Technical analysis of CVE-2024-1709 auth bypass and CVE-2024-1708 exploitation; documents ransomware group adoption and scale of exposed instances
-    LinkedFrom: ["ScreenConnect (ConnectWise)"]
   - Name: Huntress — A Series of Unfortunate (RMM) Events
     Tier: primary
     URL: https://www.huntress.com/blog/series-of-unfortunate-rmm-events
@@ -339,11 +323,6 @@ Intel:
     Tier: primary
     URL: https://techcommunity.microsoft.com/blog/microsoftsecurityexperts/keys-to-the-kingdom-rmm-exploits-enabling-human-operated-intrusions-in-2024%E2%80%9325/4410903
     Description: Microsoft Security Experts analysis of RMM exploitation patterns across incident response engagements; covers both social engineering delivery and direct CVE exploitation vectors
-  - Name: BleepingComputer — AnyDesk Production Servers Breached
-    Tier: supporting
-    URL: https://www.bleepingcomputer.com/news/security/anydesk-says-hackers-breached-its-production-servers-reset-passwords/
-    Description: Documents the February 2024 AnyDesk breach, certificate revocation, and downstream impact on threat actor tooling choices
-    LinkedFrom: ["AnyDesk"]
   - Name: MITRE ATT&CK — T1219.002 Remote Desktop Software
     Tier: primary
     URL: https://attack.mitre.org/techniques/T1219/002/

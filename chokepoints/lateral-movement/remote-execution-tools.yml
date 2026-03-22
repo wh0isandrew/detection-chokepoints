@@ -35,6 +35,7 @@ Variations:
   - Name: Impacket
     FirstSeen: "2015"
     Status: Active
+    SourceURL: https://github.com/fortra/impacket
     NotesShort: "Python suite with psexec/wmiexec/atexec/dcomexec modules; rdp_shadow added January 2025"
     Notes: >
       Python suite with multiple execution modules:
@@ -49,6 +50,7 @@ Variations:
   - Name: NetExec
     FirstSeen: "2023"
     Status: Active
+    SourceURL: https://github.com/Pennyw0rth/NetExec
     NotesShort: "Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features"
     Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
   - Name: Evil-WinRM
@@ -85,18 +87,9 @@ Chokepoints:
       - "Windows Security Event ID 4769 (Kerberos Service Ticket Request)"
     DetectionTier: Research
     SigmaRef: ""
-  - Stage: Network Access
-    Invariant: Tool establishes a network session to the target host on at least one required protocol port
-    WhyCantBypass: Tools must establish an authenticated session over a protocol port — no reachable port means no remote execution regardless of credential validity
-    LogSources:
-      - "Firewall connection logs"
-      - "Sysmon Event ID 3 (Network Connection)"
-      - "Windows Security Event ID 4624 (Logon Type 3 — Network)"
-    DetectionTier: Research
-    SigmaRef: "sigma-rules/remote-execution/research.yml"
   - Stage: Remote Execution Primitive
     Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled task creation, or WinRM command
-    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols
+    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986) — no reachable port means no remote execution regardless of credential validity
     LogSources:
       - "Windows Security Event ID 4697 / System 7045 (Service Installed)"
       - "Windows Security Event ID 5145 (IPC$/svcctl share access)"
@@ -198,7 +191,7 @@ Intel:
     URL: https://attack.mitre.org/software/S0357/
     Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful to a defender than the raw GitHub repo for understanding real-world prevalence
   - Name: MITRE ATT&CK — T1021.003 DCOM
-    Tier: supporting
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1021/003/
     Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
   - Name: MITRE ATT&CK — T1569.002 Service Execution
@@ -210,27 +203,19 @@ Intel:
     URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
     Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete example of Impacket use in a 2024 ransomware campaign
     LinkedFrom: ["Impacket"]
-  - Name: ThreatLocker — Top 10 Post-Exploitation Tools Threat Actors Use
-    Tier: primary
-    URL: https://www.threatlocker.com/blog/top-post-exploitation-tools-threat-actors-use
-    Description: Real-world prevalence data for post-exploitation tooling including Impacket, NetExec, and C2 frameworks observed across actual intrusions
   - Name: Impacket GitHub
-    Tier: supporting
+    Tier: primary
     URL: https://github.com/fortra/impacket
     Description: Monitor releases and PRs for new execution modules; source of truth for what capabilities the suite currently covers
   - Name: NetExec GitHub
-    Tier: supporting
+    Tier: primary
     URL: https://github.com/Pennyw0rth/NetExec
     Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
   - Name: SOC Investigation — Event ID 5145 Threat Hunting
-    Tier: supporting
+    Tier: primary
     URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
     Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$ access correlation
     LinkedFrom: ["Remote Execution Primitive"]
-  - Name: "hunt.io — C2 Infrastructure Tracking"
-    Tier: supporting
-    URL: "https://hunt.io"
-    Description: "Real-time C2 infrastructure map; AttackCapture feed tags Cobalt Strike, Sliver, Havoc, and Metasploit servers by banner and certificate fingerprint."
 
 RelatedChokepoints:
   - ransomware-service-manipulation

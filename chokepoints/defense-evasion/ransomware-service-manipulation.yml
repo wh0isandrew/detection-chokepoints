@@ -28,11 +28,13 @@ Variations:
   - Name: BlackBasta
     FirstSeen: "2022"
     Status: Inactive
+    SourceURL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
     NotesShort: "Collapsed February 2025 after internal chat logs leaked; members migrated to CACTUS and SafePay"
     Notes: "Targets AV, EDR, Veeam backup, SQL databases; avg TTR 6-12 hours; collapsed February 2025 after internal Matrix chat logs (196k messages) leaked by disgruntled member; former members migrated to CACTUS and SafePay"
   - Name: Alphv/BlackCat
     FirstSeen: "2021"
     Status: Defunct
+    SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
     NotesShort: "FBI-disrupted December 2023; exited via scam after $22M Change Healthcare ransom"
     Notes: "Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure"
   - Name: Akira
@@ -48,6 +50,7 @@ Variations:
   - Name: LockBit 3.0
     FirstSeen: "2022"
     Status: Severely Disrupted
+    SourceURL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
     NotesShort: "Operation Cronos seized 28 servers and 1,000+ decryption keys; significantly disrupted"
     Notes: "Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February 2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity"
 
@@ -56,17 +59,9 @@ Prerequisites:
   - Target security, backup, and database services are running (cannot stop what is not running)
 
 Chokepoints:
-  - Stage: Privilege Verification
-    Invariant: Actor must hold Admin or SYSTEM privileges on the target host before any service manipulation begins
-    WhyCantBypass: sc.exe stop and delete require elevated privileges — no privilege escalation means immediate failure at the first command
-    LogSources:
-      - "Windows Security Event ID 4672 (Special Logon — privileged account)"
-      - "Windows Security Event ID 4624 (Logon)"
-    DetectionTier: Research
-    SigmaRef: ""
   - Stage: Service Enumeration
     Invariant: Actor enumerates running services to build the kill list via sc query, Get-Service, wmic, or equivalent
-    WhyCantBypass: Ransomware cannot stop what it cannot find — service enumeration precedes every observed kill sequence across all documented families
+    WhyCantBypass: Ransomware cannot stop what it cannot find — service enumeration precedes every observed kill sequence across all documented families; sc.exe stop and delete require Admin or SYSTEM privileges, so no privilege escalation means immediate failure before enumeration can complete
     LogSources:
       - "Sysmon Event ID 1 (sc.exe query / wmic service get / Get-Service)"
       - "Windows Security Event ID 4688 (Process Creation)"
@@ -167,38 +162,14 @@ Intel:
     Tier: primary
     URL: https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf
     Description: Comprehensive analysis of service kill lists across major ransomware families
-  - Name: CISA StopRansomware — ALPHV Blackcat (AA23-353A)
-    Tier: primary
-    URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
-    Description: Official advisory detailing ALPHV/BlackCat TTPs including service manipulation and EDR bypass techniques
-    LinkedFrom: ["Alphv/BlackCat"]
-  - Name: Trend Micro — Operation Cronos Aftermath
-    Tier: supporting
-    URL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
-    Description: Post-disruption analysis of LockBit operations, affiliate structure, and residual activity following February 2024 law enforcement action
-    LinkedFrom: ["LockBit 3.0"]
-  - Name: ReliaQuest — Black Basta Decline and Legacy
-    Tier: primary
-    URL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
-    Description: Detailed TTP breakdown drawn from leaked Black Basta chat logs; covers service kill sequences and tooling
-    LinkedFrom: ["BlackBasta"]
-  - Name: Talos — BYOVD Loader Behind DeadLock Ransomware
-    Tier: primary
-    URL: https://blog.talosintelligence.com/byovd-loader-deadlock-ransomware/
-    Description: Technical analysis of purpose-built EDR-kill tooling bundled with ransomware; covers driver weaponization and service termination via kernel calls
-    LinkedFrom: ["Service Stop and Disable"]
   - Name: "MITRE ATT&CK — T1562.001 Impair Defenses: Disable or Modify Tools"
     Tier: primary
     URL: https://attack.mitre.org/techniques/T1562/001/
     Description: Technique definition, procedure examples, and detection guidance for disabling or modifying security tools
   - Name: MITRE ATT&CK — T1489 Service Stop
-    Tier: supporting
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1489/
     Description: Technique definition, procedure examples, and detection guidance for stopping services to impair system recovery
-  - Name: Mandiant M-Trends
-    Tier: supporting
-    URL: https://www.mandiant.com/m-trends
-    Description: Annual threat report covering ransomware dwell times, TTPs, and service manipulation trends observed across incident response engagements
 
 RelatedChokepoints:
   - remote-execution-tools

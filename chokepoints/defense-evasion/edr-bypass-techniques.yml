@@ -34,6 +34,7 @@ Variations:
 - Name: BYOVD — EDRKillShifter
   FirstSeen: 2024-Q3
   Status: Active
+  SourceURL: https://www.sophos.com/en-us/blog/edr-kill-shifter
   Notes: 'Deployed by RansomHub (August 2024); Go-based loader that decrypts an embedded
     payload and exploits multiple vulnerable kernel drivers in sequence to remove
     EDR callbacks. Subsequently adopted by Play, Medusa, and BianLian. Requires admin
@@ -43,6 +44,7 @@ Variations:
 - Name: BYOVD — Terminator (Spyboy)
   FirstSeen: 2023-Q1
   Status: Active
+  SourceURL: https://www.sentinelone.com/blog/terminator-edr-killer-spyboy-detecting-and-preventing-a-windows-byovd-attack/
   Notes: 'Sold on Russian forum RAMP for $300-$3,000; exploits vulnerable Zemana antimalware
     drivers (zam64.sys CVE-2022-42045, CVE-2023-36204) to kill 23+ EDR/AV products
     including CrowdStrike, Sophos, Defender, ESET, and Kaspersky. Open-source clones
@@ -64,6 +66,7 @@ Variations:
 - Name: Kernel Callback Removal (EDRSandblast)
   FirstSeen: 2022-Q1
   Status: Active
+  SourceURL: https://github.com/wavestone-cdt/EDRSandblast
   Notes: 'Directly removes registered kernel callbacks (PsSetCreateProcessNotifyRoutine,
     PsSetLoadImageNotifyRoutine) from the kernel callback array, blinding EDRs at
     the kernel level without killing their processes. EDRSandblast (Wavestone) documented
@@ -290,52 +293,27 @@ Detections:
     as ransomware precursor
   SigmaRule: sigma-rules/edr-bypass/analyst.yml
 Intel:
-- Name: CovertSwarm — Timeline of EDR Bypass Techniques
-  URL: https://www.covertswarm.com/post/timeline-of-edr-bypass-techniques
-  Description: Primary reference for the chronological evolution of EDR bypass from
-    process hollowing (2012) through AI-driven evasion (2024); covers tool authors,
-    technique families, and the cat-and-mouse progression of user-mode to kernel-level
-    bypass
-- Name: 'Sophos — EDRKillShifter: RansomHub''s EDR Killer'
-  URL: https://www.sophos.com/en-us/blog/edr-kill-shifter
-  Description: Technical breakdown of EDRKillShifter's Go-based loader architecture,
-    embedded driver payloads, and adoption by Play, Medusa, and BianLian following
-    RansomHub's initial deployment
-- Name: Trend Micro — How RansomHub Uses EDRKillShifter
-  URL: https://www.trendmicro.com/en_us/research/24/i/how-ransomhub-ransomware-uses-edrkillshifter-to-disable-edr-and--.html
-  Description: Campaign-level analysis of EDRKillShifter deployment mechanics; covers
-    privilege requirements, driver selection, and timing relative to payload execution
-- Name: SentinelOne — Terminator EDR Killer (Spyboy)
-  URL: https://www.sentinelone.com/blog/terminator-edr-killer-spyboy-detecting-and-preventing-a-windows-byovd-attack/
-  Description: Analysis of the Terminator/Spyboy tool sold on RAMP; covers Zemana
-    driver exploitation (zam64.sys), affected EDR products, and detection approaches
-- Name: Talos — BYOVD Loader Behind DeadLock Ransomware
-  URL: https://blog.talosintelligence.com/byovd-loader-deadlock-ransomware/
-  Description: Technical analysis of DeadLock's novel Baidu driver-based EDR killer
-    (2025); demonstrates how ransomware groups develop purpose-built drivers to evade
-    known blocklists
 - Name: Wavestone — EDRSandblast
+  Tier: primary
   URL: https://github.com/wavestone-cdt/EDRSandblast
   Description: Open-source tool demonstrating kernel callback removal via vulnerable
     driver; includes 1000+ driver knowledge base and detection of which EDR callbacks
     are registered; essential reference for defenders building callback-monitoring
     detection
-- Name: Cisco Talos — 2024 Year in Review
-  URL: https://blog.talosintelligence.com/2024-year-in-review/
-  Description: Source for the statistic that ~48% of high-severity 2024 ransomware
-    attacks incorporated purpose-built EDR disablement; provides prevalence baseline
-    for this chokepoint
 - Name: 'MITRE ATT&CK — T1562.001 Impair Defenses: Disable or Modify Tools'
+  Tier: primary
   URL: https://attack.mitre.org/techniques/T1562/001/
   Description: Primary technique definition covering BYOVD, process termination, and
     service stop as EDR impairment methods; procedure examples link to known threat
     actor usage
 - Name: 'MITRE ATT&CK — T1562.006 Impair Defenses: Indicator Blocking'
+  Tier: primary
   URL: https://attack.mitre.org/techniques/T1562/006/
   Description: Technique definition covering ETW patching, AMSI bypass, and other
     telemetry-blocking methods; distinct from process termination — attacker keeps
     EDR running but blinds it
 - Name: Microsoft — Vulnerable Driver Blocklist
+  Tier: primary
   URL: https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/microsoft-recommended-driver-block-rules
   Description: The authoritative list of drivers known to be abused in BYOVD attacks;
     updated multiple times per year; use as a hash and cert blocklist for Sysmon EID
