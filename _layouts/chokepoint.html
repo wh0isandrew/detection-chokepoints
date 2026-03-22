@@ -677,28 +677,6 @@ layout: default
   </section>
   {% endif %}
 
-  <!-- ── Known Bypasses ─────────────────────────────────────────── -->
-  {% if cp.KnownBypasses %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Known Bypasses &amp; Mitigations</h2>
-    <div class="table-wrapper rounded-lg overflow-hidden">
-      <table class="data-table">
-        <thead>
-          <tr><th>Bypass Method</th><th>Mitigation</th></tr>
-        </thead>
-        <tbody>
-          {% for b in cp.KnownBypasses %}
-          <tr>
-            <td>{{ b.Bypass }}</td>
-            <td>{{ b.Mitigation }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-  {% endif %}
-
   <!-- ── Raw Logs ───────────────────────────────────────────────── -->
   {% if cp.RawLogs %}
   <section class="mb-10">

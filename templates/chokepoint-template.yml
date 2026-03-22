@@ -119,9 +119,9 @@ OsintSources:
     Query: ""
     Notes: ""
 
-KnownBypasses:
-  - Bypass: "How attackers evade this detection"
-    Mitigation: "One sentence — how to harden against this bypass"
+# DEPRECATED: KnownBypasses is no longer rendered in the layout.
+# Field definition preserved to maintain YAML data integrity for future migration.
+# KnownBypasses:
 
 References:
   - "https://attack.mitre.org/techniques/T0000/"

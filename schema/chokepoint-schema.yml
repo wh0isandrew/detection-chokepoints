@@ -120,7 +120,9 @@ OsintSources:
     Query: string           # The actual query string
     Notes: string           # (optional) context on what this finds
 
-# Known bypass methods and corresponding mitigations/detections
+# DEPRECATED: KnownBypasses is no longer rendered in the layout.
+# Field definition preserved to maintain YAML data integrity for future migration.
+# Do not add new KnownBypasses entries to chokepoint files.
 KnownBypasses:
   - Bypass: string          # How attackers evade detection or harden against mitigation
     Mitigation: string      # One sentence — how to prevent or harden against this bypass
