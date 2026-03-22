@@ -27,38 +27,47 @@ Variations:
   - Name: AnyDesk
     FirstSeen: "2020"
     Status: Declining
+    NotesShort: "Declining; February 2024 production breach revoked signing cert, driving actor migration"
     Notes: "Common masquerade names: invoice.exe, tax_form.exe, SSN_verification.exe; February 2024 production server breach resulted in source code and code signing certificate theft — certificate revoked, driving threat actor migration to other tools"
   - Name: TeamViewer
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Common masquerade names: update.exe, system_check.exe"
     Notes: "Common masquerade names: update.exe, system_check.exe"
   - Name: ScreenConnect (ConnectWise)
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Primary renamed-binary choice; CVE-2024-1709 also enables direct server exploitation"
     Notes: "Common masquerade names: support_tool.exe, IT_access.exe; now primary choice for renamed-binary delivery; February 2024 CVE-2024-1709 (auth bypass) + CVE-2024-1708 (path traversal) enabled direct server exploitation by LockBit, Black Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct server exploitation"
   - Name: UltraViewer
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Low name recognition makes it credible as a disguised security tool"
     Notes: "Common masquerade names: security_scan.exe, verify.exe"
   - Name: RustDesk
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Open-source; self-hosted infrastructure makes domain-based blocking ineffective"
     Notes: "Open-source; self-hosted infrastructure makes domain blocking ineffective; first documented in Akira ransomware and Scattered Spider operations mid-2023; broader adoption through 2024"
   - Name: SimpleHelp
     FirstSeen: "2025-Q1"
     Status: Active
+    NotesShort: "Three critical CVEs exploited as ransomware initial access since January 2025"
     Notes: "CVE-2024-57727 (path traversal), CVE-2024-57726 (privilege escalation), CVE-2024-57728 (arbitrary file upload) disclosed January 2025; exploited in the wild since January 22, 2025 as ransomware initial access vector; DragonForce deployed via it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025"
   - Name: NetSupport Manager
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Long-abused via ClickFix clipboard delivery; remains common in commodity phishing"
     Notes: "Long-abused RMM (the 'NetSupport RAT' name derives from this tool); TA571 and the ClearFake cluster began ClickFix clipboard delivery specifically in March 2024; remains one of the most common RMM payloads in commodity phishing operations through 2025"
   - Name: Atera
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Used by MuddyWater in nation-state campaigns since mid-2022"
     Notes: "Used by MuddyWater (Iran/TA450) in nation-state campaigns since mid-2022; intense campaign wave October 2023–April 2024 targeting Israeli manufacturing, tech, and infosec sectors; also deployed post-compromise as secondary RMM after ScreenConnect CVE-2024-1709 exploitation in European targets"
   - Name: RMM-to-RMM Deployment
     FirstSeen: "2024"
     Status: Active
+    NotesShort: "First RMM deploys a second for redundancy; removes single point of C2 failure"
     Notes: >
       One RMM (e.g., ScreenConnect) deploys a second RMM (e.g., AnyDesk) for
       redundancy — if one is removed, the other maintains access

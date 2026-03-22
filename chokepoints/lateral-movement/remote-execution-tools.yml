@@ -35,6 +35,7 @@ Variations:
   - Name: Impacket
     FirstSeen: "2015"
     Status: Active
+    NotesShort: "Python suite with psexec/wmiexec/atexec/dcomexec modules; rdp_shadow added January 2025"
     Notes: >
       Python suite with multiple execution modules:
       psexec.py (SMB service creation), smbexec.py (SMB + scheduled tasks),
@@ -43,26 +44,32 @@ Variations:
   - Name: CrackMapExec
     FirstSeen: "2016"
     Status: Archived
+    NotesShort: "Archived December 2023; superseded by NetExec — CME-specific signatures now stale"
     Notes: "Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December 6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community updates"
   - Name: NetExec
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features"
     Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
   - Name: Evil-WinRM
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Dedicated WinRM exploitation tool targeting port 5985/5986"
     Notes: Dedicated WinRM exploitation tool; targets port 5985/5986
   - Name: Metasploit psexec
     FirstSeen: "2007"
     Status: Active
+    NotesShort: "Original PsExec-style SMB execution via Metasploit framework"
     Notes: Original PsExec-style SMB execution via Metasploit framework
   - Name: Sliver
     FirstSeen: "2020"
     Status: Active
+    NotesShort: "Open-source C2 widely adopted by nation-state and ransomware actors as Cobalt Strike alternative"
     Notes: "Open-source C2 framework widely adopted by nation-state and ransomware actors as a Cobalt Strike alternative; built-in lateral movement over SMB/WMI using the same execution primitives this chokepoint detects; used by threat actors following Fortra's crackdown on pirated Cobalt Strike licenses"
   - Name: Havoc
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Modern C2 with strong EDR bypass features; uses same underlying Windows execution primitives"
     Notes: "Modern open-source C2 framework with strong EDR bypass features and lateral movement capabilities; described as 'entry-level C2 for serious criminals'; increasingly observed in intrusions alongside or replacing Impacket; uses the same underlying Windows execution primitives (service creation, WMI, WinRM)"
 
 Prerequisites:

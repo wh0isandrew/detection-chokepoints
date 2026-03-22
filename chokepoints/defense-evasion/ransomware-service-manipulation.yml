@@ -28,22 +28,27 @@ Variations:
   - Name: BlackBasta
     FirstSeen: "2022"
     Status: Inactive
+    NotesShort: "Collapsed February 2025 after internal chat logs leaked; members migrated to CACTUS and SafePay"
     Notes: "Targets AV, EDR, Veeam backup, SQL databases; avg TTR 6-12 hours; collapsed February 2025 after internal Matrix chat logs (196k messages) leaked by disgruntled member; former members migrated to CACTUS and SafePay"
   - Name: Alphv/BlackCat
     FirstSeen: "2021"
     Status: Defunct
+    NotesShort: "FBI-disrupted December 2023; exited via scam after $22M Change Healthcare ransom"
     Notes: "Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure"
   - Name: Akira
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Prioritizes Defender and backup agents; targets VPN appliances for initial access"
     Notes: "Prioritizes Defender and backup agents; targets VPN appliances for initial access"
   - Name: Qilin
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Rebranded from Agenda; surged with NHS/Synnovis attack June 2024"
     Notes: "Originally tracked as Agenda (Golang); rebranded to Qilin and rewrote in Rust in 2022; fully operational RaaS by February 2023; targets EDR, Veeam, databases; VMware ESXi variant active; surged to prominence with NHS/Synnovis attack June 2024"
   - Name: LockBit 3.0
     FirstSeen: "2022"
     Status: Severely Disrupted
+    NotesShort: "Operation Cronos seized 28 servers and 1,000+ decryption keys; significantly disrupted"
     Notes: "Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February 2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity"
 
 Prerequisites:
