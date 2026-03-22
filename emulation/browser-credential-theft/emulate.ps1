@@ -1,33 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates infostealer browser credential theft patterns for detection validation.
-    Validates Sigma rules: Research (EID 10/11/4663), Hunt (EID 10 + DPAPI), Analyst (EID 10/11/3).
-
-.DESCRIPTION
-    Simulates the three behavioral steps common to all infostealer browser credential theft:
-      1. Non-browser process opens Chrome Login Data (triggers EID 10 / 4663)
-      2. DPAPI decryption attempt via CryptUnprotectData (triggers Hunt rule correlation)
-      3. Outbound network connection from non-browser process (triggers Analyst rule)
-
-    Does NOT steal actual credentials. Uses a scratch copy of Login Data opened read-only
-    and makes a benign HTTPS request to example.com for the network telemetry trigger.
-
-.NOTES
-    MITRE ATT&CK: T1555.003 (Credentials from Web Browsers)
-    Safe to run: no credentials are exfiltrated, no persistence is created.
-    Tested on: Windows 10/11 with Sysmon v15+, WEL Security auditing enabled.
-
-    LAB ENVIRONMENT ONLY — run in an isolated VM.
-    Enable Object Access Auditing before testing the WEL EID 4663 signal:
-      auditpol /set /subcategory:"File System" /success:enable /failure:enable
-
-.EXAMPLE
-    .\emulate.ps1
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -SkipNetwork     # Skip the outbound connection step
-    .\emulate.ps1 -CleanupOnly     # Remove artefacts from a previous run
-#>
+# MITRE ATT&CK: T1555.003 — Credentials from Web Browsers
+# Simulates non-browser process access to Chrome Login Data, DPAPI decryption call, and outbound connection.
 
 [CmdletBinding()]
 param(
@@ -38,13 +11,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Configuration ─────────────────────────────────────────────────────────────
 $ChromeLoginDataPath = Join-Path $env:LOCALAPPDATA `
     'Google\Chrome\User Data\Default\Login Data'
 $TempCopy   = Join-Path $env:TEMP "~cred_emu_$(Get-Random).db"
 $C2Endpoint = 'https://example.com'   # benign destination — change to your lab listener
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Message) {
     Write-Host "[*] $Message" -ForegroundColor Cyan
 }
@@ -62,13 +33,11 @@ function Remove-Artefacts {
     }
 }
 
-# ── Cleanup-only mode ─────────────────────────────────────────────────────────
 if ($CleanupOnly) {
     Remove-Artefacts
     exit 0
 }
 
-# ── Pre-flight checks ─────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Browser Credential Theft Emulation ===" -ForegroundColor Magenta
 Write-Host "    T1555.003 | Detection Chokepoints Project" -ForegroundColor DarkGray
@@ -81,11 +50,8 @@ if (-not (Test-Path $ChromeLoginDataPath)) {
     $ChromeLoginDataPath = $null
 }
 
-# ── Step 1: File access — triggers Sysmon EID 10 and/or WEL 4663 ─────────────
 Write-Step "Step 1/3 — Opening browser credential store (file access telemetry)"
 Write-Verbose "  Target: $ChromeLoginDataPath"
-Write-Verbose "  Signal: Sysmon EID 10 (ProcessAccess), WEL EID 4663 (Object Access)"
-Write-Verbose "  Matched rules: Research, Analyst"
 
 if ($ChromeLoginDataPath) {
     try {
@@ -107,7 +73,6 @@ if ($ChromeLoginDataPath) {
         Write-Warn "Chrome is running (file locked). Using file copy to trigger EID 11."
         Copy-Item -Path $ChromeLoginDataPath -Destination $TempCopy -ErrorAction SilentlyContinue
         Write-Ok "Copied Login Data to: $TempCopy"
-        Write-Verbose "  Signal: Sysmon EID 11 (FileCreate) for temp copy path"
     }
 } else {
     # Synthetic fallback: create a dummy file in TEMP to generate EID 11
@@ -117,10 +82,7 @@ if ($ChromeLoginDataPath) {
 
 Start-Sleep -Milliseconds 500
 
-# ── Step 2: DPAPI decryption — triggers Hunt rule temporal correlation ─────────
 Write-Step "Step 2/3 — Calling CryptUnprotectData (DPAPI decryption telemetry)"
-Write-Verbose "  Signal: CryptUnprotectData call within 60s of EID 10"
-Write-Verbose "  Matched rules: Hunt"
 
 Add-Type -TypeDefinition @'
 using System;
@@ -178,12 +140,9 @@ try {
 
 Start-Sleep -Milliseconds 500
 
-# ── Step 3: Network connection — triggers Analyst rule ────────────────────────
 if (-not $SkipNetwork) {
     Write-Step "Step 3/3 — Making outbound connection (network exfiltration telemetry)"
     Write-Verbose "  Destination: $C2Endpoint"
-    Write-Verbose "  Signal: Sysmon EID 3 (NetworkConnect) from non-browser process"
-    Write-Verbose "  Matched rules: Analyst"
 
     try {
         $response = Invoke-WebRequest -Uri $C2Endpoint -Method HEAD `
@@ -196,12 +155,10 @@ if (-not $SkipNetwork) {
     Write-Warn "Step 3 skipped (-SkipNetwork flag set)"
 }
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Step "Cleaning up artefacts"
 Remove-Artefacts
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""

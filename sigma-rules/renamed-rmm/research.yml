@@ -41,10 +41,3 @@ falsepositives:
   - Authorized remote support sessions
   - Security testing environments
 level: informational
-# ─── Research Notes ──────────────────────────────────────────────────────────────
-# Build a whitelist of approved:
-#   - RMM tool names and versions
-#   - Source user accounts (IT staff only)
-#   - Parent processes (installer, IT deployment system)
-#   - Network destinations (approved RMM vendor infrastructure)
-# Anything outside this baseline is a candidate for promotion to Hunt/Analyst level.

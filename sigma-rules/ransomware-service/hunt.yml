@@ -71,16 +71,3 @@ falsepositives:
   - AV/EDR product uninstallation during software upgrade cycles
   - IT operations during system decommissioning
 level: medium
-# ─── Hunt Notes ──────────────────────────────────────────────────────────────────
-# When this fires, check for:
-#   1. Was this preceded by a network logon (4624, LogonType 3)?
-#      → Remote attacker executing ransomware preparation
-#   2. Are multiple services being stopped within a short time window?
-#      → Correlate by parent process or session ID
-#   3. Is this followed by mass file modifications or high disk I/O?
-#      → Encryption phase beginning
-#   4. Was this during business hours or after-hours?
-#      → After-hours increases suspicion significantly
-#
-# Quick SIEM pivot: Count sc.exe "stop" events per host per 10-minute window
-# Threshold: 3+ stops → Hunt investigation; 5+ stops → Analyst alert

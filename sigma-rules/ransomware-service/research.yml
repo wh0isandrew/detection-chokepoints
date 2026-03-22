@@ -55,9 +55,3 @@ falsepositives:
   - Maintenance windows (planned service stops)
   - Backup service completion cycles (Veeam, etc. stop between jobs)
 level: low
-# ─── Research Notes ──────────────────────────────────────────────────────────────
-# Track: How many times per day/week does each service stop?
-# Track: What time of day? (Maintenance windows vs. after-hours anomalies)
-# Track: What triggers the stop? (System restart? sc.exe? Service update?)
-# Build a frequency baseline per service per host.
-# Anything outside the baseline is a candidate for Hunt rule investigation.

@@ -346,12 +346,7 @@ layout: default
           <span class="raw-log-desc">{{ log.Description }}</span>
         </div>
         {% if log.Sample %}
-        {% assign log_type_lower = log.Type | downcase %}
-        {% if log_type_lower contains "event log" or log_type_lower contains "wel" %}
-          {% assign log_lang = "language-xml" %}
-        {% else %}
-          {% assign log_lang = "language-plaintext" %}
-        {% endif %}
+        {% assign log_lang = "language-yaml" %}
         <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ log_lang }}">{{ log.Sample | xml_escape }}</code></pre>
         {% endif %}
       </div>
@@ -484,11 +479,13 @@ layout: default
 </article>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" />
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/yaml.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/powershell.min.js"></script>
 <script>
-hljs.highlightAll();
+document.addEventListener('DOMContentLoaded', function() {
+  hljs.highlightAll();
+});
 </script>
 <script>
 /* Tab switching for sigma rules */

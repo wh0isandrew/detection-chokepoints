@@ -84,10 +84,3 @@ falsepositives:
   - Custom IT automation scripts that use encoded commands and are user-initiated
   - Developers using PowerShell with encoding from browser-launched terminals
 level: high
-# ─── Response Actions ────────────────────────────────────────────────────────────
-# 1. Isolate the endpoint immediately — connection likely already established
-# 2. Capture the full CommandLine for payload analysis (decode base64 if present)
-# 3. Check ClickGrab (https://mhaggis.github.io/ClickGrab/) for known payload match
-# 4. Pull Sysmon Event ID 3 (network connections) for the same ProcessId/ProcessGuid
-# 5. Check DNS queries (Sysmon EID 22) for C2 domain resolution around same timestamp
-# 6. Review user's browsing history for the source page

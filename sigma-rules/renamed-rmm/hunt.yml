@@ -44,15 +44,3 @@ falsepositives:
   - Legitimate software downloads by users (any browser-downloaded executable)
   - IT staff downloading RMM tools for authorized deployment
 level: low
-# ─── Hunt Notes ──────────────────────────────────────────────────────────────────
-# This rule fires on ALL browser-downloaded executables — the volume will be high.
-# Pivot from file creation events to process creation events for the same file:
-#   Correlate: TargetFilename (file create) → CommandLine (process create)
-#
-# Key filters to apply during hunting:
-#   1. Product name / OriginalFilename in file version info matches RMM vendor
-#   2. File is signed by AnyDesk GmbH, ConnectWise LLC, TeamViewer GmbH, etc.
-#   3. Execution occurred within 5 minutes of download
-#   4. Followed by outbound network connection to RMM infrastructure
-#
-# Use with Sysmon EID 11 (file create) + EID 1 (process create) + EID 3 (network)

@@ -63,17 +63,3 @@ falsepositives:
   - IT tooling launched from Windows Explorer (e.g., admin scripts opened by double-click)
   - Some enterprise software launchers that spawn from explorer.exe
 level: medium
-# ─── Hunt Notes ─────────────────────────────────────────────────────────────────
-# Run this as a hunt query against 7-30 days of process creation logs.
-# Investigate each unique (ParentImage, Image, CommandLine) tuple.
-# Pair with network connection events (Sysmon EID 3) from the same ProcessId
-# to confirm outbound network activity.
-#
-# Key pivot: Is the command line encoded or obfuscated? (→ promote to Analyst rule)
-# Key pivot: Does the spawning match a ClickGrab payload? (https://mhaggis.github.io/ClickGrab/)
-# Key pivot: Parent is wt.exe / WindowsTerminal.exe? Likely Windows Terminal ClickFix
-#   (March 2026 variant, Lumma Stealer). Check for hex/XOR-encoded PowerShell and
-#   subsequent MSBuild.exe LOLBin execution.
-# Key pivot: cmd.exe spawning nslookup.exe with a non-RFC1918 IP argument?
-#   Likely KongTuke DNS-staging variant (Feb 2026). Check for ModeloRAT / VBScript
-#   dropped to %Temp% and Startup folder shortcuts.
