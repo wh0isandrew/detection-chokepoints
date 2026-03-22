@@ -47,11 +47,44 @@ Variations:
     Notes: "Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February 2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity"
 
 Prerequisites:
-  - Admin or SYSTEM privileges on target system
-  - Ability to enumerate running services (sc query, Get-Service, WMI)
-  - Ability to stop services (sc stop, net stop, taskkill)
-  - Ability to delete/disable services (sc delete, sc config start= disabled)
-  - Target services must be running (cannot stop what is not running)
+  - Admin or SYSTEM privileges already established on target system
+  - Target security, backup, and database services are running (cannot stop what is not running)
+
+Chokepoints:
+  - Stage: Privilege Verification
+    Invariant: Actor must hold Admin or SYSTEM privileges on the target host before any service manipulation begins
+    WhyCantBypass: sc.exe stop and delete require elevated privileges — no privilege escalation means immediate failure at the first command
+    LogSources:
+      - "Windows Security Event ID 4672 (Special Logon — privileged account)"
+      - "Windows Security Event ID 4624 (Logon)"
+    DetectionTier: Research
+    SigmaRef: ""
+  - Stage: Service Enumeration
+    Invariant: Actor enumerates running services to build the kill list via sc query, Get-Service, wmic, or equivalent
+    WhyCantBypass: Ransomware cannot stop what it cannot find — service enumeration precedes every observed kill sequence across all documented families
+    LogSources:
+      - "Sysmon Event ID 1 (sc.exe query / wmic service get / Get-Service)"
+      - "Windows Security Event ID 4688 (Process Creation)"
+    DetectionTier: Research
+    SigmaRef: "sigma-rules/ransomware-service/research.yml"
+  - Stage: Service Stop and Disable
+    Invariant: Security, backup, and database services are stopped in rapid succession via sc.exe, net stop, taskkill, or WMI StopService — multiple services within a short window
+    WhyCantBypass: Files locked by running services cannot be encrypted — stop must precede encryption in every observed ransomware family without exception
+    LogSources:
+      - "Windows System Event ID 7036 (Service State Change — stopped)"
+      - "Windows System Event ID 7040 (Service Start Type Changed — disabled)"
+      - "Sysmon Event ID 1 (sc.exe / net.exe / taskkill.exe process creation)"
+    DetectionTier: Hunt
+    SigmaRef: "sigma-rules/ransomware-service/hunt.yml"
+    BypassNote: Purpose-built EDR killers (BYOVD drivers, EDRKillShifter) bypass service-stop detection by killing the EDR process at kernel level — monitor Sysmon EID 6 for suspicious driver loads immediately before bulk service termination
+  - Stage: Service Deletion
+    Invariant: Stopped services are deleted or permanently disabled to prevent automatic restart during the encryption phase
+    WhyCantBypass: Without deletion, Windows service recovery policies restart stopped services and interfere with encryption — deletion is confirmed across all major documented families
+    LogSources:
+      - "Sysmon Event ID 1 (sc.exe delete / sc.exe config start= disabled)"
+      - "Windows System Event ID 7036 (service removed)"
+    DetectionTier: Analyst
+    SigmaRef: "sigma-rules/ransomware-service/analyst.yml"
 
 EvolutionTimeline:
   - Date: "2021-Q2"

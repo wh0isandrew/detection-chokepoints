@@ -22,6 +22,24 @@ Description: >
 LastUpdated: "YYYY-MM-DD"
 Author: "@your-handle"
 
+Chokepoints:
+  - Stage: "[Stage label — e.g. Clipboard Seeding]"
+    Invariant: "One sentence — what MUST happen at this stage regardless of tool or variant."
+    WhyCantBypass: "One sentence — why the attacker cannot skip or substitute this stage."
+    LogSources:
+      - "Sysmon Event ID X (Name)"
+      - "Windows Security Event ID Y (Name)"
+    DetectionTier: Hunt       # Research | Hunt | Analyst
+    SigmaRef: "sigma-rules/[technique]/hunt.yml"  # or "" if no rule exists yet
+  - Stage: "[Next stage]"
+    Invariant: "What must happen here."
+    WhyCantBypass: "Why it cannot be bypassed."
+    LogSources:
+      - "Log source"
+    DetectionTier: Analyst
+    SigmaRef: "sigma-rules/[technique]/analyst.yml"
+    BypassNote: "Known bypass risk — surfaced as red callout on the stage card."  # optional
+
 Variations:
   - Name: "[Tool or method name]"
     FirstSeen: "YYYY-QN"      # e.g., "2024-Q2" or "2024-06"
