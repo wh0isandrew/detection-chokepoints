@@ -199,17 +199,9 @@ Prerequisites:
   - RMM binary carries a valid vendor code-signing certificate — hash-based detection does not fire
 
 Chokepoints:
-  - Stage: Payload Hosting
-    Invariant: Attacker-controlled or compromised site serves a legitimately-signed RMM binary to the victim's browser
-    WhyCantBypass: The file must be hosted and reachable before the browser can download it — delivery cannot be skipped in any variant including TOAD phone-assisted delivery
-    LogSources:
-      - "Web proxy / network traffic logs"
-      - "URLScan.io domain scan"
-    DetectionTier: Research
-    SigmaRef: ""
   - Stage: Browser Download
     Invariant: Browser process creates an executable in a user-writable path (Downloads, Temp, AppData) with a campaign-themed or generic filename masking RMM software
-    WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of a standalone RMM installer
+    WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of a standalone RMM installer; the file must be hosted on an attacker-controlled or compromised site reachable by the victim's browser, so delivery cannot be skipped in any variant including TOAD phone-assisted delivery
     LogSources:
       - "Sysmon Event ID 11 (File Creation)"
       - "Browser download telemetry"

@@ -74,39 +74,32 @@ Prerequisites:
   - Modern browser with Clipboard API enabled (default on all mainstream browsers)
 
 Chokepoints:
-  - Stage: Lure Page Delivery
-    Invariant: Browser renders a page combining a Clipboard API write with an explicit execution instruction
-    WhyCantBypass: Co-occurrence of clipboard seeding and execution hint is the invariant fingerprint across all variants — no visual redesign removes both elements simultaneously
+  - Stage: Lure/Delivery
+    Invariant: Browser renders a page combining a Clipboard API write with an explicit execution instruction, and writes malicious command content to the Windows clipboard via navigator.clipboard.writeText or ClipboardItem
+    WhyCantBypass: Co-occurrence of clipboard seeding and execution hint is the invariant fingerprint across all variants — no visual redesign removes both elements simultaneously; the user cannot execute content that was never placed there
     LogSources:
       - "Web proxy with JS/HTML content inspection"
       - "IOK lure-page rule feed (phish.report)"
-      - "URLScan.io live scan API"
-    DetectionTier: Research
-    SigmaRef: "iok-rules/clickfix/clickfix-lure.yml"
-  - Stage: Clipboard Seeding
-    Invariant: Browser process writes malicious command content to the Windows clipboard via the Clipboard API (navigator.clipboard.writeText or ClipboardItem)
-    WhyCantBypass: All ClickFix variants must seed the clipboard — the user cannot execute content that was never placed there
-    LogSources:
       - "ETW Microsoft-Windows-Win32k (GUID: 8c416c79-d49b-4f01-a467-e56d3aa8234c)"
       - "ETW Microsoft.Windows.OLE.Clipboard (GUID: 3e0e3a92-b00b-4456-9dee-f40aba77f00e)"
-    DetectionTier: Hunt
-    SigmaRef: "sigma-rules/clickfix/etw-clipboard.yml"
-    BypassNote: Requires SilkETW or EDR with Win32k telemetry — not available via standard Sysmon configuration
-  - Stage: User Execution
+    DetectionTier: Research
+    SigmaRef: "iok-rules/clickfix/clickfix-lure.yml"
+    BypassNote: Clipboard ETW detection requires SilkETW or EDR with Win32k telemetry — not available via standard Sysmon configuration
+  - Stage: Execution
     Invariant: User pastes clipboard content into a scripting interpreter (powershell.exe, cmd.exe, mshta.exe, wt.exe) spawned from a browser, explorer, or terminal parent
     WhyCantBypass: The paste-and-execute action is the entire attack primitive — no variant skips the parent-process relationship between the delivery surface and the interpreter
     LogSources:
       - "Sysmon Event ID 1 (Process Creation)"
       - "Windows Security Event ID 4688 (Process Creation)"
-    DetectionTier: Analyst
+    DetectionTier: Hunt
     SigmaRef: "sigma-rules/clickfix/analyst.yml"
-  - Stage: Outbound Network Connection
+  - Stage: Second Stage Retrieval
     Invariant: Spawned interpreter makes an outbound connection to attacker infrastructure within seconds of execution to download the next stage or beacon home
     WhyCantBypass: All payloads must retrieve a next stage or establish C2 — none are fully self-contained without any network contact
     LogSources:
       - "Sysmon Event ID 3 (Network Connection)"
       - "Sysmon Event ID 22 (DNS Query)"
-    DetectionTier: Hunt
+    DetectionTier: Analyst
     SigmaRef: "sigma-rules/clickfix/hunt.yml"
     BypassNote: Delayed execution (sleep before outbound) evades short time-window correlation — extend correlation window to 5+ minutes in hunt and analyst rules
 

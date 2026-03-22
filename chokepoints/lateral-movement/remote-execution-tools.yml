@@ -85,18 +85,9 @@ Chokepoints:
       - "Windows Security Event ID 4769 (Kerberos Service Ticket Request)"
     DetectionTier: Research
     SigmaRef: ""
-  - Stage: Network Access
-    Invariant: Tool establishes a network session to the target host on at least one required protocol port
-    WhyCantBypass: Tools must establish an authenticated session over a protocol port — no reachable port means no remote execution regardless of credential validity
-    LogSources:
-      - "Firewall connection logs"
-      - "Sysmon Event ID 3 (Network Connection)"
-      - "Windows Security Event ID 4624 (Logon Type 3 — Network)"
-    DetectionTier: Research
-    SigmaRef: "sigma-rules/remote-execution/research.yml"
   - Stage: Remote Execution Primitive
     Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled task creation, or WinRM command
-    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols
+    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986) — no reachable port means no remote execution regardless of credential validity
     LogSources:
       - "Windows Security Event ID 4697 / System 7045 (Service Installed)"
       - "Windows Security Event ID 5145 (IPC$/svcctl share access)"
