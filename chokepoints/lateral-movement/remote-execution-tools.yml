@@ -116,29 +116,24 @@ Chokepoints:
 EvolutionTimeline:
   - Date: "2016-Q1"
     Event: CrackMapExec released as multi-protocol framework
-    Change: Combined reconnaissance and lateral movement in one tool; SMB, WMI, WinRM in single interface
+    Change: "Multi-protocol framework combining SMB, WMI, and WinRM in one tool; detection must cover all protocols."
     DetectionImpact: Detection must cover multiple protocols, not just SMB
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2019-Q2"
     Event: Evil-WinRM released as dedicated WinRM exploitation tool
-    Change: Simplified WinRM-specific lateral movement; requires WinRM enabled on target
+    Change: "Dedicated WinRM exploitation tool released; WinRM authentication spike detection becomes important."
     DetectionImpact: WinRM authentication spike detection becomes important
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2023-Q3"
     Event: NetExec forked from CrackMapExec
-    Change: Active development, LDAP/SSH support, improved operational security features
+    Change: "Active CrackMapExec fork adds LDAP and SSH support; no fundamental change to underlying Windows API behavior."
     DetectionImpact: No fundamental change to underlying Windows API behaviors
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2023-Q4"
     Event: CrackMapExec officially archived
-    Change: Original CME repository archived December 6, 2023; NetExec becomes the de facto community standard; CME-specific binary signatures and detection rules stop receiving community updates
+    Change: "CME archived December 6, 2023; behavioral detection remains valid but CME-specific hash/signature rules stop receiving updates."
     DetectionImpact: Behavioral detection remains valid; tool-specific hash/signature-based detection for CME becomes stale
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2025-01"
     Event: Impacket adds rdp_shadow.py (PR#2064)
-    Change: Native RDP session hijacking capability added to Impacket suite
+    Change: "Native RDP session hijacking (rdp_shadow.py) added to Impacket suite via PR#2064."
     DetectionImpact: Existing RDP session manipulation detection (Event ID 4624 LogonType 10) applies
-    TheConstant: "Admin creds + network access + remote execution primitive"
 
 Detections:
   - Level: Research

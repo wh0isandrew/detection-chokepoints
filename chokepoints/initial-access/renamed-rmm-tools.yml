@@ -237,39 +237,32 @@ Chokepoints:
 EvolutionTimeline:
   - Date: "2019"
     Event: TeamViewer and AnyDesk adoption in social engineering campaigns
-    Change: Legitimate RMM binaries adopted as an initial access alternative to malware
+    Change: "Legitimate RMM binaries adopted as initial access alternative to malware; signed binaries evade hash-based detection."
     DetectionImpact: New pattern — signed binaries evading hash-based detection
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2022-Q3"
     Event: ScreenConnect becomes primary campaign tool
-    Change: Shift to ConnectWise ScreenConnect for a more "professional" appearance; CISA AA23-025A documents first large-scale malicious ScreenConnect campaigns beginning mid-June 2022
+    Change: "Shift to ConnectWise ScreenConnect for professional appearance; CISA AA23-025A documents first large-scale malicious campaigns."
     DetectionImpact: No change to core detection pattern
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2023"
     Event: UltraViewer campaigns emerge
-    Change: Shift to less-known tools to evade AnyDesk-specific detections
+    Change: "Shift to less-known tools to evade AnyDesk-specific detections; tool-agnostic detection becomes critical."
     DetectionImpact: Tool-agnostic detection becomes critical; vendor name can no longer be relied on
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2024-Q1"
     Event: AnyDesk breach + ScreenConnect mass CVE exploitation
-    Change: AnyDesk production servers breached (code signing cert stolen and revoked); simultaneously CVE-2024-1709 auth bypass enables direct server exploitation of 18,000+ exposed ScreenConnect instances by ransomware groups
+    Change: "AnyDesk code signing cert stolen and revoked; CVE-2024-1709 enables direct exploitation of 18,000+ exposed ScreenConnect instances by ransomware groups."
     DetectionImpact: Browser-download detection insufficient for direct server exploitation; must also monitor RMM server processes for unexpected outbound sessions and lateral movement
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2023"
     Event: RustDesk adoption as self-hosted alternative
-    Change: Open-source RMM with self-hosted C2; blocklisting known RMM domains no longer works; first documented in Akira ransomware operations (mid-2023) and Scattered Spider campaigns; broad adoption accelerated through 2024
+    Change: "Open-source self-hosted RMM adopted in Akira and Scattered Spider operations; domain-based blocking no longer effective."
     DetectionImpact: Domain/IP-based blocking bypassed; behavior detection essential
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2025-Q1"
     Event: SimpleHelp CVE exploitation as ransomware initial access
-    Change: Three critical SimpleHelp vulnerabilities (CVE-2024-57727/57726/57728) exploited by ransomware actors beginning January 2025; marks shift from exploiting client-delivered RMM to exploiting the RMM server infrastructure itself
+    Change: "Three critical SimpleHelp CVEs (CVE-2024-57727/57726/57728) exploited by ransomware actors beginning January 2025 as a server-side initial access vector."
     DetectionImpact: RMM server vulnerability exploitation requires monitoring of RMM server logs and network egress, not just endpoint process/file telemetry
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2024-H2"
     Event: RMM-to-RMM deployment pattern emerges
-    Change: First RMM is used to deploy a second RMM as a backup persistence mechanism; Hunters International documented using AnyDesk + ScreenConnect simultaneously (Q3 2024, UK manufacturer); Medusa used ScreenConnect then PDQ Deploy (Q4 2024, US construction)
+    Change: "First RMM used to deploy a second as backup persistence; Hunters International documented AnyDesk + ScreenConnect deployed simultaneously."
     DetectionImpact: Process creation chain detection required; single-RMM detection insufficient
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
 
 Detections:
   - Level: Research
@@ -372,23 +365,15 @@ OsintSources:
 
 KnownBypasses:
   - Bypass: Legitimate business use of the same RMM tool
-    Mitigation: Maintain allowlist of IT-approved RMM instances and source IPs
-    Detection: Focus on user-initiated browser downloads rather than all RMM process execution
+    Mitigation: Maintain an allowlist of IT-approved RMM instances and authorized source IPs.
   - Bypass: Self-hosted RMM infrastructure (RustDesk, MeshCentral)
-    Mitigation: Network-level egress filtering by traffic pattern
-    Detection: Detect by behavior (browser download + user execution) not by destination domain
+    Mitigation: Apply network-level egress filtering by traffic pattern rather than destination domain.
   - Bypass: Legitimate-looking file names matching IT asset naming conventions
-    Mitigation: User awareness training; verify download sources with IT
-    Detection: Combine with file metadata mismatch (OriginalFilename vs. actual name)
-  - Bypass: Delayed execution (user downloads, executes hours later)
-    Mitigation: N/A
-    Detection: Extend correlation time window; correlate on file path rather than time delta
+    Mitigation: Combine filename detection with PE metadata mismatch (OriginalFilename vs. actual name).
   - Bypass: CVE exploitation of internet-exposed RMM servers (no user interaction required)
-    Mitigation: Patch RMM platforms promptly; restrict RMM management interfaces from internet exposure; subscribe to vendor security bulletins
-    Detection: "All current detection logic assumes user-initiated browser download — server-side exploitation bypasses it entirely. Monitor RMM server process telemetry for unexpected child processes, lateral movement, and outbound connections to non-RMM destinations. Alert on RMM server processes (ScreenConnect, SimpleHelp) spawning cmd.exe, powershell.exe, or network scanners."
+    Mitigation: Patch RMM platforms promptly; restrict RMM management interfaces from internet exposure.
   - Bypass: Portable executable delivery (no installation required, bypasses software install controls)
-    Mitigation: Block unsigned or unapproved portable executables via application control; monitor Downloads/Temp for executable creation
-    Detection: "CISA AA23-025A specifically highlights that portable executables don't require admin privileges and bypass software installation audit controls. Detection must focus on process execution from user-writable paths rather than relying on install events."
+    Mitigation: Block unsigned or unapproved portable executables via application control and monitor Downloads/Temp for executable creation.
 
 
 RawLogs:

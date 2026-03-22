@@ -94,29 +94,24 @@ Chokepoints:
 EvolutionTimeline:
   - Date: "2021-Q2"
     Event: Database services added to kill lists
-    Change: SQL Server, MySQL, PostgreSQL services targeted to release file locks before encryption
+    Change: "SQL Server, MySQL, and PostgreSQL services added to kill lists to release file locks before encryption."
     DetectionImpact: Database service monitoring becomes a required detection component
-    TheConstant: "Admin privileges → service enumeration → service stop → service delete"
   - Date: "2022-Q3"
     Event: Multi-vendor EDR evasion; kill lists expand to 50+ security products
-    Change: From targeted evasion (specific vendor) to comprehensive kill lists covering all major AV/EDR
+    Change: "Kill lists expand to 50+ security products covering all major AV/EDR; threshold-based detection required."
     DetectionImpact: Cannot rely on specific product name matches; threshold-based detection required
-    TheConstant: "Admin privileges → service enumeration → service stop → service delete"
   - Date: "2023-Q4"
     Event: Backup services prioritized ahead of AV/EDR in kill sequence
-    Change: Operators target Veeam, Acronis, Windows Backup before other defenses
+    Change: "Veeam, Acronis, and Windows Backup targeted before AV/EDR; backup service monitoring becomes highest-priority signal."
     DetectionImpact: Backup service monitoring becomes highest priority signal
-    TheConstant: "Admin privileges → service enumeration → service stop → service delete"
   - Date: "2024-Q2"
     Event: ESXi hypervisor service targeting increases
-    Change: VM-based service disruption targeting vmware-hostd, vpxa, vsanmgmtd
+    Change: "VM-based service disruption targets vmware-hostd, vpxa, vsanmgmtd; ESXi-specific logging required."
     DetectionImpact: ESXi-specific logging (vSphere/vCenter) required; endpoint detection insufficient
-    TheConstant: "Admin privileges → service enumeration → service stop → service delete"
   - Date: "2024-Q3"
     Event: Purpose-built EDR killer tooling becomes standard
-    Change: Groups shift from opportunistic BYOVD to purpose-built, bundled EDR-kill tools — RansomHub ships EDRKillShifter; DeadLock embeds a weaponized Baidu driver; ~25% of 2024 ransomware attacks incorporated purpose-built EDR disablement
+    Change: "RansomHub ships EDRKillShifter; DeadLock embeds a weaponized Baidu driver; ~25% of 2024 ransomware attacks incorporated purpose-built EDR disablement."
     DetectionImpact: Cannot rely on known-bad driver hashes alone; monitor for driver load events (Sysmon EID 6) of unsigned or recently signed drivers immediately before service manipulation
-    TheConstant: "Admin privileges → service enumeration → service stop → service delete"
 
 Detections:
   - Level: Research

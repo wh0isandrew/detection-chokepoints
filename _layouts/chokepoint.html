@@ -561,20 +561,30 @@ layout: default
   <!-- ── Evolution Timeline ─────────────────────────────────────── -->
   {% if cp.EvolutionTimeline %}
   <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Evolution Timeline</h2>
-    <p class="section-intro mb-5">New tools appear; the chokepoint stays the same.</p>
-    <div class="timeline flex flex-col gap-4">
-      {% for event in cp.EvolutionTimeline reversed %}
-      <div class="timeline-item flex gap-4 items-start">
-        <div class="timeline-date font-mono text-sm min-w-[6rem] pt-0.5">{{ event.Date }}</div>
-        <div class="timeline-content">
-          <h4>{{ event.Event }}</h4>
-          <p><strong>Change:</strong> {{ event.Change }}</p>
-          <p><strong>Detection impact:</strong> {{ event.DetectionImpact }}</p>
-          <p class="constant-line"><strong>The constant:</strong> <em>{{ event.TheConstant }}</em></p>
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
+        aria-expanded="false"
+        aria-controls="timeline-body"
+        data-target="timeline-body">
+      <span class="collapsible-chevron">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+      Evolution Timeline
+      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.EvolutionTimeline.size }} event{% if cp.EvolutionTimeline.size != 1 %}s{% endif %} — click to expand)</span>
+    </h2>
+    <div class="collapsible-body collapsed mt-4" id="timeline-body">
+      <p class="section-intro mb-5">Techniques and tooling evolve; the underlying detection chokepoint does not.</p>
+      <div class="timeline flex flex-col gap-4">
+        {% for event in cp.EvolutionTimeline reversed %}
+        <div class="timeline-item flex gap-4 items-start">
+          <div class="timeline-date font-mono text-sm min-w-[6rem] pt-0.5">{{ event.Date }}</div>
+          <div class="timeline-content">
+            <h4>{% if event.IntelRef %}<a href="{{ event.IntelRef }}" target="_blank" rel="noopener">{{ event.Event }}</a>{% else %}{{ event.Event }}{% endif %}</h4>
+            <p><strong>Change:</strong> {{ event.Change }}</p>
+            <p><strong>Detection impact:</strong> {{ event.DetectionImpact }}</p>
+          </div>
         </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
   </section>
   {% endif %}
