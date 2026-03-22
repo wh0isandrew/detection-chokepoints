@@ -27,38 +27,47 @@ Variations:
   - Name: AnyDesk
     FirstSeen: "2020"
     Status: Declining
+    NotesShort: "Declining; February 2024 production breach revoked signing cert, driving actor migration"
     Notes: "Common masquerade names: invoice.exe, tax_form.exe, SSN_verification.exe; February 2024 production server breach resulted in source code and code signing certificate theft — certificate revoked, driving threat actor migration to other tools"
   - Name: TeamViewer
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Common masquerade names: update.exe, system_check.exe"
     Notes: "Common masquerade names: update.exe, system_check.exe"
   - Name: ScreenConnect (ConnectWise)
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Primary renamed-binary choice; CVE-2024-1709 also enables direct server exploitation"
     Notes: "Common masquerade names: support_tool.exe, IT_access.exe; now primary choice for renamed-binary delivery; February 2024 CVE-2024-1709 (auth bypass) + CVE-2024-1708 (path traversal) enabled direct server exploitation by LockBit, Black Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct server exploitation"
   - Name: UltraViewer
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Low name recognition makes it credible as a disguised security tool"
     Notes: "Common masquerade names: security_scan.exe, verify.exe"
   - Name: RustDesk
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Open-source; self-hosted infrastructure makes domain-based blocking ineffective"
     Notes: "Open-source; self-hosted infrastructure makes domain blocking ineffective; first documented in Akira ransomware and Scattered Spider operations mid-2023; broader adoption through 2024"
   - Name: SimpleHelp
     FirstSeen: "2025-Q1"
     Status: Active
+    NotesShort: "Three critical CVEs exploited as ransomware initial access since January 2025"
     Notes: "CVE-2024-57727 (path traversal), CVE-2024-57726 (privilege escalation), CVE-2024-57728 (arbitrary file upload) disclosed January 2025; exploited in the wild since January 22, 2025 as ransomware initial access vector; DragonForce deployed via it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025"
   - Name: NetSupport Manager
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Long-abused via ClickFix clipboard delivery; remains common in commodity phishing"
     Notes: "Long-abused RMM (the 'NetSupport RAT' name derives from this tool); TA571 and the ClearFake cluster began ClickFix clipboard delivery specifically in March 2024; remains one of the most common RMM payloads in commodity phishing operations through 2025"
   - Name: Atera
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Used by MuddyWater in nation-state campaigns since mid-2022"
     Notes: "Used by MuddyWater (Iran/TA450) in nation-state campaigns since mid-2022; intense campaign wave October 2023–April 2024 targeting Israeli manufacturing, tech, and infosec sectors; also deployed post-compromise as secondary RMM after ScreenConnect CVE-2024-1709 exploitation in European targets"
   - Name: RMM-to-RMM Deployment
     FirstSeen: "2024"
     Status: Active
+    NotesShort: "First RMM deploys a second for redundancy; removes single point of C2 failure"
     Notes: >
       One RMM (e.g., ScreenConnect) deploys a second RMM (e.g., AnyDesk) for
       redundancy — if one is removed, the other maintains access
@@ -186,47 +195,74 @@ MasqueradeThemes:
     Sources: ["Cloudflare Force One — SSA-themed ScreenConnect campaign", "Red Canary — fake update pages with security framing"]
 
 Prerequisites:
-  - Site to host payload (attacker-controlled or compromised legitimate site)
-  - Social engineering pretext (tax, invoice, SSN, IT support, e-invite)
-  - RMM tool binary (legitimately signed vendor software, just renamed)
-  - User must download and execute the binary via browser
+  - User account can execute binaries from browser download paths (Downloads, Temp, AppData)
+  - RMM binary carries a valid vendor code-signing certificate — hash-based detection does not fire
+
+Chokepoints:
+  - Stage: Payload Hosting
+    Invariant: Attacker-controlled or compromised site serves a legitimately-signed RMM binary to the victim's browser
+    WhyCantBypass: The file must be hosted and reachable before the browser can download it — delivery cannot be skipped in any variant including TOAD phone-assisted delivery
+    LogSources:
+      - "Web proxy / network traffic logs"
+      - "URLScan.io domain scan"
+    DetectionTier: Research
+    SigmaRef: ""
+  - Stage: Browser Download
+    Invariant: Browser process creates an executable in a user-writable path (Downloads, Temp, AppData) with a campaign-themed or generic filename masking RMM software
+    WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of a standalone RMM installer
+    LogSources:
+      - "Sysmon Event ID 11 (File Creation)"
+      - "Browser download telemetry"
+    DetectionTier: Hunt
+    SigmaRef: "sigma-rules/renamed-rmm/hunt.yml"
+  - Stage: User Execution
+    Invariant: User executes the downloaded binary, which is a legitimately-signed RMM tool regardless of its filename — PE metadata (OriginalFilename, Company) betrays the mismatch
+    WhyCantBypass: The binary must execute to establish C2 — no execution means no remote access regardless of delivery success
+    LogSources:
+      - "Sysmon Event ID 1 (Process Creation)"
+      - "Windows Security Event ID 4688 (Process Creation)"
+    DetectionTier: Analyst
+    SigmaRef: "sigma-rules/renamed-rmm/analyst.yml"
+    BypassNote: CVE exploitation of internet-exposed RMM servers (ScreenConnect CVE-2024-1709, SimpleHelp CVE-2024-57727) bypasses all user-execution detection — monitor RMM server process telemetry separately
+  - Stage: Outbound RMM Connection
+    Invariant: Executed binary establishes a persistent connection to RMM relay or attacker-controlled server on standard HTTPS ports
+    WhyCantBypass: The C2 channel must be established — the entire purpose of RMM tool deployment is persistent remote access
+    LogSources:
+      - "Sysmon Event ID 3 (Network Connection)"
+      - "Firewall / proxy egress logs"
+    DetectionTier: Analyst
+    SigmaRef: "sigma-rules/renamed-rmm/analyst.yml"
+    BypassNote: Self-hosted RMM infrastructure (RustDesk, MeshCentral) makes domain-based blocking ineffective — detect by behavior (browser download + execution + outbound), not by destination
 
 EvolutionTimeline:
   - Date: "2019"
     Event: TeamViewer and AnyDesk adoption in social engineering campaigns
-    Change: Legitimate RMM binaries adopted as an initial access alternative to malware
+    Change: "Legitimate RMM binaries adopted as initial access alternative to malware; signed binaries evade hash-based detection."
     DetectionImpact: New pattern — signed binaries evading hash-based detection
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2022-Q3"
     Event: ScreenConnect becomes primary campaign tool
-    Change: Shift to ConnectWise ScreenConnect for a more "professional" appearance; CISA AA23-025A documents first large-scale malicious ScreenConnect campaigns beginning mid-June 2022
+    Change: "Shift to ConnectWise ScreenConnect for professional appearance; CISA AA23-025A documents first large-scale malicious campaigns."
     DetectionImpact: No change to core detection pattern
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2023"
     Event: UltraViewer campaigns emerge
-    Change: Shift to less-known tools to evade AnyDesk-specific detections
+    Change: "Shift to less-known tools to evade AnyDesk-specific detections; tool-agnostic detection becomes critical."
     DetectionImpact: Tool-agnostic detection becomes critical; vendor name can no longer be relied on
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2024-Q1"
     Event: AnyDesk breach + ScreenConnect mass CVE exploitation
-    Change: AnyDesk production servers breached (code signing cert stolen and revoked); simultaneously CVE-2024-1709 auth bypass enables direct server exploitation of 18,000+ exposed ScreenConnect instances by ransomware groups
+    Change: "AnyDesk code signing cert stolen and revoked; CVE-2024-1709 enables direct exploitation of 18,000+ exposed ScreenConnect instances by ransomware groups."
     DetectionImpact: Browser-download detection insufficient for direct server exploitation; must also monitor RMM server processes for unexpected outbound sessions and lateral movement
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2023"
     Event: RustDesk adoption as self-hosted alternative
-    Change: Open-source RMM with self-hosted C2; blocklisting known RMM domains no longer works; first documented in Akira ransomware operations (mid-2023) and Scattered Spider campaigns; broad adoption accelerated through 2024
+    Change: "Open-source self-hosted RMM adopted in Akira and Scattered Spider operations; domain-based blocking no longer effective."
     DetectionImpact: Domain/IP-based blocking bypassed; behavior detection essential
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2025-Q1"
     Event: SimpleHelp CVE exploitation as ransomware initial access
-    Change: Three critical SimpleHelp vulnerabilities (CVE-2024-57727/57726/57728) exploited by ransomware actors beginning January 2025; marks shift from exploiting client-delivered RMM to exploiting the RMM server infrastructure itself
+    Change: "Three critical SimpleHelp CVEs (CVE-2024-57727/57726/57728) exploited by ransomware actors beginning January 2025 as a server-side initial access vector."
     DetectionImpact: RMM server vulnerability exploitation requires monitoring of RMM server logs and network egress, not just endpoint process/file telemetry
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
   - Date: "2024-H2"
     Event: RMM-to-RMM deployment pattern emerges
-    Change: First RMM is used to deploy a second RMM as a backup persistence mechanism; Hunters International documented using AnyDesk + ScreenConnect simultaneously (Q3 2024, UK manufacturer); Medusa used ScreenConnect then PDQ Deploy (Q4 2024, US construction)
+    Change: "First RMM used to deploy a second as backup persistence; Hunters International documented AnyDesk + ScreenConnect deployed simultaneously."
     DetectionImpact: Process creation chain detection required; single-RMM detection insufficient
-    TheConstant: "Browser download → renamed binary → user execution → outbound RMM connection"
 
 Detections:
   - Level: Research
@@ -281,24 +317,35 @@ Detections:
 
 Intel:
   - Name: CISA AA23-025A — Protecting Against Malicious Use of RMM Software
+    Tier: primary
     URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
     Description: Foundational joint advisory from CISA, NSA, and MS-ISAC documenting malicious RMM use; specifically covers portable executable delivery bypassing software installation controls, AnyDesk and ScreenConnect campaign mechanics
   - Name: CISA AA25-163A — Ransomware Actors Exploit SimpleHelp RMM
+    Tier: primary
     URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-163a
     Description: June 2025 advisory covering CVE-2024-57727 exploitation by ransomware actors as initial access vector since January 2025; includes IOCs and detection guidance
+    LinkedFrom: ["SimpleHelp"]
   - Name: Unit 42 — ConnectWise ScreenConnect CVE-2024-1709 Threat Brief
+    Tier: primary
     URL: https://unit42.paloaltonetworks.com/connectwise-threat-brief-cve-2024-1708-cve-2024-1709/
     Description: Technical analysis of CVE-2024-1709 auth bypass and CVE-2024-1708 exploitation; documents ransomware group adoption and scale of exposed instances
+    LinkedFrom: ["ScreenConnect (ConnectWise)"]
   - Name: Huntress — A Series of Unfortunate (RMM) Events
+    Tier: primary
     URL: https://www.huntress.com/blog/series-of-unfortunate-rmm-events
     Description: Covers RMM-to-RMM chaining, detection evasion patterns, and the broader RMM abuse landscape from an MSP incident response perspective
+    LinkedFrom: ["RMM-to-RMM Deployment"]
   - Name: "Microsoft — Keys to the kingdom: RMM exploits enabling human-operated intrusions in 2024–25"
+    Tier: primary
     URL: https://techcommunity.microsoft.com/blog/microsoftsecurityexperts/keys-to-the-kingdom-rmm-exploits-enabling-human-operated-intrusions-in-2024%E2%80%9325/4410903
     Description: Microsoft Security Experts analysis of RMM exploitation patterns across incident response engagements; covers both social engineering delivery and direct CVE exploitation vectors
   - Name: BleepingComputer — AnyDesk Production Servers Breached
+    Tier: supporting
     URL: https://www.bleepingcomputer.com/news/security/anydesk-says-hackers-breached-its-production-servers-reset-passwords/
     Description: Documents the February 2024 AnyDesk breach, certificate revocation, and downstream impact on threat actor tooling choices
+    LinkedFrom: ["AnyDesk"]
   - Name: MITRE ATT&CK — T1219.002 Remote Desktop Software
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1219/002/
     Description: Technique definition, procedure examples including RMM tool abuse, and detection guidance for remote desktop software used as C2
 
@@ -310,42 +357,34 @@ OsintSources:
   - Platform: URLScan
     Query: "filename:tax*.exe OR filename:invoice*.exe OR filename:ssn*.exe OR filename:support*.exe OR filename:verify*.exe"
     URL: "https://urlscan.io/search/#filename%3Atax*.exe%20OR%20filename%3Ainvoice*.exe%20OR%20filename%3Assn*.exe"
-    Notes: "Finds download pages serving tax/invoice/support-themed executables — the most common RMM masquerade pretexts. Extend with seasonal pretexts (W2, refund, enrollment) during relevant periods."
+    Notes: "Finds download pages serving tax/invoice/support-themed executables; extend with seasonal pretexts during relevant periods."
   - Platform: Shodan
     Query: 'product:"ScreenConnect"'
     URL: "https://www.shodan.io/search?query=product%3A%22ScreenConnect%22"
-    Notes: "Find internet-exposed ScreenConnect instances; cross-reference against known legitimate MSP infrastructure to identify attacker-controlled instances. Also run product:\"SimpleHelp\" to cover the actively exploited CVE-2024-57727 vector (CISA AA25-163A)."
+    Notes: "Find internet-exposed ScreenConnect instances; cross-reference against known legitimate MSP infrastructure to identify attacker-controlled deployments."
   - Platform: Censys
     Query: 'services.tls.certificate.parsed.subject.common_name: "SimpleHelp"'
     URL: "https://search.censys.io/search?resource=hosts&q=services.tls.certificate.parsed.subject.common_name%3A+%22SimpleHelp%22"
-    Notes: "Finds infrastructure presenting SimpleHelp TLS certificates — currently the most actively exploited RMM platform per CISA AA25-163A (June 2025). For AnyDesk: its certificates were revoked following the February 2024 production server breach, making cert-based hunting less reliable — pivot to the VT PE metadata query below for AnyDesk binary identification instead."
+    Notes: "Finds infrastructure presenting SimpleHelp TLS certificates — currently the most actively exploited RMM platform per CISA AA25-163A."
   - Platform: VirusTotal Intelligence
     Query: 'have:itw tag:peexe (metadata:"AnyDesk" OR metadata:"ScreenConnect" OR metadata:"SimpleHelp" OR metadata:"NetSupport")'
     URL: "https://www.virustotal.com/gui/search/have%3Aitw%20tag%3Apeexe%20metadata%3A%22AnyDesk%22"
-    Notes: "Requires VT Intelligence subscription. Finds PE executables observed in the wild whose internal metadata (OriginalFilename, Company, Product fields) references known RMM vendors. These are renamed or repackaged RMM binaries — the core delivery mechanism. Pivot to Details > PE Info to confirm metadata mismatch between submitted filename and OriginalFilename."
+    Notes: "Requires VT Intelligence subscription; finds PE executables in the wild whose internal metadata references known RMM vendors — the core renamed-binary delivery mechanism."
   - Platform: LOLRMM
     URL: "https://lolrmm.io"
-    Notes: "Community-maintained catalog of every known RMM tool with file metadata, network indicators, and detection heuristics. Use to extract OriginalFilename values and network destinations for any RMM tool to feed into VT metadata searches and network-based detection rules. Essential reference for keeping the renamed-binary analyst rule current as new tools emerge."
+    Notes: "Community-maintained catalog of every known RMM tool with file metadata, network indicators, and detection heuristics for building renamed-binary analyst rules."
 
 KnownBypasses:
   - Bypass: Legitimate business use of the same RMM tool
-    Mitigation: Maintain allowlist of IT-approved RMM instances and source IPs
-    Detection: Focus on user-initiated browser downloads rather than all RMM process execution
+    Mitigation: Maintain an allowlist of IT-approved RMM instances and authorized source IPs.
   - Bypass: Self-hosted RMM infrastructure (RustDesk, MeshCentral)
-    Mitigation: Network-level egress filtering by traffic pattern
-    Detection: Detect by behavior (browser download + user execution) not by destination domain
+    Mitigation: Apply network-level egress filtering by traffic pattern rather than destination domain.
   - Bypass: Legitimate-looking file names matching IT asset naming conventions
-    Mitigation: User awareness training; verify download sources with IT
-    Detection: Combine with file metadata mismatch (OriginalFilename vs. actual name)
-  - Bypass: Delayed execution (user downloads, executes hours later)
-    Mitigation: N/A
-    Detection: Extend correlation time window; correlate on file path rather than time delta
+    Mitigation: Combine filename detection with PE metadata mismatch (OriginalFilename vs. actual name).
   - Bypass: CVE exploitation of internet-exposed RMM servers (no user interaction required)
-    Mitigation: Patch RMM platforms promptly; restrict RMM management interfaces from internet exposure; subscribe to vendor security bulletins
-    Detection: "All current detection logic assumes user-initiated browser download — server-side exploitation bypasses it entirely. Monitor RMM server process telemetry for unexpected child processes, lateral movement, and outbound connections to non-RMM destinations. Alert on RMM server processes (ScreenConnect, SimpleHelp) spawning cmd.exe, powershell.exe, or network scanners."
+    Mitigation: Patch RMM platforms promptly; restrict RMM management interfaces from internet exposure.
   - Bypass: Portable executable delivery (no installation required, bypasses software install controls)
-    Mitigation: Block unsigned or unapproved portable executables via application control; monitor Downloads/Temp for executable creation
-    Detection: "CISA AA23-025A specifically highlights that portable executables don't require admin privileges and bypass software installation audit controls. Detection must focus on process execution from user-writable paths rather than relying on install events."
+    Mitigation: Block unsigned or unapproved portable executables via application control and monitor Downloads/Temp for executable creation.
 
 
 RawLogs:

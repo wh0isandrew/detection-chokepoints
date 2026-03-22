@@ -2,6 +2,297 @@
 layout: default
 ---
 
+<style>
+/* ── Detection Chain ────────────────────────────────────────────── */
+.chain-stages { position: relative; display: flex; flex-direction: column; gap: 0; }
+
+.chain-stage { position: relative; display: flex; flex-direction: column; gap: 0; }
+
+.chain-connector {
+  width: 2px;
+  height: 1.5rem;
+  background: var(--border);
+  margin-left: calc(1.25rem - 1px);
+  flex-shrink: 0;
+}
+
+.chain-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.chain-num {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.chain-body {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0;
+}
+
+.chain-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: .5rem;
+}
+
+.chain-stage-name {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.chain-tier-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: .25rem .55rem .2rem;
+  border-radius: 5px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.chain-tier-badge.tier-research  { background: rgba(88,166,255,.12); color: #58a6ff; border: 1px solid rgba(88,166,255,.3); }
+.chain-tier-badge.tier-hunt      { background: rgba(240,136,62,.12); color: #f0883e; border: 1px solid rgba(240,136,62,.3); }
+.chain-tier-badge.tier-analyst   { background: rgba(63,185,80,.12);  color: #3fb950; border: 1px solid rgba(63,185,80,.3); }
+
+.chain-tier-sub {
+  font-size: .55rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  opacity: .8;
+  text-transform: uppercase;
+}
+
+.chain-invariant {
+  font-size: .875rem;
+  color: var(--text);
+  margin-bottom: .35rem;
+}
+
+.chain-why {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-bottom: .6rem;
+}
+
+.chain-logs {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 .6rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.chain-logs li {
+  font-size: .75rem;
+  color: var(--text-muted);
+  padding-left: 1rem;
+  position: relative;
+}
+
+.chain-logs li::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.chain-sigma-link {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  margin-top: .1rem;
+}
+.chain-sigma-link:hover { text-decoration: underline; }
+
+.chain-bypass-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  background: rgba(220, 38, 38, .08);
+  border: 1px solid rgba(220, 38, 38, .25);
+  border-radius: 7px;
+  padding: .6rem .9rem;
+  margin: .5rem 0 0 3.5rem;
+  font-size: .78rem;
+  color: #f87171;
+  line-height: 1.5;
+}
+
+.chain-bypass-note-icon {
+  flex-shrink: 0;
+  font-size: .85rem;
+  margin-top: .05rem;
+}
+
+/* ── Variation cards ────────────────────────────────────────────── */
+.var-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: .75rem;
+}
+
+.var-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+}
+
+.var-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+
+.var-card-name {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.var-card-meta {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: .5rem;
+  flex-wrap: wrap;
+}
+
+.var-first-seen {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+}
+
+.var-notes-short {
+  font-size: .82rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: .35rem;
+}
+
+.var-expand-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: .72rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.var-notes-full {
+  font-size: .8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-top: .4rem;
+  border-top: 1px solid var(--border);
+  padding-top: .4rem;
+}
+
+.var-notes-full.hidden { display: none; }
+
+/* ── Intel cards ────────────────────────────────────────────────── */
+.intel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: .75rem;
+}
+
+.intel-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .9rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s;
+}
+.intel-card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+.intel-card-name {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: .35rem;
+  line-height: 1.4;
+}
+
+.intel-card-desc {
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  flex: 1;
+  margin-bottom: .4rem;
+}
+
+.intel-linked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  margin-top: auto;
+}
+
+.intel-link-tag {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-sidebar, rgba(255,255,255,.04));
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: .1rem .4rem;
+}
+
+.intel-supporting-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.intel-supporting-toggle:hover { color: var(--text); }
+</style>
+
 {% assign cp = site.data.chokepoints | where: "_slug", page.slug | first %}
 
 {% if cp == nil %}
@@ -46,12 +337,11 @@ layout: default
   </header>
 
   <!-- ── Prerequisites ─────────────────────────────────────────── -->
-  <section class="mb-10">
+  {% if cp.Prerequisites %}
+  <section class="mb-6">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
-      Prerequisites <span class="section-sub">(The Chokepoint)</span>
+      Prerequisites <span class="section-sub">(Environmental)</span>
     </h2>
-    <p class="section-intro mb-4">What <strong>must</strong> be true for this technique to succeed,
-       regardless of which tool is used:</p>
     <ul class="prereq-list flex flex-col gap-2">
       {% for prereq in cp.Prerequisites %}
         <li class="flex items-start gap-2 text-[.9375rem]">
@@ -61,8 +351,74 @@ layout: default
       {% endfor %}
     </ul>
   </section>
+  {% endif %}
 
-  <!-- ── The Constant ───────────────────────────────────────────── -->
+  <!-- ── Detection Chain ────────────────────────────────────────── -->
+  {% if cp.Chokepoints %}
+  <section class="mb-10">
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
+        aria-expanded="false"
+        aria-controls="chain-body"
+        data-target="chain-body">
+      <span class="collapsible-chevron">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+      Detection Chain
+      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.Chokepoints.size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %} — click to expand)</span>
+    </h2>
+    <div class="collapsible-body collapsed mt-5" id="chain-body">
+      <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+      <div class="chain-stages">
+        {% for stage in cp.Chokepoints %}
+        <div class="chain-stage">
+          {% unless forloop.first %}
+          <div class="chain-connector"></div>
+          {% endunless %}
+          <div class="chain-card">
+            <div class="chain-num">{{ forloop.index }}</div>
+            <div class="chain-body">
+              <div class="chain-header">
+                <h4 class="chain-stage-name">{{ stage.Stage }}</h4>
+                <span class="chain-tier-badge tier-{{ stage.DetectionTier | downcase }}">
+                  {{ stage.DetectionTier }}
+                  <span class="chain-tier-sub">
+                    {%- if stage.DetectionTier == "Research" -%}Baseline
+                    {%- elsif stage.DetectionTier == "Hunt" -%}Active Hunt
+                    {%- else -%}SOC Alert
+                    {%- endif -%}
+                  </span>
+                </span>
+              </div>
+              <p class="chain-invariant">{{ stage.Invariant }}</p>
+              <p class="chain-why">{{ stage.WhyCantBypass }}</p>
+              {% if stage.LogSources %}
+              <ul class="chain-logs">
+                {% for src in stage.LogSources %}
+                <li>{{ src }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if stage.SigmaRef and stage.SigmaRef != "" %}
+              <a class="chain-sigma-link"
+                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ stage.SigmaRef }}"
+                 target="_blank" rel="noopener">View rule &rarr;</a>
+              {% endif %}
+            </div>
+          </div>
+          {% if stage.BypassNote %}
+          <div class="chain-bypass-note">
+            <span class="chain-bypass-note-icon" aria-hidden="true">&#9888;</span>
+            <span><strong>Bypass risk:</strong> {{ stage.BypassNote }}</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── The Constant (legacy) ──────────────────────────────────── -->
   {% if cp.TheConstant %}
   <div class="constant-box rounded-xl px-6 py-5 mb-10">
     <p class="constant-box-label">The Constant</p>
@@ -74,28 +430,26 @@ layout: default
   {% if cp.Variations %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Variations</h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint (the list grows; the chokepoint doesn't change):</p>
-    <div class="table-wrapper rounded-lg overflow-hidden">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Tool / Method</th>
-            <th>First Seen</th>
-            <th>Status</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for v in cp.Variations %}
-          <tr>
-            <td><strong>{{ v.Name }}</strong></td>
-            <td>{{ v.FirstSeen }}</td>
-            <td><span class="status-badge status-{{ v.Status | downcase }}">{{ v.Status }}</span></td>
-            <td>{{ v.Notes }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change:</p>
+    <div class="var-grid">
+      {% for v in cp.Variations %}
+      <div class="var-card">
+        <div class="var-card-header">
+          <span class="var-card-name">{{ v.Name }}</span>
+          <span class="status-badge status-{{ v.Status | downcase }}">{{ v.Status }}</span>
+        </div>
+        <div class="var-card-meta">
+          <span class="var-first-seen">{{ v.FirstSeen }}</span>
+        </div>
+        {% if v.NotesShort %}
+        <p class="var-notes-short">{{ v.NotesShort }}</p>
+        {% endif %}
+        {% if v.Notes and v.Notes != v.NotesShort %}
+        <button class="var-expand-btn" data-expanded="false">More ▾</button>
+        <div class="var-notes-full hidden">{{ v.Notes }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
   </section>
   {% endif %}
@@ -275,20 +629,30 @@ layout: default
   <!-- ── Evolution Timeline ─────────────────────────────────────── -->
   {% if cp.EvolutionTimeline %}
   <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Evolution Timeline</h2>
-    <p class="section-intro mb-5">New tools appear; the chokepoint stays the same.</p>
-    <div class="timeline flex flex-col gap-4">
-      {% for event in cp.EvolutionTimeline reversed %}
-      <div class="timeline-item flex gap-4 items-start">
-        <div class="timeline-date font-mono text-sm min-w-[6rem] pt-0.5">{{ event.Date }}</div>
-        <div class="timeline-content">
-          <h4>{{ event.Event }}</h4>
-          <p><strong>Change:</strong> {{ event.Change }}</p>
-          <p><strong>Detection impact:</strong> {{ event.DetectionImpact }}</p>
-          <p class="constant-line"><strong>The constant:</strong> <em>{{ event.TheConstant }}</em></p>
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
+        aria-expanded="false"
+        aria-controls="timeline-body"
+        data-target="timeline-body">
+      <span class="collapsible-chevron">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+      Evolution Timeline
+      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.EvolutionTimeline.size }} event{% if cp.EvolutionTimeline.size != 1 %}s{% endif %} — click to expand)</span>
+    </h2>
+    <div class="collapsible-body collapsed mt-4" id="timeline-body">
+      <p class="section-intro mb-5">Techniques and tooling evolve; the underlying detection chokepoint does not.</p>
+      <div class="timeline flex flex-col gap-4">
+        {% for event in cp.EvolutionTimeline reversed %}
+        <div class="timeline-item flex gap-4 items-start">
+          <div class="timeline-date font-mono text-sm min-w-[6rem] pt-0.5">{{ event.Date }}</div>
+          <div class="timeline-content">
+            <h4>{% if event.IntelRef %}<a href="{{ event.IntelRef }}" target="_blank" rel="noopener">{{ event.Event }}</a>{% else %}{{ event.Event }}{% endif %}</h4>
+            <p><strong>Change:</strong> {{ event.Change }}</p>
+            <p><strong>Detection impact:</strong> {{ event.DetectionImpact }}</p>
+          </div>
         </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
   </section>
   {% endif %}
@@ -300,14 +664,13 @@ layout: default
     <div class="table-wrapper rounded-lg overflow-hidden">
       <table class="data-table">
         <thead>
-          <tr><th>Bypass Method</th><th>Mitigation</th><th>Detection</th></tr>
+          <tr><th>Bypass Method</th><th>Mitigation</th></tr>
         </thead>
         <tbody>
           {% for b in cp.KnownBypasses %}
           <tr>
             <td>{{ b.Bypass }}</td>
             <td>{{ b.Mitigation }}</td>
-            <td>{{ b.Detection }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -434,14 +797,44 @@ layout: default
   {% if cp.Intel %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Intel Resources</h2>
-    <ul class="intel-list flex flex-col gap-2">
-      {% for intel in cp.Intel %}
-      <li class="flex items-start gap-2">
-        <a href="{{ intel.URL }}" target="_blank" rel="noopener">{{ intel.Name }}</a>
-        {% if intel.Description %}&mdash; <span style="color:var(--text-dim);font-size:.9rem">{{ intel.Description | truncate: 120 }}</span>{% endif %}
-      </li>
+
+    {% assign primary_intel = cp.Intel | where: "Tier", "primary" %}
+    {% assign supporting_intel = cp.Intel | where: "Tier", "supporting" %}
+
+    {% if primary_intel.size > 0 %}
+    <div class="intel-grid mb-4">
+      {% for intel in primary_intel %}
+      <a class="intel-card rounded-lg p-4" href="{{ intel.URL }}" target="_blank" rel="noopener">
+        <span class="intel-card-name">{{ intel.Name }}</span>
+        {% if intel.Description %}<p class="intel-card-desc">{{ intel.Description | truncate: 100 }}</p>{% endif %}
+        {% if intel.LinkedFrom %}
+        <div class="intel-linked">
+          {% for link in intel.LinkedFrom %}
+          <span class="intel-link-tag">{{ link }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </a>
       {% endfor %}
-    </ul>
+    </div>
+    {% endif %}
+
+    {% if supporting_intel.size > 0 %}
+    <div>
+      <button class="intel-supporting-toggle" data-expanded="false" aria-expanded="false">
+        Supporting Resources ({{ supporting_intel.size }}) ▾
+      </button>
+      <ul class="intel-supporting-list intel-list flex flex-col gap-2 mt-2" style="display:none">
+        {% for intel in supporting_intel %}
+        <li class="flex items-start gap-2">
+          <a href="{{ intel.URL }}" target="_blank" rel="noopener">{{ intel.Name }}</a>
+          {% if intel.Description %}&mdash; <span style="color:var(--text-dim);font-size:.9rem">{{ intel.Description | truncate: 120 }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
   </section>
   {% endif %}
 
@@ -526,6 +919,30 @@ document.querySelectorAll('.collapsible-header').forEach(header => {
     header.setAttribute('aria-expanded', String(!expanded));
     const body = document.getElementById(header.dataset.target);
     if (body) body.classList.toggle('collapsed', expanded);
+  });
+});
+
+/* Variation card expand/collapse */
+document.querySelectorAll('.var-expand-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const expanded = btn.dataset.expanded === 'true';
+    const full = btn.nextElementSibling;
+    btn.dataset.expanded = String(!expanded);
+    btn.textContent = expanded ? 'More ▾' : 'Less ▴';
+    full.classList.toggle('hidden', expanded);
+  });
+});
+
+/* Intel supporting resources toggle */
+document.querySelectorAll('.intel-supporting-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const expanded = btn.dataset.expanded === 'true';
+    const list = btn.nextElementSibling;
+    btn.dataset.expanded = String(!expanded);
+    btn.setAttribute('aria-expanded', String(!expanded));
+    const name = btn.textContent.replace(/[▾▴]/, '').trim();
+    btn.textContent = (expanded ? name + ' ▾' : name.replace('▾','').trim() + ' ▴');
+    list.style.display = expanded ? 'none' : 'flex';
   });
 });
 </script>

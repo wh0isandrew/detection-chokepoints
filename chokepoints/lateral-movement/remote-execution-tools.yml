@@ -35,6 +35,7 @@ Variations:
   - Name: Impacket
     FirstSeen: "2015"
     Status: Active
+    NotesShort: "Python suite with psexec/wmiexec/atexec/dcomexec modules; rdp_shadow added January 2025"
     Notes: >
       Python suite with multiple execution modules:
       psexec.py (SMB service creation), smbexec.py (SMB + scheduled tasks),
@@ -43,60 +44,96 @@ Variations:
   - Name: CrackMapExec
     FirstSeen: "2016"
     Status: Archived
+    NotesShort: "Archived December 2023; superseded by NetExec — CME-specific signatures now stale"
     Notes: "Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December 6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community updates"
   - Name: NetExec
     FirstSeen: "2023"
     Status: Active
+    NotesShort: "Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features"
     Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
   - Name: Evil-WinRM
     FirstSeen: "2019"
     Status: Active
+    NotesShort: "Dedicated WinRM exploitation tool targeting port 5985/5986"
     Notes: Dedicated WinRM exploitation tool; targets port 5985/5986
   - Name: Metasploit psexec
     FirstSeen: "2007"
     Status: Active
+    NotesShort: "Original PsExec-style SMB execution via Metasploit framework"
     Notes: Original PsExec-style SMB execution via Metasploit framework
   - Name: Sliver
     FirstSeen: "2020"
     Status: Active
+    NotesShort: "Open-source C2 widely adopted by nation-state and ransomware actors as Cobalt Strike alternative"
     Notes: "Open-source C2 framework widely adopted by nation-state and ransomware actors as a Cobalt Strike alternative; built-in lateral movement over SMB/WMI using the same execution primitives this chokepoint detects; used by threat actors following Fortra's crackdown on pirated Cobalt Strike licenses"
   - Name: Havoc
     FirstSeen: "2022"
     Status: Active
+    NotesShort: "Modern C2 with strong EDR bypass features; uses same underlying Windows execution primitives"
     Notes: "Modern open-source C2 framework with strong EDR bypass features and lateral movement capabilities; described as 'entry-level C2 for serious criminals'; increasingly observed in intrusions alongside or replacing Impacket; uses the same underlying Windows execution primitives (service creation, WMI, WinRM)"
 
 Prerequisites:
-  - Valid admin credentials for target system (local or domain)
-  - Network access to target on required protocol ports (SMB 445, WMI 135, WinRM 5985/5986, RPC 135/139)
-  - Remote execution capability on target (service creation, WMI, scheduled task, WinRM endpoint enabled)
-  - Target services must be running (Server service for SMB, WinRM service, etc.)
+  - Network access to target on at least one required protocol port (SMB 445, WMI/RPC 135, WinRM 5985/5986)
+  - Remote execution surface enabled on target (Server service for SMB, WinRM service, WMI, or Task Scheduler)
+
+Chokepoints:
+  - Stage: Credential Acquisition
+    Invariant: Valid admin credentials (local or domain) must be obtained before any remote execution attempt
+    WhyCantBypass: All remote execution tools require authenticated access — no valid credentials means authentication failure at every attempted protocol regardless of which tool is used
+    LogSources:
+      - "Windows Security Event ID 4648 (Logon with Explicit Credentials)"
+      - "Windows Security Event ID 4769 (Kerberos Service Ticket Request)"
+    DetectionTier: Research
+    SigmaRef: ""
+  - Stage: Network Access
+    Invariant: Tool establishes a network session to the target host on at least one required protocol port
+    WhyCantBypass: Tools must establish an authenticated session over a protocol port — no reachable port means no remote execution regardless of credential validity
+    LogSources:
+      - "Firewall connection logs"
+      - "Sysmon Event ID 3 (Network Connection)"
+      - "Windows Security Event ID 4624 (Logon Type 3 — Network)"
+    DetectionTier: Research
+    SigmaRef: "sigma-rules/remote-execution/research.yml"
+  - Stage: Remote Execution Primitive
+    Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled task creation, or WinRM command
+    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols
+    LogSources:
+      - "Windows Security Event ID 4697 / System 7045 (Service Installed)"
+      - "Windows Security Event ID 5145 (IPC$/svcctl share access)"
+      - "Sysmon Event ID 1 (wmiprvse.exe or services.exe spawning cmd.exe/powershell.exe)"
+    DetectionTier: Analyst
+    SigmaRef: "sigma-rules/remote-execution/analyst.yml"
+    BypassNote: LOTL tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command) produce identical telemetry to Impacket but with signed Microsoft binaries — detection must be purely behavioral with no reliance on tool signatures
+  - Stage: Lateral Spread
+    Invariant: The same credential and execution primitive sequence repeats across multiple hosts in a short window or follows a deliberate pivot path
+    WhyCantBypass: Lateral movement by definition requires replication of the credential-plus-primitive pattern on each subsequent host — the telemetry is identical on every hop
+    LogSources:
+      - "Windows Security Event ID 4624 (multiple target hosts, short window)"
+      - "Sysmon Event ID 3 (same source IP, multiple RFC1918 destinations)"
+    DetectionTier: Hunt
+    SigmaRef: "sigma-rules/remote-execution/hunt.yml"
 
 EvolutionTimeline:
   - Date: "2016-Q1"
     Event: CrackMapExec released as multi-protocol framework
-    Change: Combined reconnaissance and lateral movement in one tool; SMB, WMI, WinRM in single interface
+    Change: "Multi-protocol framework combining SMB, WMI, and WinRM in one tool; detection must cover all protocols."
     DetectionImpact: Detection must cover multiple protocols, not just SMB
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2019-Q2"
     Event: Evil-WinRM released as dedicated WinRM exploitation tool
-    Change: Simplified WinRM-specific lateral movement; requires WinRM enabled on target
+    Change: "Dedicated WinRM exploitation tool released; WinRM authentication spike detection becomes important."
     DetectionImpact: WinRM authentication spike detection becomes important
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2023-Q3"
     Event: NetExec forked from CrackMapExec
-    Change: Active development, LDAP/SSH support, improved operational security features
+    Change: "Active CrackMapExec fork adds LDAP and SSH support; no fundamental change to underlying Windows API behavior."
     DetectionImpact: No fundamental change to underlying Windows API behaviors
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2023-Q4"
     Event: CrackMapExec officially archived
-    Change: Original CME repository archived December 6, 2023; NetExec becomes the de facto community standard; CME-specific binary signatures and detection rules stop receiving community updates
+    Change: "CME archived December 6, 2023; behavioral detection remains valid but CME-specific hash/signature rules stop receiving updates."
     DetectionImpact: Behavioral detection remains valid; tool-specific hash/signature-based detection for CME becomes stale
-    TheConstant: "Admin creds + network access + remote execution primitive"
   - Date: "2025-01"
     Event: Impacket adds rdp_shadow.py (PR#2064)
-    Change: Native RDP session hijacking capability added to Impacket suite
+    Change: "Native RDP session hijacking (rdp_shadow.py) added to Impacket suite via PR#2064."
     DetectionImpact: Existing RDP session manipulation detection (Event ID 4624 LogonType 10) applies
-    TheConstant: "Admin creds + network access + remote execution primitive"
 
 Detections:
   - Level: Research
@@ -157,29 +194,43 @@ Detections:
 
 Intel:
   - Name: MITRE ATT&CK — Impacket Software S0357
+    Tier: primary
     URL: https://attack.mitre.org/software/S0357/
     Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful to a defender than the raw GitHub repo for understanding real-world prevalence
   - Name: MITRE ATT&CK — T1021.003 DCOM
+    Tier: supporting
     URL: https://attack.mitre.org/techniques/T1021/003/
     Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
   - Name: MITRE ATT&CK — T1569.002 Service Execution
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1569/002/
     Description: Technique definition for service-based remote execution (psexec/smbexec pattern); the primary detection signal in this chokepoint's hunt and analyst rules
   - Name: Microsoft — Storm-0501 Ransomware Hybrid Cloud Attacks
+    Tier: primary
     URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
     Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete example of Impacket use in a 2024 ransomware campaign
+    LinkedFrom: ["Impacket"]
   - Name: ThreatLocker — Top 10 Post-Exploitation Tools Threat Actors Use
+    Tier: primary
     URL: https://www.threatlocker.com/blog/top-post-exploitation-tools-threat-actors-use
     Description: Real-world prevalence data for post-exploitation tooling including Impacket, NetExec, and C2 frameworks observed across actual intrusions
   - Name: Impacket GitHub
+    Tier: supporting
     URL: https://github.com/fortra/impacket
     Description: Monitor releases and PRs for new execution modules; source of truth for what capabilities the suite currently covers
   - Name: NetExec GitHub
+    Tier: supporting
     URL: https://github.com/Pennyw0rth/NetExec
     Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
   - Name: SOC Investigation — Event ID 5145 Threat Hunting
+    Tier: supporting
     URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
     Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$ access correlation
+    LinkedFrom: ["Remote Execution Primitive"]
+  - Name: "hunt.io — C2 Infrastructure Tracking"
+    Tier: supporting
+    URL: "https://hunt.io"
+    Description: "Real-time C2 infrastructure map; AttackCapture feed tags Cobalt Strike, Sliver, Havoc, and Metasploit servers by banner and certificate fingerprint."
 
 RelatedChokepoints:
   - ransomware-service-manipulation
@@ -188,38 +239,26 @@ OsintSources:
   - Platform: Shodan
     Query: 'port:5985 product:"Microsoft HTTPAPI"'
     URL: "https://www.shodan.io/search?query=port%3A5985+product%3A%22Microsoft+HTTPAPI%22"
-    Notes: "Finds internet-exposed WinRM endpoints (Evil-WinRM targets). Use as an exposure audit to identify unintentionally exposed WinRM in your own IP ranges (narrow with 'org:' or 'net:' filters). Port 5986 is the HTTPS variant — run a second query substituting 5986. Note: searching for exposed ports finds your attack surface, not attacker infrastructure — for hunting attacker C2, use the JARM query below."
+    Notes: "Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface — run a second query on port 5986 for the HTTPS variant."
   - Platform: Shodan
     Query: 'ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5 port:443'
     URL: "https://www.shodan.io/search?query=ssl.jarm%3A07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5"
-    Notes: "Default Cobalt Strike JARM fingerprint. Clusters of hosts sharing this fingerprint are likely Cobalt Strike team servers — the most common C2 framework used alongside Impacket/NetExec in lateral movement chains. JARM fingerprints are more resilient to infrastructure rotation than IP/domain blocklists. Also search for Sliver C2 (ssl.jarm:29d29d00029d29d00042d41d00041d2aa5ce6a70de7ba95aef77a77b00a0af) and check hunt.io for current Havoc signatures."
+    Notes: "Clusters of hosts sharing this default Cobalt Strike JARM fingerprint are likely team servers; more resilient to infrastructure rotation than IP/domain blocklists."
   - Platform: GitHub Code Search
     Query: '"wmiexec" OR "smbexec" OR "atexec" path:*.py'
     URL: "https://github.com/search?q=%22wmiexec%22+OR+%22smbexec%22+OR+%22atexec%22+path%3A*.py&type=code"
-    Notes: "Finds community tools and forks built on Impacket execution primitives. Monitor for new modules that extend the execution surface beyond the known chokepoint. This is a tool-tracking query (defender awareness), not infrastructure hunting — results are researcher repos, not attacker infrastructure."
-  - Platform: hunt.io
-    URL: "https://hunt.io"
-    Notes: "Specialized threat hunting platform that maps active C2 infrastructure in real time. Use to search for Cobalt Strike, Sliver, Havoc, and Metasploit infrastructure — the C2 frameworks most commonly paired with Impacket/NetExec lateral movement. The AttackCapture feed tags servers by framework based on banner, certificate, and behavioral fingerprints."
-
+    Notes: "Finds community tools built on Impacket execution primitives; use for defender awareness of new modules extending the execution surface."
 KnownBypasses:
   - Bypass: Using legitimate service names that blend in with existing services
-    Mitigation: Maintain baseline of approved services; alert on new service creation
-    Detection: Correlate service creation with the binary path and network logon context
-  - Bypass: Delayed execution after service creation
-    Mitigation: N/A
-    Detection: Extend correlation window; focus on IPC$ + service creation regardless of timing
+    Mitigation: Maintain a baseline of approved services; alert on any new service creation.
   - Bypass: NTLM relay attacks instead of direct credential use
-    Mitigation: Enable SMB signing and LDAP signing; disable NTLM where possible
-    Detection: Detect relay patterns (source relays to destination within seconds of receiving auth)
+    Mitigation: Enable SMB signing and LDAP signing; disable NTLM where operationally feasible.
   - Bypass: Using legitimate admin tools (psexec.exe from Sysinternals)
-    Mitigation: Software allowlisting; monitor hash for known-good vs. impersonated versions
-    Detection: Same IPC$ + service creation pattern applies; tool-agnostic detection covers this
-  - Bypass: Living Off the Land (LOTL) — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command)
-    Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW (Privileged Access Workstation) for remote admin; log and alert on PowerShell remoting to non-standard targets
-    Detection: "These tools produce identical event telemetry to Impacket/NetExec (4624 LogonType 3, 4688 wmiprvse.exe child, 7045 service install) but with signed Microsoft binaries — no tool signature to match. Detection must be purely behavioral: network logon + protocol + execution primitive, regardless of which binary produced it. A 2024 analysis found 84% of high-severity attacks now use LOTL techniques."
+    Mitigation: Enforce software allowlisting and monitor hash for known-good vs. impersonated versions.
+  - Bypass: Living Off the Land — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
+    Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW for remote administration.
   - Bypass: Kerberos-based lateral movement (Overpass-the-Hash, Pass-the-Ticket, Silver/Golden Tickets)
-    Mitigation: Enable AES encryption for Kerberos; protect krbtgt account; monitor for anomalous TGS requests
-    Detection: "Bypasses NTLM-relay mitigations and NTLM-focused detection entirely. Detect via Kerberos anomalies: Event ID 4769 (TGS request) with RC4 encryption when AES is expected; Event ID 4768 (TGT request) from non-DC hosts; unusual ticket lifetime or service name patterns. Impacket's getST.py and Rubeus are common tools for ticket forging."
+    Mitigation: Enable AES encryption for Kerberos; protect the krbtgt account; monitor for anomalous TGS requests.
 
 YaraRules:
   - yara-rules/impacket-indicators.yar

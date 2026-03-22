@@ -50,6 +50,18 @@ Author: string  # Example: "@iimp0ster"
 
 # ─── RECOMMENDED FIELDS ─────────────────────────────────────────────────────────
 
+# Per-stage detection chain — the invariant sequence the attacker must traverse
+# Renders as a collapsible numbered card chain in the chokepoint detail page
+Chokepoints:
+  - Stage: string           # Short stage label: "Clipboard Seeding" / "User Execution" etc.
+    Invariant: string       # One sentence — what MUST happen at this stage, regardless of variant
+    WhyCantBypass: string   # One sentence — why the attacker cannot skip or substitute this stage
+    LogSources:
+      - string              # Log source that covers this stage: "Sysmon EID 1 (Process Creation)"
+    DetectionTier: string   # Research | Hunt | Analyst (best achievable tier for this stage)
+    SigmaRef: string        # Relative path to the Sigma/IOK rule covering this stage (or "" if none)
+    BypassNote: string      # (optional) One sentence — known bypass risk surfaced as red callout
+
 # Tool/method variations that exploit this chokepoint
 Variations:
   - Name: string            # Tool or method name
@@ -85,8 +97,11 @@ Detections:
 # Free intel resources tied to this chokepoint
 Intel:
   - Name: string
+    Tier: string          # primary | supporting — primary renders as card, supporting as link list
     URL: string
     Description: string
+    LinkedFrom:           # (optional) names of variations/stages that reference this resource
+      - string
 
 # Cross-references to other chokepoints in this repo
 # Use the filename stem (no path, no extension)
@@ -107,9 +122,8 @@ OsintSources:
 
 # Known bypass methods and corresponding mitigations/detections
 KnownBypasses:
-  - Bypass: string          # How attackers evade detection
-    Mitigation: string      # How to prevent or harden
-    Detection: string       # How to detect the bypass anyway
+  - Bypass: string          # How attackers evade detection or harden against mitigation
+    Mitigation: string      # One sentence — how to prevent or harden against this bypass
 
 # YARA rules for memory/file-based detection (in addition to Sigma)
 YaraRules:
@@ -134,6 +148,11 @@ YaraRules:
 #   LOW    — Clear telemetry, low FP rate at Analyst level
 #   MEDIUM — Requires correlation across multiple sources
 #   HIGH   — Significant tuning needed; high initial FP rate
+
+# DetectionTier values for Chokepoints entries:
+#   Research — Broad baseline; high FP rate; useful for understanding scope
+#   Hunt     — Filtered, context-aware; medium FP; active hunting use case
+#   Analyst  — High-fidelity correlated; low FP; SOC alerting trigger
 
 # Status values for Variations:
 #   Active    — Actively observed in current campaigns
