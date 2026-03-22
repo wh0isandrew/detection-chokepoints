@@ -251,33 +251,23 @@ Detections:
 
 Intel:
   - Name: "ShellForge — Adversarial Co-Evolution of Webshell Generation and Detection"
+    Tier: primary
     URL: https://arxiv.org/abs/2601.22182
     Description: January 2026 paper demonstrating adversarially generated webshells achieve 93.9% evasion rate against VirusTotal commercial engines; validates behavioral (process-creation) detection over file-content scanning; documents invariant functional requirements that survive all obfuscation
   - Name: "NSA/ASD — Detect and Prevent Web Shell Malware"
+    Tier: primary
     URL: https://media.defense.gov/2020/Jun/09/2002313081/-1/-1/0/CSI-DETECT-AND-PREVENT-WEB-SHELL-MALWARE-20200422.PDF
     Description: Foundational April 2020 joint advisory with detection guidance, Splunk queries, Snort rules, and file integrity monitoring recommendations; establishes process parent-child monitoring as the primary behavioral detection approach
   - Name: "Microsoft — IIS Modules: The Evolution of Web Shells and How to Detect Them"
+    Tier: primary
     URL: https://www.microsoft.com/en-us/security/blog/2022/12/12/iis-modules-the-evolution-of-web-shells-and-how-to-detect-them/
     Description: Documents the 2022 shift to fileless IIS native module webshells that bypass file-based detection; explains why w3wp.exe process behavior monitoring remains effective even against DLL-based shells
-  - Name: "CISA — CL0P Ransomware MOVEit Advisory (AA23-158A)"
-    URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a
-    Description: Documents LEMURLOOT webshell deployment via MOVEit CVE-2023-34362; includes IOCs, detection guidance, and timeline of CL0P exploitation across approximately 130 organizations
-  - Name: "CISA — Ivanti Connect Secure Advisory (AA24-060B)"
-    URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-060b
-    Description: Documents GLASSTOKEN, BUSHWALK, LIGHTWIRE, and CHAINLINE webshell families deployed against 1,700+ Ivanti appliances; includes integrity-check bypass techniques and detection guidance
-  - Name: "Google Cloud — Barracuda ESG Zero-Day Exploitation by UNC4841"
-    URL: https://cloud.google.com/blog/topics/threat-intelligence/barracuda-esg-exploited-globally/
-    Description: Documents SALTWATER, SEASPY, and SEASIDE webshell-style implants deployed by China-nexus UNC4841 against Barracuda ESG; CISA mandated full appliance replacement over patching — webshells persisted through firmware
-  - Name: "Cisco Talos — IR Trends Q4 2024"
-    URL: https://blog.talosintelligence.com/talos-ir-trends-q4-2024/
-    Description: "Source for the statistic that web shells were present in 35% of all Q4 2024 IR incidents; documents the shift toward exploitation of vulnerable public-facing applications as primary initial access"
-  - Name: "Google Cloud — ProxyShell Exploiting Microsoft Exchange Servers"
-    URL: https://cloud.google.com/blog/topics/threat-intelligence/pst-want-shell-proxyshell-exploiting-microsoft-exchange-servers
-    Description: Technical analysis of CVE-2021-34473 ProxyShell exploitation; explains how attackers used the PST export mechanism to write ASPX webshells to Exchange OWA directories — creative abuse of legitimate server functionality
   - Name: "MITRE ATT&CK — T1505.003 Server Software Component: Web Shell"
+    Tier: primary
     URL: https://attack.mitre.org/techniques/T1505/003/
     Description: Primary technique definition with procedure examples linking to documented threat actor usage; extensive list of APT groups and ransomware operators observed deploying web shells as persistence mechanism
   - Name: "Microsoft — Web Shell Attacks Continue to Rise"
+    Tier: primary
     URL: https://www.microsoft.com/en-us/security/blog/2021/02/11/web-shell-attacks-continue-to-rise/
     Description: Documents the doubling of web shell detections in 2020-2021; includes monthly detection data and attack vector analysis; establishes process creation monitoring as the most reliable detection approach
 

@@ -314,16 +314,6 @@ Intel:
     Tier: primary
     URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
     Description: Foundational joint advisory from CISA, NSA, and MS-ISAC documenting malicious RMM use; specifically covers portable executable delivery bypassing software installation controls, AnyDesk and ScreenConnect campaign mechanics
-  - Name: CISA AA25-163A — Ransomware Actors Exploit SimpleHelp RMM
-    Tier: primary
-    URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-163a
-    Description: June 2025 advisory covering CVE-2024-57727 exploitation by ransomware actors as initial access vector since January 2025; includes IOCs and detection guidance
-    LinkedFrom: ["SimpleHelp"]
-  - Name: Unit 42 — ConnectWise ScreenConnect CVE-2024-1709 Threat Brief
-    Tier: primary
-    URL: https://unit42.paloaltonetworks.com/connectwise-threat-brief-cve-2024-1708-cve-2024-1709/
-    Description: Technical analysis of CVE-2024-1709 auth bypass and CVE-2024-1708 exploitation; documents ransomware group adoption and scale of exposed instances
-    LinkedFrom: ["ScreenConnect (ConnectWise)"]
   - Name: Huntress — A Series of Unfortunate (RMM) Events
     Tier: primary
     URL: https://www.huntress.com/blog/series-of-unfortunate-rmm-events
@@ -333,11 +323,6 @@ Intel:
     Tier: primary
     URL: https://techcommunity.microsoft.com/blog/microsoftsecurityexperts/keys-to-the-kingdom-rmm-exploits-enabling-human-operated-intrusions-in-2024%E2%80%9325/4410903
     Description: Microsoft Security Experts analysis of RMM exploitation patterns across incident response engagements; covers both social engineering delivery and direct CVE exploitation vectors
-  - Name: BleepingComputer — AnyDesk Production Servers Breached
-    Tier: supporting
-    URL: https://www.bleepingcomputer.com/news/security/anydesk-says-hackers-breached-its-production-servers-reset-passwords/
-    Description: Documents the February 2024 AnyDesk breach, certificate revocation, and downstream impact on threat actor tooling choices
-    LinkedFrom: ["AnyDesk"]
   - Name: MITRE ATT&CK — T1219.002 Remote Desktop Software
     Tier: primary
     URL: https://attack.mitre.org/techniques/T1219/002/

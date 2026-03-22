@@ -257,11 +257,6 @@ Intel:
     URL: https://huntress.com/blog/dont-sweat-clickfix-techniques
     Description: Primary reference for the ClickFix variant taxonomy (FileFix, TerminalFix, DownloadFix); explains why the chokepoint is stable across all variants
     LinkedFrom: ["FileFix", "TerminalFix", "DownloadFix"]
-  - Name: "mr.d0x — FileFix: A ClickFix Alternative"
-    Tier: primary
-    URL: https://mrd0x.com/filefix-clickfix-alternative/
-    Description: Original research introducing FileFix (June 2025); details the File Explorer address bar attack surface and why it bypasses Run-dialog detection heuristics
-    LinkedFrom: ["FileFix"]
   - Name: "MITRE ATT&CK — T1204.004 User Execution: Malicious Copy and Paste"
     Tier: primary
     URL: https://attack.mitre.org/techniques/T1204/004/
@@ -273,58 +268,21 @@ Intel:
       Community-sourced payload collection from active ClickFix infrastructure.
       Plug payloads directly into threat hunting queries to identify indicators
       in your environment. See intel/clickgrab.md for usage guidance.
-  - Name: AITMFEED ClickFix Infrastructure Tracking
-    Tier: supporting
-    URL: https://www.aitmfeed.com/blog/blog-1/tracking-clickfix-infrastructure-4
-    Description: Tracking and analysis of ClickFix hosting infrastructure over time
-  - Name: "Security Boulevard — Abusing Windows File Explorer and WebDAV for Malware Delivery"
-    Tier: primary
-    URL: https://securityboulevard.com/2026/02/abusing-windows-file-explorer-and-webdav-for-malware-delivery/
-    Description: Detailed analysis of the WebDAV ClickFix variant; covers the mshta.exe → fileless .NET assembly → shellcode injection chain, steganography in PNG images, and payload taxonomy (LummaStealer, Xworm, AsyncRAT, r77 rootkit)
-    LinkedFrom: ["WebDAV ClickFix"]
-  - Name: "BleepingComputer — New ClickFix attack abuses nslookup to retrieve PowerShell payload via DNS"
-    Tier: primary
-    URL: https://www.bleepingcomputer.com/news/security/new-clickfix-attack-abuses-nslookup-to-retrieve-powershell-payload-via-dns/
-    Description: Technical breakdown of the KongTuke DNS-staging variant; explains how PowerShell payload is embedded in the DNS Name field response and how nslookup output is piped to cmd.exe for execution
-    LinkedFrom: ["DNS-based ClickFix"]
-  - Name: "The Hacker News — Microsoft Reveals ClickFix Campaign Using Windows Terminal to Deploy Lumma Stealer"
-    Tier: primary
-    URL: https://thehackernews.com/2026/03/microsoft-reveals-clickfix-campaign.html
-    Description: Coverage of the Microsoft Defender Experts disclosure (March 6, 2026); covers Win+X→I terminal lure, hex/XOR-encoded payload, MSBuild.exe LOLBin abuse, and QueueUserAPC injection into browser processes
-    LinkedFrom: ["Windows Terminal ClickFix"]
-  - Name: "The Register — Microsoft spots ClickFix scam spreading Lumma infostealer"
-    Tier: supporting
-    URL: https://www.theregister.com/2026/03/06/microsoft_spots_clickfix_campaign_abusing/
-    Description: Concise summary of the Windows Terminal ClickFix variant; notes the Run-dialog detection bypass as the primary motivation for the technique evolution
-    LinkedFrom: ["Windows Terminal ClickFix"]
-  - Name: "BleepingComputer — InstallFix: Fake Claude Code install page delivers Amatera infostealer"
-    Tier: primary
-    URL: https://www.bleepingcomputer.com/news/security/installfix-fake-claude-code-install-page-delivers-amatera-infostealer/
-    Description: InstallFix campaign targeting developers via Google Ads malvertising; cloned Claude Code CLI install page; mshta.exe → conhost.exe → Amatera infostealer chain; documented February–March 2026
-    LinkedFrom: ["InstallFix"]
   - Name: "Matt Graeber — Microsoft.Windows.OLE.Clipboard ETW Provider"
     Tier: primary
     URL: https://gist.github.com/mattifestation/04e8299d8bc97ef825affe733310f7bd
     Description: "Discovery and documentation of the OLE Clipboard ETW provider (GUID: 3e0e3a92-b00b-4456-9dee-f40aba77f00e); foundational reference for clipboard write ETW monitoring and ClickFix pre-execution detection"
     LinkedFrom: ["Clipboard Seeding"]
   - Name: "Mandiant — SilkETW"
-    Tier: supporting
+    Tier: primary
     URL: https://github.com/mandiant/SilkETW
     Description: "C# ETW wrapper for security telemetry; enables Microsoft-Windows-Win32k and OLE Clipboard provider monitoring with JSON output and Windows Event Log forwarding; required infrastructure for the ETW clipboard detection layer"
     LinkedFrom: ["Clipboard Seeding"]
-  - Name: "hunt.io — ClickFix Pages: Proactive Threat Hunting"
-    Tier: supporting
-    URL: "https://hunt.io/blog/clickfix-pages-proactive-threat-hunting"
-    Description: "Proactive ClickFix infrastructure fingerprinting; complement to URLScan for discovering active lure page hosting."
   - Name: "phish.report — IOK Rule Reference"
     Tier: primary
     URL: https://phish.report/docs/iok-rule-reference
     Description: "IOK (Indicator of Kit) rule format documentation; Sigma-based syntax for detecting phishing and lure page infrastructure; community rule feed at phish.report/IOK; supports html, js, dom, requests, and headers matchers"
     LinkedFrom: ["Lure Page Delivery"]
-  - Name: "phish.report — IOK GitHub Repository"
-    Tier: supporting
-    URL: https://github.com/phish-report/IOK
-    Description: "Community IOK rule repository (215+ rules); ClickFix lure rule (iok-rules/clickfix/clickfix-lure.yml) should be contributed here for scanning against phishing submissions and URLScan data"
 
 RelatedChokepoints:
   - renamed-rmm-tools
