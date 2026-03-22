@@ -124,7 +124,16 @@ def _extract_domains(enriched_records):
             continue
 
         asn          = enr.get("asn") or None
-        creation_date = enr.get("vt_creation_date")
+        # Three-level fallback for registration date:
+        #   1. vt_creation_date — WHOIS date from VirusTotal (most accurate)
+        #   2. record["date"]   — URLScan scan date; used when WHOIS is absent
+        #                         (privacy-protected registrars, ~40% of domains)
+        #   3. record["first_seen"] — alternative field name in some pipeline records
+        creation_date = (
+            enr.get("vt_creation_date")
+            or record.get("date")
+            or record.get("first_seen", "")
+        )
         week         = _iso_week(creation_date)
         record_date  = record.get("date", "")
 

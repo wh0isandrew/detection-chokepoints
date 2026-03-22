@@ -162,7 +162,19 @@ def build_domain_age_histogram(enriched_records):
             continue
         seen_hosts.add(host)
 
-        bucket = _domain_age_bucket(enr.get("vt_creation_date"))
+        # Three-level fallback for registration date (best-effort approximation):
+        #   1. vt_creation_date — WHOIS date from VirusTotal (most accurate)
+        #   2. record["date"]   — URLScan scan date; proxy when WHOIS is absent
+        #                         (privacy-protected registrars, ~40% of domains)
+        #   3. record["first_seen"] — alternative field name in some pipeline records
+        # Note: WHOIS data is absent for ~40% of privacy-protected registrar domains;
+        # the resulting age histogram is a best-effort approximation.
+        creation_date = (
+            enr.get("vt_creation_date")
+            or record.get("date")
+            or record.get("first_seen", "")
+        )
+        bucket = _domain_age_bucket(creation_date)
         if bucket:
             bucket_counts[bucket] += 1
 
