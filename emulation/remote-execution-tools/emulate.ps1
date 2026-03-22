@@ -1,37 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates lateral movement via remote execution tools (PsExec/Impacket patterns) for detection validation.
-    Validates Sigma rules: Research (WEL 4624+7045), Hunt (random service name+suspicious path), Analyst (IPC$+service+spray).
-
-.DESCRIPTION
-    Attackers use PsExec, Impacket, CrackMapExec, and similar tools to execute commands on
-    remote hosts using admin credentials. The invariant:
-    Admin creds + network access → IPC$ connection → service/WMI execution
-
-    This script simulates the observable behaviors on LOCALHOST (no real lateral movement):
-      1. Network logon type 3 to 127.0.0.1 via net use IPC$ — generates WEL 4624 + 5145
-      2. Service creation with random name from temp path — generates WEL 7045 + Sysmon EID 1
-      3. Spawns cmd.exe from services.exe context (simulates service execution) — Sysmon EID 1
-      4. Optionally simulates multi-host spray pattern with repeated connections
-
-    Does NOT require remote hosts. All activity targets localhost.
-
-.NOTES
-    MITRE ATT&CK: T1021.002 (SMB/Windows Admin Shares), T1569.002 (Service Execution)
-    Requires: Administrator privileges, net use / sc.exe available
-    LAB ENVIRONMENT ONLY — generates authentication and service events.
-
-    For multi-host Analyst spray pattern: run from multiple hosts or loop with -SprayCount.
-    Real PsExec replay: use Invoke-AtomicTest T1021.002 with attack data from
-    https://github.com/splunk/attack_data for highest fidelity.
-
-.EXAMPLE
-    .\emulate.ps1
-    .\emulate.ps1 -SprayCount 3    # Simulate 3-host spray pattern (Analyst threshold)
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -CleanupOnly
-#>
+# MITRE ATT&CK: T1021.002 / T1569.002 — SMB Admin Shares / Service Execution
+# Simulates PsExec/Impacket-style lateral movement via SMB service installation.
 
 [CmdletBinding()]
 param(
@@ -42,7 +11,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Msg) { Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok   ([string]$Msg) { Write-Host "[+] $Msg" -ForegroundColor Green }
 function Write-Warn ([string]$Msg) { Write-Host "[!] $Msg" -ForegroundColor Yellow }
@@ -90,8 +58,6 @@ for ($spray = 1; $spray -le $SprayCount; $spray++) {
 
     # ── Step 1: IPC$ network logon — Research rule trigger (WEL 4624+5145) ────
     Write-Step "Step 1/3 — Network logon (Type 3) + IPC$ access"
-    Write-Verbose "  Signal: WEL 4624 (LogonType=3, Network), WEL 5145 (IPC$ share access)"
-    Write-Verbose "  Matched rules: Research, Analyst"
 
     $netResult = net use \\127.0.0.1\IPC$ /user:$env:USERNAME '' 2>&1
     if ($LASTEXITCODE -eq 0) {
@@ -111,8 +77,6 @@ for ($spray = 1; $spray -le $SprayCount; $spray++) {
     Write-Step "Step 2/3 — Service creation with random name from TEMP path"
     Write-Verbose "  Service name: $svcName (8-char alphanumeric — PsExec/Impacket pattern)"
     Write-Verbose "  Binary path: C:\Windows\Temp\$svcName.exe (TEMP path — Hunt signal)"
-    Write-Verbose "  Signal: WEL 7045 (Service Installed), Sysmon EID 1 (sc.exe create)"
-    Write-Verbose "  Matched rules: Hunt, Analyst"
 
     $createResult = sc.exe create $svcName `
         binPath= "C:\Windows\Temp\$svcName.exe" `
@@ -128,9 +92,7 @@ for ($spray = 1; $spray -le $SprayCount; $spray++) {
     # We simulate this by running cmd /c whoami (generates Sysmon EID 1 from current context)
     Write-Step "Step 3/3 — Simulating service-spawned command execution"
     Write-Verbose "  Real pattern: services.exe → <random_svc>.exe → cmd.exe → payload"
-    Write-Verbose "  Signal: Sysmon EID 1 — parent=powershell.exe, image=cmd.exe with recon commands"
     Write-Verbose "  Note: Real PsExec parent would be services.exe — manual replay has higher fidelity"
-    Write-Verbose "  Matched rules: Hunt (WMI parent), Analyst (service binary path)"
 
     $cmdResult = cmd.exe /c "whoami && hostname && net user" 2>&1
     Write-Ok "cmd.exe executed recon commands (EID 1 generated):"
@@ -139,12 +101,10 @@ for ($spray = 1; $spray -le $SprayCount; $spray++) {
     Start-Sleep -Milliseconds 300
 }
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Step "Cleaning up artefacts"
 Remove-Artefacts
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""

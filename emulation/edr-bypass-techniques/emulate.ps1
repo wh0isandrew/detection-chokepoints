@@ -1,40 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates EDR bypass behaviors for detection validation.
-    Validates Sigma rules: Research (Sysmon EID 6 driver loads), Hunt (driver load + security process handle), Analyst (driver + service stop).
-
-.DESCRIPTION
-    EDR bypass techniques require admin/SYSTEM privileges and follow the invariant:
-    Admin/SYSTEM privileges → bypass mechanism → security telemetry impaired
-
-    This script simulates observable behaviors WITHOUT loading vulnerable kernel drivers:
-      1. Opens a process handle to a security process (MsMpEng.exe) — triggers Sysmon EID 10
-         (process access with high-privilege access rights — the Hunt rule signal)
-      2. Attempts to stop/disable Windows Defender via sc.exe — triggers WEL 7036/7040
-         (service state change — the Analyst rule signal)
-      3. Creates and loads a signed test driver stub via SCM — triggers Sysmon EID 6
-         (driver load event — the Research rule signal; clean/safe driver, no exploit)
-
-    Does NOT load vulnerable or malicious drivers. Does NOT disable real EDR telemetry.
-
-.NOTES
-    MITRE ATT&CK: T1562.001 (Impair Defenses - Disable or Modify Tools)
-    Requires: Administrator privileges (most telemetry requires admin context)
-    LAB ENVIRONMENT ONLY — may temporarily affect Defender state.
-
-    Safe operation notes:
-    - Process handle open to MsMpEng generates EID 10 even if access is DENIED
-    - Driver step uses a test service (no actual kernel code executed if using stub)
-    - sc stop WinDefend will be attempted; re-enable with: sc start WinDefend
-    - Run -SkipServiceStop to skip Defender manipulation entirely
-
-.EXAMPLE
-    .\emulate.ps1                     # Full emulation (requires admin)
-    .\emulate.ps1 -SkipServiceStop    # Skip sc stop WinDefend
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -CleanupOnly
-#>
+# MITRE ATT&CK: T1562.001 — Impair Defenses: Disable or Modify Tools
+# Simulates service-stop and filter-driver disable commands targeting security software.
 
 [CmdletBinding()]
 param(
@@ -45,7 +11,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'   # Don't stop on access-denied errors
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Msg) { Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok   ([string]$Msg) { Write-Host "[+] $Msg" -ForegroundColor Green }
 function Write-Warn ([string]$Msg) { Write-Host "[!] $Msg" -ForegroundColor Yellow }
@@ -75,12 +40,9 @@ Write-Host "=== EDR Bypass Emulation ===" -ForegroundColor Magenta
 Write-Host "    T1562.001 | Detection Chokepoints Project" -ForegroundColor DarkGray
 Write-Host ""
 
-# ── Step 1: Open handle to security process — Hunt rule trigger (EID 10) ──────
 Write-Step "Step 1/3 — Opening process handle to MsMpEng.exe (Sysmon EID 10)"
-Write-Verbose "  Signal: Sysmon EID 10 — SourceImage=emulate.ps1 context → TargetImage=MsMpEng.exe"
 Write-Verbose "  Access rights: PROCESS_ALL_ACCESS (0x1FFFFF) — same as BYOVD tool pre-kill"
 Write-Verbose "  Note: EID 10 fires even if OpenProcess returns ACCESS_DENIED"
-Write-Verbose "  Matched rules: Hunt"
 
 Add-Type -TypeDefinition @'
 using System;
@@ -125,12 +87,9 @@ if (-not $found) {
 
 Start-Sleep -Milliseconds 500
 
-# ── Step 2: Service stop/disable — Analyst rule trigger (WEL 7036/7040) ──────
 if (-not $SkipServiceStop) {
     Write-Step "Step 2/3 — Stopping and disabling WinDefend service (sc.exe)"
-    Write-Verbose "  Signal: WEL EID 7036 (service stopped), EID 7040 (start type changed)"
     Write-Verbose "  Process: sc.exe — same tool used by all major ransomware operators"
-    Write-Verbose "  Matched rules: Hunt, Analyst"
     Write-Warn "Attempting to stop WinDefend. Use -SkipServiceStop to skip."
     Write-Warn "Re-enable after testing: sc start WinDefend"
 
@@ -157,12 +116,9 @@ if (-not $SkipServiceStop) {
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 3: Driver service install — Research rule trigger (EID 6 context) ────
 Write-Step "Step 3/3 — Installing test service to simulate driver load telemetry"
-Write-Verbose "  Signal: WEL 7045 (service installed) — simulates the service used to load BYOVD"
 Write-Verbose "  Note: EID 6 requires an actual kernel driver (.sys) with NtLoadDriver"
 Write-Verbose "  This step generates the SCM service install event without loading kernel code"
-Write-Verbose "  Matched rules: Research (EID 6), Hunt/Analyst via service context"
 Write-Warn "For EID 6 (actual driver load), use a signed test driver in an isolated VM."
 Write-Warn "See: https://github.com/fengjixuchui/TestKrnlDrv for safe test drivers"
 
@@ -182,7 +138,6 @@ if ($isAdmin) {
     Write-Warn "Step 3 skipped — Administrator required for service creation"
 }
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""

@@ -1,36 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates ClickFix social engineering technique for detection validation.
-    Validates Sigma rules: Research (EID 4688/Sysmon 1+3), Hunt (EID 1+3, browser parent), Analyst (EID 1+3+22, encoded cmd).
-
-.DESCRIPTION
-    ClickFix lures victims into pasting malicious commands copied from a fake browser dialog into
-    Run/PowerShell. The invariant: user clipboard → scripting interpreter → outbound network connection.
-
-    This script simulates the three observable behaviors:
-      1. Scripting interpreter execution with encoded command (triggers Research/Analyst rules)
-      2. DNS resolution + outbound HTTP connection from the interpreter (triggers all tiers)
-      3. Optionally simulates the browser-spawn parent chain via VBScript shim
-
-    Does NOT download or execute real payloads.
-
-.NOTES
-    MITRE ATT&CK: T1204.004 (Malicious Copy-Paste)
-    Safe to run: all commands are benign, no persistence, no real C2.
-    LAB ENVIRONMENT ONLY.
-
-    For Hunt/Analyst rule validation, the PARENT PROCESS matters:
-      - Analyst rule fires when powershell.exe parent is chrome.exe/msedge.exe/explorer.exe
-      - Step 3 (-UseVbsShim) spawns PowerShell via VBScript to simulate this parent chain
-      - Without -UseVbsShim, only Research rule fires (no browser parent)
-
-.EXAMPLE
-    .\emulate.ps1                    # Research + Analyst network signal
-    .\emulate.ps1 -UseVbsShim        # Full chain: VBScript → PowerShell (Hunt + Analyst)
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -CleanupOnly
-#>
+# MITRE ATT&CK: T1204.004 — Malicious Copy-Paste
+# Simulates ClickFix UI deception chain that spawns a script interpreter to execute a payload.
 
 [CmdletBinding()]
 param(
@@ -41,11 +11,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Configuration ─────────────────────────────────────────────────────────────
 $VbsShimPath  = Join-Path $env:TEMP "cf_shim_$(Get-Random).vbs"
 $C2Endpoint   = 'https://example.com'
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Msg) { Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok   ([string]$Msg) { Write-Host "[+] $Msg" -ForegroundColor Green }
 function Write-Warn ([string]$Msg) { Write-Host "[!] $Msg" -ForegroundColor Yellow }
@@ -64,10 +32,7 @@ Write-Host "=== ClickFix Technique Emulation ===" -ForegroundColor Magenta
 Write-Host "    T1204.004 | Detection Chokepoints Project" -ForegroundColor DarkGray
 Write-Host ""
 
-# ── Step 1: Encoded command execution — Research + Analyst rule trigger ────────
 Write-Step "Step 1/3 — Executing PowerShell with -EncodedCommand flag"
-Write-Verbose "  Signal: Sysmon EID 1 — CommandLine contains -enc/-EncodedCommand pattern"
-Write-Verbose "  Matched rules: Research, Analyst"
 
 # Benign payload: Get-Date | Out-String (base64 encoded)
 $BenignCmd   = 'Get-Date | Out-String'
@@ -79,10 +44,7 @@ Write-Ok "Encoded command executed. Output: $($result.Trim())"
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 2: DNS + outbound connection — all tiers trigger ─────────────────────
 Write-Step "Step 2/3 — DNS resolution + outbound HTTP connection from interpreter"
-Write-Verbose "  Signal: Sysmon EID 22 (DNS query), Sysmon EID 3 (NetworkConnect)"
-Write-Verbose "  Matched rules: Research, Hunt, Analyst"
 
 try {
     $null = [System.Net.Dns]::GetHostAddresses('example.com')
@@ -101,15 +63,12 @@ try {
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 3 (optional): VBScript shim → PowerShell parent chain simulation ────
 # This is what makes Hunt/Analyst rules fire — browser/scripting parent spawning PowerShell
 if ($UseVbsShim) {
     Write-Step "Step 3/3 — Spawning PowerShell via VBScript shim (browser parent simulation)"
-    Write-Verbose "  Signal: Sysmon EID 1 — ParentImage=wscript.exe → Image=powershell.exe"
     Write-Verbose "  Note: For full browser parent (chrome.exe → powershell.exe), manually:"
     Write-Verbose "        1. Open Chrome, press F12 → Console"
     Write-Verbose "        2. This script cannot automate that chain safely"
-    Write-Verbose "  Matched rules: Hunt, Analyst"
 
     # VBScript spawns PowerShell with encoded command — simulates wscript.exe parent chain
     $InnerEncoded = [Convert]::ToBase64String(
@@ -141,12 +100,10 @@ oShell.Run "powershell.exe -NonInteractive -NoProfile -EncodedCommand $InnerEnco
     Write-Host "    3. Check Sysmon EID 1 for ParentImage=chrome.exe" -ForegroundColor DarkGray
 }
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Step "Cleaning up artefacts"
 Remove-Artefacts
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""

@@ -1,39 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates ransomware pre-encryption service manipulation for detection validation.
-    Validates Sigma rules: Research (WEL 7036), Hunt (7036+7040+sc.exe pattern), Analyst (network logon+bulk stops).
-
-.DESCRIPTION
-    Before encrypting, ransomware operators stop security, backup, and database services to remove
-    protections and release file locks. The invariant:
-    Admin privileges → service enumeration → service stop → service delete/disable
-
-    This script simulates:
-      1. Rapid bulk service stop+disable pattern — triggers Research + Hunt rules
-         (WEL 7036 service stopped, 7040 start type changed, Sysmon EID 1 sc.exe)
-      2. Service delete attempts — escalates Hunt to Analyst threshold
-      3. Simulates the network logon context used by Analyst rule (loopback logon)
-
-    Uses ONLY a safe dummy service created by the script (no actual security services harmed).
-    Optionally targets VSS/wbengine (safe, recoverable, common ransomware target).
-
-.NOTES
-    MITRE ATT&CK: T1562.001 (Impair Defenses), T1489 (Service Stop)
-    Requires: Administrator privileges
-    LAB ENVIRONMENT ONLY.
-
-    Default mode: creates a dummy "RansomTestSvc" service and manipulates it safely.
-    -TargetVss: also stops VSS (Volume Shadow Service) — safe to stop, re-enables automatically.
-    -TargetCount N: creates N dummy services to simulate bulk-stop pattern (Analyst threshold: 5+).
-
-.EXAMPLE
-    .\emulate.ps1                      # Safe dummy service only
-    .\emulate.ps1 -TargetCount 6       # 6 dummy services (exceeds Analyst threshold of 5)
-    .\emulate.ps1 -TargetVss           # Also target VSS (common ransomware target)
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -CleanupOnly
-#>
+# MITRE ATT&CK: T1562.001 / T1489 — Impair Defenses / Service Stop
+# Simulates ransomware pre-encryption steps: VSS deletion and backup service termination.
 
 [CmdletBinding()]
 param(
@@ -45,7 +12,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Msg) { Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok   ([string]$Msg) { Write-Host "[+] $Msg" -ForegroundColor Green }
 function Write-Warn ([string]$Msg) { Write-Host "[!] $Msg" -ForegroundColor Yellow }
@@ -77,7 +43,6 @@ Write-Host "=== Ransomware Service Manipulation Emulation ===" -ForegroundColor 
 Write-Host "    T1562.001 + T1489 | Detection Chokepoints Project" -ForegroundColor DarkGray
 Write-Host ""
 
-# ── Step 1: Create dummy services (stand-in for backup/security services) ─────
 Write-Step "Step 1/3 — Creating $TargetCount dummy test services"
 Write-Verbose "  These stand in for real targets: VeeamBackupSvc, WinDefend, VSS, SQLWriter"
 
@@ -92,12 +57,9 @@ for ($i = 1; $i -le $TargetCount; $i++) {
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 2: Rapid bulk service stop + disable — Research + Hunt rule trigger ──
 Write-Step "Step 2/3 — Bulk service stop + disable (WEL 7036, 7040, Sysmon EID 1)"
-Write-Verbose "  Signal: sc.exe stop + config start=disabled in rapid succession"
 Write-Verbose "  Pattern: 3+ services stopped within 5-min window = Hunt trigger"
 Write-Verbose "  Pattern: 5+ services stopped = Analyst threshold"
-Write-Verbose "  Matched rules: Research (7036), Hunt (7036+7040+sc.exe), Analyst (5+ targets)"
 
 $StoppedCount = 0
 for ($i = 1; $i -le $TargetCount; $i++) {
@@ -124,7 +86,6 @@ if ($StoppedCount -ge 5) {
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 2b: Optional — Target VSS (common real ransomware target) ─────────────
 if ($TargetVss) {
     Write-Step "Step 2b — Stopping VSS and wbengine (Volume Shadow + Windows Backup)"
     Write-Warn "Stopping VSS temporarily. Will re-enable. No shadow copies will be deleted."
@@ -139,11 +100,8 @@ if ($TargetVss) {
     Write-Ok "VSS + wbengine re-enabled"
 }
 
-# ── Step 3: Service delete — escalates to Analyst if combined with bulk stop ──
 Write-Step "Step 3/3 — Service delete (sc delete — ransomware persistence removal step)"
-Write-Verbose "  Signal: Sysmon EID 1 — sc.exe with 'delete' verb on service name"
 Write-Verbose "  Combined with bulk stop: meets Analyst rule criteria"
-Write-Verbose "  Matched rules: Hunt (stop+delete combo), Analyst (5+ stops + delete)"
 
 for ($i = 1; $i -le $TargetCount; $i++) {
     $svcName = "$ServicePrefix$i"
@@ -152,7 +110,6 @@ for ($i = 1; $i -le $TargetCount; $i++) {
     Start-Sleep -Milliseconds 100
 }
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""

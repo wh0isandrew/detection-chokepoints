@@ -1,37 +1,6 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-    Emulates renamed RMM tool execution for detection validation.
-    Validates Sigma rules: Research (RMM process name), Hunt (browser-downloaded+renamed binary), Analyst (campaign name+outbound).
-
-.DESCRIPTION
-    Threat actors rename legitimate RMM tools (AnyDesk, ScreenConnect, etc.) to social engineering
-    filenames (tax-2024.exe, invoice.exe) and deliver them via browser. The invariant:
-    browser download → renamed binary → user execution → outbound RMM connection
-
-    This script simulates three observable behaviors:
-      1. Places a renamed binary (signed, legitimate Windows binary) in %Downloads% or %TEMP%
-         as if downloaded by a browser — triggers Research/Hunt rules on file metadata mismatch
-      2. Executes the renamed binary briefly — generates Sysmon EID 1 with OriginalFilename mismatch
-      3. Makes outbound TCP connection to an RMM relay port — triggers Analyst rule
-
-    Does NOT install RMM software or establish real remote access.
-
-.NOTES
-    MITRE ATT&CK: T1219.002 (Remote Access Tools)
-    Safe to run: uses a benign signed Windows binary (notepad.exe) as the "RMM tool" stand-in.
-    LAB ENVIRONMENT ONLY.
-
-    For higher-fidelity testing: replace $RmmSourceBinary with the actual AnyDesk.exe or
-    ScreenConnect binary. The OriginalFilename metadata check will then produce a true-positive
-    signal (OriginalFilename=AnyDesk.exe vs. ProcessName=tax-document-2024.exe).
-
-.EXAMPLE
-    .\emulate.ps1
-    .\emulate.ps1 -CampaignName "W2-document-2025"
-    .\emulate.ps1 -Verbose
-    .\emulate.ps1 -CleanupOnly
-#>
+# MITRE ATT&CK: T1219.002 — Remote Access Tools
+# Simulates browser-downloaded RMM binary renamed to a campaign-themed filename.
 
 [CmdletBinding()]
 param(
@@ -42,7 +11,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Configuration ─────────────────────────────────────────────────────────────
 # Use a legitimate signed Windows binary as the "RMM" stand-in for safe emulation.
 # In a real engagement, replace this with actual AnyDesk.exe for full fidelity.
 $RmmSourceBinary = Join-Path $env:WINDIR 'System32\notepad.exe'
@@ -51,7 +19,6 @@ $RenamedBinary   = Join-Path $DownloadsPath "$CampaignName.exe"
 $RmmPort         = 443    # AnyDesk relay uses 443/80/6568; use 443 for lab (less likely blocked)
 $RmmHost         = 'relay.anydesk.com'
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ([string]$Msg) { Write-Host "[*] $Msg" -ForegroundColor Cyan }
 function Write-Ok   ([string]$Msg) { Write-Host "[+] $Msg" -ForegroundColor Green }
 function Write-Warn ([string]$Msg) { Write-Host "[!] $Msg" -ForegroundColor Yellow }
@@ -70,12 +37,9 @@ Write-Host "=== Renamed RMM Tool Emulation ===" -ForegroundColor Magenta
 Write-Host "    T1219.002 | Detection Chokepoints Project" -ForegroundColor DarkGray
 Write-Host ""
 
-# ── Step 1: File drop — simulate browser download of renamed binary ────────────
 Write-Step "Step 1/3 — Dropping renamed binary to Downloads (browser-download simulation)"
 Write-Verbose "  Source binary: $RmmSourceBinary"
 Write-Verbose "  Renamed to:    $RenamedBinary"
-Write-Verbose "  Signal: Sysmon EID 11 (FileCreate) in Downloads path"
-Write-Verbose "  Matched rules: Hunt, Analyst"
 
 # Ensure Downloads directory exists
 if (-not (Test-Path $DownloadsPath)) {
@@ -104,11 +68,8 @@ try {
 
 Start-Sleep -Milliseconds 500
 
-# ── Step 2: Execute renamed binary — triggers Sysmon EID 1 ────────────────────
 Write-Step "Step 2/3 — Executing renamed binary (brief run to generate process telemetry)"
-Write-Verbose "  Signal: Sysmon EID 1 — Image=$CampaignName.exe, OriginalFilename=notepad.exe"
 Write-Verbose "  Note: In real scenario, OriginalFilename=AnyDesk.exe vs. CurrentName=$CampaignName.exe"
-Write-Verbose "  Matched rules: Research, Hunt, Analyst"
 
 try {
     # Start notepad briefly then kill it — generates EID 1 with the renamed image path
@@ -125,11 +86,8 @@ try {
 
 Start-Sleep -Milliseconds 300
 
-# ── Step 3: Outbound connection to RMM relay — Analyst rule trigger ────────────
 Write-Step "Step 3/3 — Outbound connection to RMM relay port (network telemetry)"
 Write-Verbose "  Target: $RmmHost`:$RmmPort"
-Write-Verbose "  Signal: Sysmon EID 3 — non-browser process connecting to RMM infrastructure"
-Write-Verbose "  Matched rules: Analyst"
 Write-Warn "Note: real AnyDesk connects to relay.anydesk.com:443/80/6568; using TCP connect test only"
 
 try {
@@ -147,12 +105,10 @@ try {
     Write-Warn "Network connection failed (telemetry may still have fired): $_"
 }
 
-# ── Cleanup ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Step "Cleaning up artefacts"
 Remove-Artefacts
 
-# ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "=== Emulation Complete ===" -ForegroundColor Magenta
 Write-Host ""
