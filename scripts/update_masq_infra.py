@@ -85,6 +85,8 @@ LURE_PATTERNS = {
     "fake_software": ["install", "setup", "download", "free", "portable", "official", "get"],
 }
 
+REPO_ROOT = Path(__file__).parent.parent
+
 LOOKBACK_DAYS             = 30
 URLSCAN_RATE_LIMIT_SLEEP  = 2    # seconds between brand queries
 MB_RATE_LIMIT_SLEEP       = 1
@@ -949,7 +951,6 @@ def aggregate(
         "payload_hosting":   payload_hosting,
         "urlhaus_tags":      urlhaus_tags,
         "favicon_clusters":  favicon_clusters,
-        "campaign_clusters": fingerprint_campaigns(records),
         "domain_patterns":   extract_domain_patterns([r["domain"] for r in records]),
         "delivery_chains":   _build_delivery_chains(records),
         "recent_samples":    recent_samples,
@@ -1065,6 +1066,9 @@ def main() -> None:
 
     # --- Aggregate and write ---
     output = aggregate(enriched, crt_stats, shodan_clusters, validin_stats, urlhaus_records, mb_brand_samples)
+
+    payload_clusters = fingerprint_campaigns(enriched)
+    (REPO_ROOT / "cache" / "payload_clusters.json").write_text(json.dumps(payload_clusters, indent=2))
 
     try:
         output_path.write_text(json.dumps(output, indent=2, default=str))

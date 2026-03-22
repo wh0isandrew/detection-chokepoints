@@ -38,11 +38,12 @@ REPO_ROOT = Path(__file__).parent.parent
 CACHE_DIR = REPO_ROOT / "cache"
 DATA_DIR  = REPO_ROOT / "_data"
 
-ENRICHED_PATH  = CACHE_DIR / "enriched_infra.json"
-CLUSTERS_PATH  = CACHE_DIR / "campaign_clusters.json"
-TRIAGE_PATH    = CACHE_DIR / "triage_results.json"
-HA_LOOKUP_PATH = CACHE_DIR / "ha_lookup_results.json"
-OUTPUT_PATH    = DATA_DIR  / "masq_infra.json"
+ENRICHED_PATH         = CACHE_DIR / "enriched_infra.json"
+CLUSTERS_PATH         = CACHE_DIR / "campaign_clusters.json"
+PAYLOAD_CLUSTERS_PATH = CACHE_DIR / "payload_clusters.json"
+TRIAGE_PATH           = CACHE_DIR / "triage_results.json"
+HA_LOOKUP_PATH        = CACHE_DIR / "ha_lookup_results.json"
+OUTPUT_PATH           = DATA_DIR  / "masq_infra.json"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -307,7 +308,7 @@ def score_cluster(cluster: dict, cluster_type: str) -> dict:
     }
 
 
-def build_campaigns(clusters, triage_results, ha_lookup_results=None):
+def build_campaigns(clusters, triage_results, ha_lookup_results=None, cluster_type="infra"):
     """Build campaign records from cluster data, enriched with Triage and HA family tags."""
     domain_families = collections.defaultdict(set)
     for result in (triage_results or []):
@@ -352,7 +353,7 @@ def build_campaigns(clusters, triage_results, ha_lookup_results=None):
             "brand": cluster.get("brand"),
             "families": all_families,
             "domains": domains,
-            **score_cluster(cluster, "infra"),
+            **score_cluster(cluster, cluster_type),
         })
     return campaigns
 
@@ -457,16 +458,17 @@ def main():
     country_dist     = build_country_distribution(enriched_records)
     age_hist         = build_domain_age_histogram(enriched_records)
     payload_families = build_payload_families(triage_results, ha_lookup_results)
-    campaigns        = build_campaigns(clusters, triage_results, ha_lookup_results)
-    payload_campaigns = build_payload_campaigns(existing.get("campaign_clusters", []))
-    summary          = build_summary(enriched_records, clusters, triage_results)
+    payload_clusters_data = _load_json(PAYLOAD_CLUSTERS_PATH, default=[])
+    campaigns             = build_campaigns(clusters, triage_results, ha_lookup_results)
+    payload_campaigns     = build_payload_campaigns(payload_clusters_data)
+    summary               = build_summary(enriched_records, clusters, triage_results)
 
     print(f"  ASN distribution: {len(asn_dist)} entries")
     print(f"  Country distribution: {len(country_dist)} entries")
     print(f"  Age histogram: {age_hist}")
     print(f"  Payload families: {payload_families}")
-    print(f"  Campaigns: {len(campaigns)}")
-    print(f"  Payload campaigns: {len(payload_campaigns)}")
+    print(f"  Infra clusters: {len(campaigns)}")
+    print(f"  Payload clusters: {len(payload_campaigns)}")
 
     merged = dict(existing)
     merged["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -475,8 +477,10 @@ def main():
     merged["asn_distribution"]   = asn_dist
     merged["country_distribution"] = country_dist
     merged["domain_age_histogram"] = age_hist
-    merged["campaigns"]          = campaigns
-    merged["campaign_clusters"]  = payload_campaigns
+    merged["infra_clusters"]      = campaigns
+    merged["payload_clusters"]    = payload_campaigns
+    merged.pop("campaigns", None)
+    merged.pop("campaign_clusters", None)
     merged["lure_payload_matrix"] = build_lure_payload_matrix(campaigns)
 
     if payload_families:
