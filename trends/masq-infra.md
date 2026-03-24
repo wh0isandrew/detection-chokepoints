@@ -540,8 +540,9 @@ No infrastructure data yet.
 <section id="samples">
 <h2>Samples</h2>
 
-{% assign samples = site.data.masq_infra.records | sort: "last_seen" | reverse %}
-{% if samples.size > 0 %}
+{% assign _sample_recs = site.data.masq_infra.records %}
+{% if _sample_recs.size > 0 %}
+{% assign samples = _sample_recs | sort: "last_seen" | reverse %}
 <table class="cg-table cg-samples-table">
   <thead>
     <tr>
