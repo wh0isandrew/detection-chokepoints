@@ -16,7 +16,22 @@ scripts/.mitre_cache.json
 scripts/__pycache__/
 
 # Enrichment pipeline intermediate cache (rebuilt each run)
-cache/
+cache/*
 
 # Local environment — copy .env.example and fill in keys; never commit
 .env
+.env.local
+.env.*
+
+# Cache dir is gitignored but the placeholder file is kept
+!cache/.gitkeep
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Local test output
+/tmp/masq_infra_test.json
