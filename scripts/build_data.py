@@ -1,512 +1,266 @@
-#!/usr/bin/env python3
 """
-build_data.py
-Merge enrichment pipeline outputs into _data/masq_infra.json.
+build_data.py — Final data assembly for the masq-infra pipeline.
 
-Loads the existing masq_infra.json (written by update_masq_infra.py) and
-adds / updates the ClickGrab-derived sections without removing existing
-hosting_providers, lure_types, traffic_sources, or urlhaus_tags fields.
+Merges triaged IOC records and campaign clusters into _data/masq_infra.json
+using the schema defined in _data/masq_infra_schema.md.
 
-Reads:
-  cache/enriched_infra.json
-  cache/campaign_clusters.json
-  cache/triage_results.json      (optional — absent when sandbox step skipped)
-  cache/ha_lookup_results.json   (optional — HA IOC search results)
-  _data/masq_infra.json          (existing; must be preserved)
-
-Writes:
-  _data/masq_infra.json       (merged output)
+Run standalone:
+    python scripts/build_data.py [--dry-run]
 """
 
+import argparse
 import collections
 import json
-import os
 import sys
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
+CACHE_DIR  = Path(__file__).parent.parent / "cache"
+DATA_DIR   = Path(__file__).parent.parent / "_data"
 
-REPO_ROOT = Path(__file__).parent.parent
-CACHE_DIR = REPO_ROOT / "cache"
-DATA_DIR  = REPO_ROOT / "_data"
+TRIAGED_PATH  = CACHE_DIR / "triaged_records.json"
+CAMPAIGNS_PATH = CACHE_DIR / "campaigns.json"
+HISTORY_PATH  = DATA_DIR  / "masq_infra_history.json"
+OUTPUT_PATH   = DATA_DIR  / "masq_infra.json"
 
-ENRICHED_PATH         = CACHE_DIR / "enriched_infra.json"
-CLUSTERS_PATH         = CACHE_DIR / "campaign_clusters.json"
-PAYLOAD_CLUSTERS_PATH = CACHE_DIR / "payload_clusters.json"
-TRIAGE_PATH           = CACHE_DIR / "triage_results.json"
-HA_LOOKUP_PATH        = CACHE_DIR / "ha_lookup_results.json"
-OUTPUT_PATH           = DATA_DIR  / "masq_infra.json"
+PIPELINE_VERSION    = "2.0.0"
+CONFIDENCE_THRESHOLD = 40  # minimum confidence to be published
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _load_json(path: Path, default=None):
-    if path.exists():
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception as exc:
-            print(f"  [WARN] Could not load {path}: {exc}", file=sys.stderr)
-    return default if default is not None else {}
-
-
-def _domain_age_bucket(creation_date):
-    """Map a VT creation_date (Unix timestamp or ISO string) to an age-at-observation bucket."""
-    if not creation_date:
-        return None
-    try:
-        if isinstance(creation_date, (int, float)):
-            reg_date = datetime.fromtimestamp(creation_date, tz=timezone.utc).date()
-        else:
-            reg_date = date.fromisoformat(str(creation_date).strip()[:10])
-    except Exception:
-        return None
-
-    age_days = (date.today() - reg_date).days
-    if age_days < 0:
-        return None
-    if age_days <= 1:
-        return "0-1d"
-    if age_days <= 7:
-        return "1-7d"
-    if age_days <= 30:
-        return "7-30d"
-    if age_days <= 90:
-        return "30-90d"
-    return "90d+"
-
-
-AGE_BUCKETS = ["0-1d", "1-7d", "7-30d", "30-90d", "90d+"]
-
-
-# ---------------------------------------------------------------------------
-# Build new sections from enriched data
-# ---------------------------------------------------------------------------
-
-def build_asn_distribution(enriched_records):
-    """Top ASNs by domain count (deduplicated by hostname)."""
-    asn_counts = collections.Counter()
-    asn_names = {}
-    seen_hosts = set()
-
-    for record in enriched_records:
-        enr = record.get("enrichment", {})
-        host = (enr.get("host") or "").lower()
-        if not host or host in seen_hosts:
-            continue
-        seen_hosts.add(host)
-
-        asn = enr.get("asn")
-        if asn:
-            asn_counts[asn] += 1
-            if asn not in asn_names:
-                asn_names[asn] = enr.get("as_name") or ""
-
-    total = sum(asn_counts.values()) or 1
-    return [
-        {
-            "asn": asn,
-            "org": asn_names.get(asn, ""),
-            "count": count,
-            "pct": round(count / total * 100, 1),
-        }
-        for asn, count in asn_counts.most_common(20)
-    ]
-
-
-def build_country_distribution(enriched_records):
-    """Domain count per country (deduplicated by hostname)."""
-    country_counts = collections.Counter()
-    country_names = {}
-    seen_hosts = set()
-
-    for record in enriched_records:
-        enr = record.get("enrichment", {})
-        host = (enr.get("host") or "").lower()
-        if not host or host in seen_hosts:
-            continue
-        seen_hosts.add(host)
-
-        cc = enr.get("country_code")
-        if cc:
-            country_counts[cc] += 1
-            if cc not in country_names:
-                country_names[cc] = enr.get("country") or ""
-
-    return [
-        {
-            "country_code": cc,
-            "country": country_names.get(cc, ""),
-            "count": count,
-        }
-        for cc, count in country_counts.most_common()
-    ]
-
-
-def build_domain_age_histogram(enriched_records):
-    """Count domains per age-at-observation bucket (deduplicated by hostname)."""
-    bucket_counts = collections.Counter()
-    seen_hosts = set()
-
-    for record in enriched_records:
-        enr = record.get("enrichment", {})
-        host = (enr.get("host") or "").lower()
-        if not host or host in seen_hosts:
-            continue
-        seen_hosts.add(host)
-
-        # Three-level fallback for registration date (best-effort approximation):
-        #   1. vt_creation_date — WHOIS date from VirusTotal (most accurate)
-        #   2. record["date"]   — URLScan scan date; proxy when WHOIS is absent
-        #                         (privacy-protected registrars, ~40% of domains)
-        #   3. record["first_seen"] — alternative field name in some pipeline records
-        # Note: WHOIS data is absent for ~40% of privacy-protected registrar domains;
-        # the resulting age histogram is a best-effort approximation.
-        creation_date = (
-            enr.get("vt_creation_date")
-            or record.get("date")
-            or record.get("first_seen", "")
-        )
-        bucket = _domain_age_bucket(creation_date)
-        if bucket:
-            bucket_counts[bucket] += 1
-
-    return [{"bucket": b, "count": bucket_counts.get(b, 0)} for b in AGE_BUCKETS]
-
-
-def build_payload_families(triage_results, ha_lookup_results):
-    """Aggregate family tags from sandbox submissions and HA IOC lookups."""
-    family_counts = collections.Counter()
-
-    for result in (triage_results or []):
-        for fam in result.get("families", []):
-            if fam:
-                family_counts[fam.lower()] += 1
-
-    # ha_lookup_results is a dict keyed by "domain:x" / "ip:x", values are lists of hits
-    for hits in (ha_lookup_results or {}).values():
-        for hit in (hits or []):
-            for fam in hit.get("families", []):
-                if fam:
-                    family_counts[fam.lower()] += 1
-
-    return [{"family": fam, "count": count} for fam, count in family_counts.most_common()]
-
-
-def build_tls_cert_authorities(enriched_records):
-    """
-    TLS CA distribution — derived from existing stats in masq_infra.json since
-    crt.sh data comes from update_masq_infra.py. Returns a placeholder here;
-    the existing value is preserved during merge if already present.
-    """
-    return []
-
-
-def score_cluster(cluster: dict, cluster_type: str) -> dict:
-    """
-    Three-category confidence scoring for campaign clusters.
-
-    Methodology: heuristic_v1
-
-    Category 1 — Payload/lure signal:
-      Infra:   lure_type present and not "unknown" (30 pts).
-               Payload family and file type are not available on infra clusters;
-               these signals are reserved as placeholders for future enrichment.
-      Payload: payload_families non-empty (20 pts) + file_type present (20 pts).
-
-    Category 2 — Infrastructure signal:
-      Infra:   favicon_hash present (30 pts) + asn present (20 pts).
-      Payload: cluster_type == "asn_cohort" (40 pts); no favicon available on
-               payload clusters.
-
-    Category 3 — Temporal signal:
-      Infra:   registration_week present (20 pts).
-      Payload: date_range width ≤ 7 days (20 pts), ≤ 30 days (10 pts);
-               narrower range signals coordinated deployment.
-
-    Confidence labels: high ≥ 70, medium ≥ 40, low < 40.
-    """
-    if cluster_type == "infra":
-        # Category 1: lure signal
-        # Payload family and file type are not available on infra clusters —
-        # placeholder for future enrichment when these signals can be joined.
-        has_lure = bool(cluster.get("lure_type") and cluster.get("lure_type") != "unknown")
-        cat1 = 30 if has_lure else 0
-
-        # Category 2: infrastructure signal
-        has_favicon = bool(cluster.get("favicon_hash"))
-        has_asn = bool(cluster.get("asn"))
-        cat2 = (30 if has_favicon else 0) + (20 if has_asn else 0)
-
-        # Category 3: temporal signal
-        has_reg_week = bool(cluster.get("registration_week"))
-        cat3 = 20 if has_reg_week else 0
-
-        signal_breakdown = {
-            "cat1_lure_type": cat1,
-            "cat2_favicon_hash": 30 if has_favicon else 0,
-            "cat2_asn": 20 if has_asn else 0,
-            "cat3_registration_week": cat3,
-            "methodology": "heuristic_v1",
-        }
-
-    else:  # payload
-        # Category 1: payload signal
-        has_families = bool(cluster.get("payload_families"))
-        has_file_type = bool(cluster.get("file_type"))
-        cat1 = (20 if has_families else 0) + (20 if has_file_type else 0)
-
-        # Category 2: infrastructure signal (no favicon on payload clusters)
-        is_asn_cohort = cluster.get("cluster_type") == "asn_cohort"
-        cat2 = 40 if is_asn_cohort else 0
-
-        # Category 3: temporal signal — narrow date range = coordinated deployment
-        cat3 = 0
-        date_range = cluster.get("date_range", {})
-        first = date_range.get("first", "")
-        last  = date_range.get("last", "")
-        if first and last:
-            try:
-                delta = (
-                    date.fromisoformat(last[:10]) - date.fromisoformat(first[:10])
-                ).days
-                if delta <= 7:
-                    cat3 = 20
-                elif delta <= 30:
-                    cat3 = 10
-            except Exception:
-                pass
-
-        signal_breakdown = {
-            "cat1_payload_families": 20 if has_families else 0,
-            "cat1_file_type": 20 if has_file_type else 0,
-            "cat2_asn_cohort": cat2,
-            "cat3_date_range_width": cat3,
-            "methodology": "heuristic_v1",
-        }
-
-    score = cat1 + cat2 + cat3
+def confidence_label(score: int) -> str:
+    if score >= 90:
+        return "confirmed"
     if score >= 70:
-        label = "high"
-    elif score >= 40:
-        label = "medium"
-    else:
-        label = "low"
+        return "high"
+    if score >= 40:
+        return "medium"
+    return "low"
 
+
+# ---------------------------------------------------------------------------
+# Section builders
+# ---------------------------------------------------------------------------
+
+def build_meta(records: list) -> dict:
+    """Build the pipeline run metadata section."""
+    sources = sorted({r["source"] for r in records if r.get("source")})
     return {
-        "confidence": score,
-        "confidence_label": label,
-        "signal_breakdown": signal_breakdown,
+        "last_updated":         datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "record_count":         len(records),
+        "lookback_days":        30,
+        "confidence_threshold": CONFIDENCE_THRESHOLD,
+        "sources":              sources,
+        "pipeline_version":     PIPELINE_VERSION,
     }
 
 
-def build_campaigns(clusters, triage_results, ha_lookup_results=None, cluster_type="infra"):
-    """Build campaign records from cluster data, enriched with Triage and HA family tags."""
-    domain_families = collections.defaultdict(set)
-    for result in (triage_results or []):
-        url = result.get("url", "")
-        families = result.get("families", [])
-        try:
-            host = (urlparse(url).hostname or "").lower()
-        except Exception:
-            host = ""
-        if host:
-            for fam in families:
-                domain_families[host].add(fam)
+def build_payload_summary(records: list) -> dict:
+    """Derive payload class/family statistics from the record set."""
+    # --- class_breakdown ---
+    class_breakdown: dict = collections.Counter(
+        r.get("payload_class", "unknown") for r in records
+    )
+    for cls in ("stealer", "c2", "rmm", "loader", "unknown"):
+        class_breakdown.setdefault(cls, 0)
 
-    # Join HA family hits keyed as "domain:{host}"
-    for host_key, hits in (ha_lookup_results or {}).items():
-        if not host_key.startswith("domain:"):
-            continue
-        host = host_key[len("domain:"):]
-        for hit in (hits or []):
-            for fam in hit.get("families", []):
-                if fam:
-                    domain_families[host].add(fam)
+    # --- top_families ---
+    family_records = [r for r in records if r.get("payload_family")]
+    family_counts  = collections.Counter(r["payload_family"] for r in family_records)
+    # For each family, track which payload_class it most often belongs to
+    family_class_map: dict = {}
+    for r in family_records:
+        fam = r["payload_family"]
+        family_class_map.setdefault(fam, collections.Counter())[
+            r.get("payload_class", "unknown")
+        ] += 1
 
-    campaigns = []
-    for cluster in (clusters or []):
-        domains = cluster.get("domains", [])
-        all_families = sorted({
-            fam
-            for d in domains
-            for fam in domain_families.get(d, set())
-        })
-
-        campaigns.append({
-            "id": cluster.get("id", ""),
-            "asn": cluster.get("asn", ""),
-            "favicon_hash": cluster.get("favicon_hash"),
-            "domain_count": cluster.get("domain_count", len(domains)),
-            "first_seen": cluster.get("first_seen"),
-            "last_seen": cluster.get("last_seen"),
-            "countries": cluster.get("countries", []),
-            "lure_type": cluster.get("lure_type", "unknown"),
-            "brand": cluster.get("brand"),
-            "families": all_families,
-            "domains": domains,
-            **score_cluster(cluster, cluster_type),
-        })
-    return campaigns
-
-
-def build_payload_campaigns(payload_clusters):
-    """Re-emit payload clusters from fingerprint_campaigns() with heuristic_v1 confidence scoring."""
-    result = []
-    for cluster in (payload_clusters or []):
-        result.append({**cluster, **score_cluster(cluster, "payload")})
-    return result
-
-
-def build_lure_payload_matrix(campaigns):
-    """Aggregate {lure_type, top_families, domain_count} across all campaigns."""
-    by_lure: dict = collections.defaultdict(lambda: {"domain_count": 0, "families": collections.Counter()})
-    for camp in (campaigns or []):
-        lt = camp.get("lure_type") or "unknown"
-        by_lure[lt]["domain_count"] += camp.get("domain_count", len(camp.get("domains", [])))
-        for fam in camp.get("families", []):
-            by_lure[lt]["families"][fam] += 1
-    return [
+    top_families = [
         {
-            "lure_type": lt,
-            "top_families": [f for f, _ in data["families"].most_common(5)],
-            "domain_count": data["domain_count"],
+            "family": fam,
+            "count":  cnt,
+            "class":  family_class_map[fam].most_common(1)[0][0],
         }
-        for lt, data in sorted(by_lure.items(), key=lambda x: x[1]["domain_count"], reverse=True)
+        for fam, cnt in family_counts.most_common(10)
     ]
 
+    # --- lure_payload_matrix ---
+    matrix_counter: collections.Counter = collections.Counter()
+    matrix_top_family: dict = {}
+    for r in records:
+        lt  = r.get("lure_type") or "unknown"
+        pc  = r.get("payload_class", "unknown")
+        matrix_counter[(lt, pc)] += 1
+        if r.get("payload_family"):
+            matrix_top_family.setdefault(
+                (lt, pc), collections.Counter()
+            )[r["payload_family"]] += 1
 
-# ---------------------------------------------------------------------------
-# Summary counters
-# ---------------------------------------------------------------------------
+    lure_payload_matrix = [
+        {
+            "lure_type":    lt,
+            "payload_class": pc,
+            "count":         cnt,
+            "top_family":    (
+                matrix_top_family[(lt, pc)].most_common(1)[0][0]
+                if matrix_top_family.get((lt, pc)) else None
+            ),
+        }
+        for (lt, pc), cnt in sorted(matrix_counter.items(), key=lambda x: -x[1])
+    ]
 
-def build_summary(enriched_records, clusters, triage_results):
-    seen_hosts = set()
-    seen_asns = set()
-    seen_countries = set()
-
-    for record in enriched_records:
-        enr = record.get("enrichment", {})
-        host = (enr.get("host") or "").lower()
-        if host:
-            seen_hosts.add(host)
-        if enr.get("asn"):
-            seen_asns.add(enr["asn"])
-        if enr.get("country_code"):
-            seen_countries.add(enr["country_code"])
+    # --- chain stats ---
+    chain_obs = sum(1 for r in records if r.get("chain_observed"))
+    chain_pct = round(100.0 * chain_obs / len(records), 1) if records else 0.0
 
     return {
-        "total_domains": len(seen_hosts),
-        "unique_asns": len(seen_asns),
-        "unique_countries": len(seen_countries),
-        "campaigns_identified": len([c for c in (clusters or []) if c.get("domain_count", 0) >= 3]),
-        "payloads_sandboxed": len(triage_results or []),
+        "class_breakdown":     dict(class_breakdown),
+        "top_families":        top_families,
+        "lure_payload_matrix": lure_payload_matrix,
+        "chain_observed_count": chain_obs,
+        "chain_observed_pct":   chain_pct,
     }
 
 
-# ---------------------------------------------------------------------------
-# Run log
-# ---------------------------------------------------------------------------
+def build_infrastructure_summary(records: list) -> dict:
+    """Derive infrastructure statistics (domains, IPs, ASNs, favicon clusters)."""
+    domains = [r["domain"] for r in records if r.get("domain")]
+    ips     = [r["ip"]     for r in records if r.get("ip")]
 
-def _write_run_log(cache_dir: Path, section: str, data: dict) -> None:
-    import datetime as _dt
-    path = cache_dir / "pipeline_run.json"
-    log: dict = {}
-    if path.exists():
-        try:
-            log = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    log.setdefault("run_date", _dt.date.today().isoformat())
-    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
-    path.write_text(json.dumps(log, indent=2), encoding="utf-8")
+    # top_asns: aggregate by domain count per ASN
+    asn_counter: collections.Counter = collections.Counter()
+    for r in records:
+        asn = (r.get("asn") or "").strip()
+        if asn and asn.lower() not in ("unknown", "none", ""):
+            asn_counter[asn] += 1
+    top_asns = [
+        {"asn": asn, "count": cnt}
+        for asn, cnt in asn_counter.most_common(10)
+    ]
 
+    # favicon_clusters: hashes appearing on 2+ domains
+    fav_map: dict = collections.defaultdict(list)
+    for r in records:
+        fh = r.get("favicon_hash")
+        dm = r.get("domain")
+        if fh and dm:
+            fav_map[fh].append(dm)
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-def main():
-    if not ENRICHED_PATH.exists():
-        print(f"ERROR: {ENRICHED_PATH} not found. Run enrich_infra.py first.", file=sys.stderr)
-        sys.exit(1)
-
-    enriched_records = _load_json(ENRICHED_PATH, default=[])
-    clusters        = _load_json(CLUSTERS_PATH, default=[])
-    triage_results  = _load_json(TRIAGE_PATH, default=[])
-    ha_lookup_results = _load_json(HA_LOOKUP_PATH, default={})
-    existing        = _load_json(OUTPUT_PATH, default={})
-
-    ha_hit_count = sum(len(v) for v in ha_lookup_results.values())
-    print(f"Loaded {len(enriched_records)} enriched records")
-    print(f"Loaded {len(clusters)} campaign clusters")
-    print(f"Loaded {len(triage_results)} sandbox results")
-    print(f"Loaded {len(ha_lookup_results)} HA lookup terms ({ha_hit_count} report hits)")
-
-    today    = date.today()
-    week_ago = today - timedelta(days=7)
-
-    asn_dist         = build_asn_distribution(enriched_records)
-    country_dist     = build_country_distribution(enriched_records)
-    age_hist         = build_domain_age_histogram(enriched_records)
-    payload_families = build_payload_families(triage_results, ha_lookup_results)
-    payload_clusters_data = _load_json(PAYLOAD_CLUSTERS_PATH, default=[])
-    campaigns             = build_campaigns(clusters, triage_results, ha_lookup_results)
-    payload_campaigns     = build_payload_campaigns(payload_clusters_data)
-    summary               = build_summary(enriched_records, clusters, triage_results)
-
-    print(f"  ASN distribution: {len(asn_dist)} entries")
-    print(f"  Country distribution: {len(country_dist)} entries")
-    print(f"  Age histogram: {age_hist}")
-    print(f"  Payload families: {payload_families}")
-    print(f"  Infra clusters: {len(campaigns)}")
-    print(f"  Payload clusters: {len(payload_campaigns)}")
-
-    merged = dict(existing)
-    merged["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    merged["date_range"] = {"start": week_ago.isoformat(), "end": today.isoformat()}
-    merged["summary"]            = summary
-    merged["asn_distribution"]   = asn_dist
-    merged["country_distribution"] = country_dist
-    merged["domain_age_histogram"] = age_hist
-    merged["infra_clusters"]      = campaigns
-    merged["payload_clusters"]    = payload_campaigns
-    merged.pop("campaigns", None)
-    merged.pop("campaign_clusters", None)
-    merged["lure_payload_matrix"] = build_lure_payload_matrix(campaigns)
-
-    if payload_families:
-        merged["payload_families"] = payload_families
-    elif "payload_families" not in merged:
-        merged["payload_families"] = []
-
-    if "tls_cert_authorities" not in merged:
-        merged["tls_cert_authorities"] = build_tls_cert_authorities(enriched_records)
-
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(
-        json.dumps(merged, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
+    favicon_clusters = sorted(
+        [
+            {
+                "favicon_hash":  fh,
+                "count":         len(doms),
+                "sample_domain": doms[0],
+            }
+            for fh, doms in fav_map.items()
+            if len(doms) >= 2
+        ],
+        key=lambda x: -x["count"],
     )
 
-    print(f"\nWritten: {OUTPUT_PATH}")
-    print(f"Summary: {summary}")
+    return {
+        "confirmed_domains":  len(set(domains)),
+        "confirmed_ips":      len(set(ips)),
+        "top_asns":           top_asns,
+        "favicon_clusters":   favicon_clusters,
+    }
 
-    _write_run_log(CACHE_DIR, "build_data", {
-        "records_merged": len(enriched_records),
-        "clusters_merged": len(clusters),
-        "payload_families": len(payload_families),
-        **summary,
-        "status": "ok",
-    })
+
+def load_weekly_summary() -> list:
+    """Load historical weekly metrics and return as a sorted list."""
+    if not HISTORY_PATH.exists():
+        return []
+    try:
+        history = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+        return sorted(history.values(), key=lambda x: x.get("week", ""))
+    except Exception as exc:
+        print(f"[WARN] Could not load {HISTORY_PATH}: {exc}", file=sys.stderr)
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Merge pipeline cache outputs into _data/masq_infra.json."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Write output to /tmp/masq_infra_test.json instead of _data/masq_infra.json.",
+    )
+    args = parser.parse_args()
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Load inputs
+    records: list = []
+    if TRIAGED_PATH.exists():
+        try:
+            records = json.loads(TRIAGED_PATH.read_text(encoding="utf-8"))
+            print(f"[INFO] Loaded {len(records)} triaged records", file=sys.stderr)
+        except Exception as exc:
+            print(f"[WARN] Failed to load {TRIAGED_PATH}: {exc}", file=sys.stderr)
+    else:
+        print(f"[WARN] {TRIAGED_PATH} not found — run the collection pipeline first", file=sys.stderr)
+
+    campaigns: list = []
+    if CAMPAIGNS_PATH.exists():
+        try:
+            campaigns = json.loads(CAMPAIGNS_PATH.read_text(encoding="utf-8"))
+            print(f"[INFO] Loaded {len(campaigns)} campaigns", file=sys.stderr)
+        except Exception as exc:
+            print(f"[WARN] Failed to load {CAMPAIGNS_PATH}: {exc}", file=sys.stderr)
+    else:
+        print(f"[WARN] {CAMPAIGNS_PATH} not found — no campaign data will be included", file=sys.stderr)
+
+    # Filter to publishable confidence threshold and sort
+    filtered = [r for r in records if r.get("confidence", 0) >= CONFIDENCE_THRESHOLD]
+    filtered.sort(key=lambda r: r.get("last_seen", ""), reverse=True)
+
+    dropped = len(records) - len(filtered)
+    print(
+        f"[INFO] {len(filtered)} records pass confidence threshold "
+        f"({CONFIDENCE_THRESHOLD}); {dropped} filtered out",
+        file=sys.stderr,
+    )
+
+    output = {
+        "meta":                    build_meta(filtered),
+        "records":                 filtered,
+        "campaigns":               campaigns,
+        "payload_summary":         build_payload_summary(filtered),
+        "infrastructure_summary":  build_infrastructure_summary(filtered),
+        "weekly_summary":          load_weekly_summary(),
+    }
+
+    dest = Path("/tmp/masq_infra_test.json") if args.dry_run else OUTPUT_PATH
+    dest.write_text(json.dumps(output, indent=2, ensure_ascii=False))
+
+    # Summary output
+    class_bd = output["payload_summary"]["class_breakdown"]
+    top3     = output["payload_summary"]["top_families"][:3]
+    top3_names = [f["family"] for f in top3]
+
+    print(
+        f"[SUMMARY] records_written={len(filtered)}  "
+        f"campaigns_written={len(campaigns)}  "
+        f"class_breakdown={dict(class_bd)}  "
+        f"top3_families={top3_names}",
+        file=sys.stderr,
+    )
+    print(f"[INFO] Wrote output → {dest}", file=sys.stderr)
 
 
 if __name__ == "__main__":
