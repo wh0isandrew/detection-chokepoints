@@ -1,354 +1,389 @@
-#!/usr/bin/env python3
 """
-cluster_campaigns.py
-Group domains from the enrichment pipeline into probable campaigns using
-a composite key of (favicon_hash, ASN, registration_week).
+cluster_campaigns.py — Hard-signal campaign clustering for the masq-infra pipeline.
 
-Two domains share a cluster if they share at least 2 of 3 signals.
-Minimum cluster size: 3 domains (singletons/pairs are noise at weekly granularity).
+Reads cache/triaged_records.json and clusters records into campaigns using hard
+signals only (shared payload hash, shared favicon hash, shared IP within 30 days,
+shared self-signed cert pattern on cheap TLDs).
 
-Cluster IDs: CLUSTER-{YYYY-WW}-{ASN}
+Writes confirmed campaigns (confidence >= 70) to cache/campaigns.json and
+lower-confidence clusters to cache/low_confidence_campaigns.json.
 
-Reads:  cache/enriched_infra.json
-Writes: cache/campaign_clusters.json
-
-Environment: FAVICON_TIMEOUT, FAVICON_CONCURRENCY (see .env.example)
+Run standalone:
+    python scripts/cluster_campaigns.py [--narratives]
 """
 
-import asyncio
-import base64
+import argparse
 import collections
+import hashlib
 import json
 import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
 
-import httpx
-import mmh3
+from dateutil.parser import parse as parse_date
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
+CACHE_DIR            = Path(__file__).parent.parent / "cache"
+INPUT_PATH           = CACHE_DIR / "triaged_records.json"
+OUTPUT_PATH          = CACHE_DIR / "campaigns.json"
+LOW_CONF_OUTPUT_PATH = CACHE_DIR / "low_confidence_campaigns.json"
 
-REPO_ROOT   = Path(__file__).parent.parent
-CACHE_DIR   = REPO_ROOT / "cache"
-INPUT_PATH  = CACHE_DIR / "enriched_infra.json"
-OUTPUT_PATH = CACHE_DIR / "campaign_clusters.json"
+MODEL                = "claude-sonnet-4-6"
+MAX_NARRATIVE_CALLS  = 20
+NARRATIVE_RATE_SLEEP = 1  # seconds between Anthropic API calls
 
-# ---------------------------------------------------------------------------
-# Constants (overridable via .env)
-# ---------------------------------------------------------------------------
+# Hard-signal priority order (highest → lowest)
+PRIORITY_ORDER = ["shared_payload", "shared_favicon", "shared_ip", "shared_cert_pattern"]
 
-FAVICON_TIMEOUT     = float(os.getenv("FAVICON_TIMEOUT", "5"))
-FAVICON_CONCURRENCY = int(os.getenv("FAVICON_CONCURRENCY", "10"))
+# Cert-pattern: cheap disposable TLDs with self-signed certs
+CERT_PATTERN = re.compile(
+    r"^[a-z0-9-]+\.(tk|ml|ga|cf|gq|top|xyz|site|online|click|buzz|fun)$"
+)
 
-# Known common/default favicon hashes that produce false cluster merges.
-COMMON_FAVICON_BLOCKLIST = {
-    -1507574776,   # Apache default
-    -335242539,    # Nginx default
-    -1026074561,   # cPanel/WHM default
-    116323821,     # WordPress default
-    -1269494984,   # Cloudflare generic
-}
+CONF_HIGH_THRESHOLD = 70
+
 
 # ---------------------------------------------------------------------------
-# Favicon hash (Shodan-compatible algorithm)
+# Confidence helpers
 # ---------------------------------------------------------------------------
 
-async def compute_favicon_hash(domain: str, client: httpx.AsyncClient, sem: asyncio.Semaphore):
-    """Fetch /favicon.ico and return Murmur3 hash (Shodan algorithm).
+def confidence_label(score: int) -> str:
+    if score >= 90:
+        return "confirmed"
+    if score >= 70:
+        return "high"
+    if score >= 40:
+        return "medium"
+    return "low"
 
-    Returns None on any error or if the hash is on the blocklist.
-    RFC 2045 base64 (76-char line wrapping + trailing newline).
-    """
-    url = f"https://{domain}/favicon.ico"
+
+def campaign_id(signal_type: str, signal_value: str) -> str:
+    return hashlib.sha256(f"{signal_type}:{signal_value}".encode()).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------------------
+# Date helpers
+# ---------------------------------------------------------------------------
+
+def _parse_date_safe(s: str):
+    """Parse a date string; return None on failure."""
+    if not s:
+        return None
     try:
-        async with sem:
-            resp = await client.get(url, timeout=FAVICON_TIMEOUT, follow_redirects=True)
-        resp.raise_for_status()
-        if not resp.content:
-            return None
-        b64 = base64.b64encode(resp.content).decode("utf-8")
-        b64_wrapped = re.sub("(.{76})", "\\1\n", b64) + "\n"
-        h = mmh3.hash(b64_wrapped)
-        return None if h in COMMON_FAVICON_BLOCKLIST else h
+        return parse_date(s[:10])
     except Exception:
         return None
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _iso_week(creation_date):
-    """Convert a VT creation_date (Unix timestamp or ISO string) to ISO week 'YYYY-WW'."""
-    if creation_date is None:
+def date_range_days(records: list):
+    """Return the span in days between the earliest first_seen and latest last_seen, or None."""
+    firsts = [_parse_date_safe(r.get("first_seen", "")) for r in records]
+    lasts  = [_parse_date_safe(r.get("last_seen", ""))  for r in records]
+    firsts = [d for d in firsts if d]
+    lasts  = [d for d in lasts  if d]
+    all_dates = firsts + lasts
+    if len(all_dates) < 2:
         return None
-    try:
-        if isinstance(creation_date, (int, float)):
-            dt = datetime.fromtimestamp(creation_date, tz=timezone.utc)
-        else:
-            s = str(creation_date).strip()
-            for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d"):
-                try:
-                    dt = datetime.strptime(s[:19], fmt[:len(s[:19])])
-                    break
-                except ValueError:
-                    continue
-            else:
-                return None
-        iso = dt.isocalendar()
-        return f"{iso[0]:04d}-{iso[1]:02d}"
-    except Exception:
-        return None
+    return (max(all_dates) - min(all_dates)).days
 
 
-def _extract_domains(enriched_records):
-    """Build a dict of domain → {asn, registration_week, date_first, date_last, lure_type, brand}."""
-    domain_info = {}
-    for record in enriched_records:
-        url = record.get("url", "")
-        enr = record.get("enrichment", {})
-        try:
-            host = (urlparse(url).hostname or "").lower()
-        except Exception:
-            continue
-        if not host:
-            continue
-
-        asn          = enr.get("asn") or None
-        # Three-level fallback for registration date:
-        #   1. vt_creation_date — WHOIS date from VirusTotal (most accurate)
-        #   2. record["date"]   — URLScan scan date; used when WHOIS is absent
-        #                         (privacy-protected registrars, ~40% of domains)
-        #   3. record["first_seen"] — alternative field name in some pipeline records
-        creation_date = (
-            enr.get("vt_creation_date")
-            or record.get("date")
-            or record.get("first_seen", "")
-        )
-        week         = _iso_week(creation_date)
-        record_date  = record.get("date", "")
-
-        # Extract lure_type: try lure_type → category → tag, fall back to "unknown"
-        lure_type = (
-            record.get("lure_type")
-            or enr.get("lure_type")
-            or record.get("category")
-            or enr.get("category")
-            or record.get("tag")
-            or enr.get("tag")
-            or "unknown"
-        )
-        brand = record.get("brand") or enr.get("brand") or None
-
-        if host not in domain_info:
-            domain_info[host] = {
-                "asn": asn,
-                "registration_week": week,
-                "date_first": record_date,
-                "date_last": record_date,
-                "country_codes": set(),
-                "lure_type": lure_type,
-                "brand": brand,
-            }
-        else:
-            existing = domain_info[host]
-            if record_date and (not existing["date_first"] or record_date < existing["date_first"]):
-                existing["date_first"] = record_date
-            if record_date and (not existing["date_last"] or record_date > existing["date_last"]):
-                existing["date_last"] = record_date
-            # Update lure_type if current is unknown and new value is not
-            if existing["lure_type"] == "unknown" and lure_type != "unknown":
-                existing["lure_type"] = lure_type
-            if existing["brand"] is None and brand is not None:
-                existing["brand"] = brand
-        if enr.get("country_code"):
-            domain_info[host]["country_codes"].add(enr["country_code"])
-
-    for info in domain_info.values():
-        info["country_codes"] = sorted(info["country_codes"])
-
-    return domain_info
+def _within_30_days(records: list) -> bool:
+    """Return True if all records in this IP group fall within a 30-day window."""
+    days = date_range_days(records)
+    if days is None:
+        return True
+    return days <= 30
 
 
 # ---------------------------------------------------------------------------
-# Clustering
+# Signal group construction
 # ---------------------------------------------------------------------------
 
-def _shared_signals(a_info, a_fav, b_info, b_fav):
-    """Return count of signals shared between domains a and b (max 3)."""
-    count = 0
-    if a_fav is not None and b_fav is not None and a_fav == b_fav:
-        count += 1
-    if a_info["asn"] and b_info["asn"] and a_info["asn"] == b_info["asn"]:
-        count += 1
-    if (
-        a_info["registration_week"]
-        and b_info["registration_week"]
-        and a_info["registration_week"] == b_info["registration_week"]
-    ):
-        count += 1
-    return count
+def build_signal_groups(records: list) -> dict:
+    """Group records by each hard signal type.
 
+    Returns a nested dict:
+        {signal_type: {signal_value: [record, ...]}}
 
-def cluster_domains(domain_info, favicon_hashes):
-    """Build clusters using union-find over the domain graph.
-
-    Two domains are linked if they share ≥2 of 3 signals.
-    Returns list of cluster dicts (only those with ≥3 members).
+    Each inner list is filtered to 2+ members (the minimum to form a cluster).
     """
-    domains = list(domain_info.keys())
-    n = len(domains)
+    groups = {
+        "shared_payload":      {},
+        "shared_favicon":      {},
+        "shared_ip":           {},
+        "shared_cert_pattern": {},
+    }
 
-    parent = list(range(n))
+    for rec in records:
+        if sha256 := rec.get("payload_sha256"):
+            groups["shared_payload"].setdefault(sha256, []).append(rec)
 
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
+        if fav := rec.get("favicon_hash"):
+            groups["shared_favicon"].setdefault(str(fav), []).append(rec)
 
-    def union(x, y):
-        parent[find(x)] = find(y)
+        if ip := rec.get("ip"):
+            groups["shared_ip"].setdefault(ip, []).append(rec)
 
-    idx = {d: i for i, d in enumerate(domains)}
+        cn = (rec.get("cert_cn") or "").strip().lower()
+        if rec.get("cert_self_signed") and cn and CERT_PATTERN.match(cn):
+            groups["shared_cert_pattern"].setdefault(cn, []).append(rec)
 
-    for i in range(n):
-        for j in range(i + 1, n):
-            da, db = domains[i], domains[j]
-            if _shared_signals(domain_info[da], favicon_hashes.get(da),
-                               domain_info[db], favicon_hashes.get(db)) >= 2:
-                union(i, j)
+    # Filter shared_ip groups to 30-day window
+    groups["shared_ip"] = {
+        k: v for k, v in groups["shared_ip"].items() if _within_30_days(v)
+    }
 
-    groups: dict = collections.defaultdict(list)
-    for i, d in enumerate(domains):
-        groups[find(i)].append(d)
+    # Drop groups with fewer than 2 records
+    for sig in list(groups.keys()):
+        groups[sig] = {k: v for k, v in groups[sig].items() if len(v) >= 2}
 
-    clusters = []
-    for members in groups.values():
-        if len(members) < 3:
-            continue
-
-        asns  = [domain_info[d]["asn"] for d in members if domain_info[d]["asn"]]
-        weeks = [domain_info[d]["registration_week"] for d in members if domain_info[d]["registration_week"]]
-        favs  = [favicon_hashes.get(d) for d in members if favicon_hashes.get(d) is not None]
-
-        rep_asn  = collections.Counter(asns).most_common(1)[0][0] if asns else "UNKNOWN"
-        rep_week = collections.Counter(weeks).most_common(1)[0][0] if weeks else "unknown"
-        rep_fav  = collections.Counter(favs).most_common(1)[0][0] if favs else None
-
-        # Majority-vote lure_type, brand, and breakdown across cluster members
-        lure_types = [domain_info[d]["lure_type"] for d in members]
-        brands     = [domain_info[d]["brand"] for d in members if domain_info[d]["brand"]]
-        lure_type_breakdown = dict(collections.Counter(lure_types))
-        rep_lure_type = collections.Counter(lure_types).most_common(1)[0][0]
-        rep_brand     = collections.Counter(brands).most_common(1)[0][0] if brands else None
-
-        cluster_id  = f"CLUSTER-{rep_week}-{rep_asn}"
-        dates_first = [domain_info[d]["date_first"] for d in members if domain_info[d]["date_first"]]
-        dates_last  = [domain_info[d]["date_last"]  for d in members if domain_info[d]["date_last"]]
-        countries   = sorted({cc for d in members for cc in domain_info[d].get("country_codes", [])})
-
-        clusters.append({
-            "id": cluster_id,
-            "asn": rep_asn,
-            "favicon_hash": rep_fav,
-            "registration_week": rep_week,
-            "domain_count": len(members),
-            "first_seen": min(dates_first) if dates_first else None,
-            "last_seen":  max(dates_last)  if dates_last  else None,
-            "countries": countries,
-            "lure_type": rep_lure_type,
-            "brand": rep_brand,
-            "lure_type_breakdown": lure_type_breakdown,
-            "domains": sorted(members),
-        })
-
-    clusters.sort(key=lambda c: c["domain_count"], reverse=True)
-    return clusters
+    return groups
 
 
 # ---------------------------------------------------------------------------
-# Run log
+# Cluster scoring
 # ---------------------------------------------------------------------------
 
-def _write_run_log(cache_dir: Path, section: str, data: dict) -> None:
-    import datetime as _dt
-    path = cache_dir / "pipeline_run.json"
-    log: dict = {}
-    if path.exists():
-        try:
-            log = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    log.setdefault("run_date", _dt.date.today().isoformat())
-    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
-    path.write_text(json.dumps(log, indent=2), encoding="utf-8")
+def score_cluster(signal_type: str, records: list) -> int:
+    """Compute a 0–100 confidence score for a campaign cluster."""
+    base_pts = {
+        "shared_payload":      40,
+        "shared_favicon":      30,
+        "shared_ip":           30,
+        "shared_cert_pattern": 20,
+    }
+    score = base_pts[signal_type]
+
+    # Corroborating signals (additive)
+    classes  = {r.get("payload_class") for r in records}
+    families = {r.get("payload_family") for r in records if r.get("payload_family")}
+
+    if len(classes) == 1:
+        score += 10
+    if len(families) == 1:
+        score += 10
+
+    dr = date_range_days(records)
+    if dr is not None and dr <= 14:
+        score += 10
+
+    if len(records) >= 5:
+        score += 5
+
+    if any(r.get("chain_observed") for r in records):
+        score += 5
+
+    return min(score, 100)
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Campaign record construction
 # ---------------------------------------------------------------------------
 
-async def main():
+def build_campaign(signal_type: str, signal_value: str, records: list) -> dict:
+    """Assemble a campaign record dict from a group of linked records."""
+    domains    = sorted({r["domain"] for r in records if r.get("domain")})
+    families   = sorted({r["payload_family"] for r in records if r.get("payload_family")})
+    classes    = sorted({r.get("payload_class", "unknown") for r in records})
+    lure_types = sorted({r["lure_type"] for r in records if r.get("lure_type")})
+
+    first_dates = [r["first_seen"][:10] for r in records if r.get("first_seen")]
+    last_dates  = [r["last_seen"][:10]  for r in records if r.get("last_seen")]
+
+    score = score_cluster(signal_type, records)
+
+    return {
+        "id":                campaign_id(signal_type, signal_value),
+        "hard_signal":       signal_type,
+        "hard_signal_value": signal_value,
+        "domain_count":      len(domains),
+        "domains":           domains,
+        "payload_families":  families,
+        "payload_classes":   classes,
+        "lure_types":        lure_types,
+        "first_seen":        min(first_dates) if first_dates else "",
+        "last_seen":         max(last_dates)  if last_dates  else "",
+        "confidence":        score,
+        "confidence_label":  confidence_label(score),
+        "narrative":         None,
+        "record_ids":        [r["id"] for r in records],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Priority-based record assignment
+# ---------------------------------------------------------------------------
+
+def assign_records_to_clusters(records: list) -> list:
+    """
+    Assign each record to at most one cluster using hard-signal priority order.
+
+    Returns a list of campaign dicts.
+    """
+    all_groups = build_signal_groups(records)
+    assigned_ids: set = set()
+    campaigns: list = []
+
+    for signal_type in PRIORITY_ORDER:
+        for signal_value, group_records in all_groups[signal_type].items():
+            # Only keep records not already claimed by a higher-priority cluster
+            eligible = [r for r in group_records if r["id"] not in assigned_ids]
+            if len(eligible) < 2:
+                continue
+            campaign = build_campaign(signal_type, signal_value, eligible)
+            campaigns.append(campaign)
+            for r in eligible:
+                assigned_ids.add(r["id"])
+
+    return campaigns
+
+
+# ---------------------------------------------------------------------------
+# Narrative generation
+# ---------------------------------------------------------------------------
+
+def generate_narrative(client, campaign: dict) -> str:
+    """Call the Anthropic API to write a 2-3 sentence campaign summary."""
+    families_str = ", ".join(campaign["payload_families"]) or "unknown"
+    classes_str  = ", ".join(campaign["payload_classes"])  or "unknown"
+    lure_str     = ", ".join(campaign["lure_types"])        or "unknown"
+
+    user_msg = (
+        f"Summarize this malware campaign cluster:\n"
+        f"- Hard signal: {campaign['hard_signal']} ({campaign['hard_signal_value']})\n"
+        f"- Domains: {campaign['domain_count']} confirmed delivery domains\n"
+        f"- Payload families: {families_str}\n"
+        f"- Payload class: {classes_str}\n"
+        f"- Lure types: {lure_str}\n"
+        f"- Active: {campaign['first_seen']} to {campaign['last_seen']}\n"
+        f"- Confidence: {campaign['confidence_label']} ({campaign['confidence']} pts)"
+    )
+
+    resp = client.messages.create(
+        model=MODEL,
+        max_tokens=200,
+        system=(
+            "You are a threat intelligence analyst writing concise campaign summaries. "
+            "Be factual and specific. Respond in 2-3 sentences only."
+        ),
+        messages=[{"role": "user", "content": user_msg}],
+    )
+    return resp.content[0].text.strip()
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Cluster triaged IOC records into campaigns using hard signals."
+    )
+    parser.add_argument(
+        "--narratives",
+        action="store_true",
+        help="Generate AI narrative summaries for high-confidence campaigns.",
+    )
+    args = parser.parse_args()
+
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     if not INPUT_PATH.exists():
-        print(f"ERROR: {INPUT_PATH} not found. Run enrich_infra.py first.", file=sys.stderr)
-        sys.exit(1)
+        print(f"[WARN] {INPUT_PATH} not found — writing empty campaign files", file=sys.stderr)
+        OUTPUT_PATH.write_text("[]", encoding="utf-8")
+        LOW_CONF_OUTPUT_PATH.write_text("[]", encoding="utf-8")
+        return
 
-    enriched_records = json.loads(INPUT_PATH.read_text(encoding="utf-8"))
-    domain_info = _extract_domains(enriched_records)
-    domains = list(domain_info.keys())
-    print(f"Unique domains to cluster: {len(domains)}")
+    try:
+        records: list = json.loads(INPUT_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"[WARN] Failed to load {INPUT_PATH}: {exc}", file=sys.stderr)
+        OUTPUT_PATH.write_text("[]", encoding="utf-8")
+        LOW_CONF_OUTPUT_PATH.write_text("[]", encoding="utf-8")
+        return
 
-    # Fetch favicon hashes concurrently
-    print(f"Fetching favicons (concurrency={FAVICON_CONCURRENCY})...")
-    sem = asyncio.Semaphore(FAVICON_CONCURRENCY)
-    headers = {"User-Agent": "detection-chokepoints/enrichment-pipeline"}
+    print(f"[INFO] Clustering {len(records)} records …", file=sys.stderr)
+    campaigns = assign_records_to_clusters(records)
 
-    async with httpx.AsyncClient(headers=headers) as client:
-        hashes = await asyncio.gather(*[
-            compute_favicon_hash(d, client, sem) for d in domains
-        ])
-
-    favicon_hashes = {}
-    for domain, h in zip(domains, hashes):
-        if h is not None:
-            favicon_hashes[domain] = h
-            print(f"  {domain}: {h}")
+    # Optional narrative generation
+    if args.narratives:
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+        if not api_key:
+            print(
+                "[WARN] ANTHROPIC_API_KEY not set — skipping narrative generation",
+                file=sys.stderr,
+            )
         else:
-            print(f"  {domain}: (no favicon)")
+            client = None
+            try:
+                from anthropic import Anthropic
+                client = Anthropic(api_key=api_key)
+            except ImportError:
+                print(
+                    "[WARN] anthropic package not installed — skipping narratives",
+                    file=sys.stderr,
+                )
 
-    print(f"Favicons obtained: {len(favicon_hashes)}/{len(domains)}")
+            if client:
+                narrative_calls = 0
+                for c in campaigns:
+                    if c["confidence"] < CONF_HIGH_THRESHOLD or c["narrative"] is not None:
+                        continue
+                    if narrative_calls >= MAX_NARRATIVE_CALLS:
+                        print(
+                            f"[WARN] Narrative call limit reached ({MAX_NARRATIVE_CALLS}).",
+                            file=sys.stderr,
+                        )
+                        break
+                    try:
+                        c["narrative"] = generate_narrative(client, c)
+                    except Exception as exc:
+                        print(
+                            f"[WARN] Narrative generation failed for {c['id']}: {exc}",
+                            file=sys.stderr,
+                        )
+                    narrative_calls += 1
+                    time.sleep(NARRATIVE_RATE_SLEEP)
 
-    print("Clustering...")
-    clusters = cluster_domains(domain_info, favicon_hashes)
-    print(f"Clusters identified (≥3 domains): {len(clusters)}")
-    for c in clusters:
-        print(f"  {c['id']}: {c['domain_count']} domains")
+                print(
+                    f"[INFO] Generated {narrative_calls} campaign narratives.",
+                    file=sys.stderr,
+                )
 
-    OUTPUT_PATH.write_text(
-        json.dumps(clusters, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+    # Split by confidence threshold
+    high_conf = [c for c in campaigns if c["confidence"] >= CONF_HIGH_THRESHOLD]
+    low_conf  = [c for c in campaigns if c["confidence"] <  CONF_HIGH_THRESHOLD]
+
+    OUTPUT_PATH.write_text(json.dumps(high_conf, indent=2, ensure_ascii=False))
+    LOW_CONF_OUTPUT_PATH.write_text(json.dumps(low_conf, indent=2, ensure_ascii=False))
+
+    clustered_ids = {rid for c in campaigns for rid in c["record_ids"]}
+    unclustered   = len(records) - len(clustered_ids)
+
+    conf_dist = collections.Counter(confidence_label(c["confidence"]) for c in campaigns)
+
+    print(
+        f"[SUMMARY] total_clusters={len(campaigns)}  "
+        f"high_conf_clusters={len(high_conf)}  "
+        f"low_conf_clusters={len(low_conf)}  "
+        f"confirmed={conf_dist.get('confirmed', 0)}  "
+        f"high={conf_dist.get('high', 0)}  "
+        f"medium={conf_dist.get('medium', 0)}  "
+        f"low={conf_dist.get('low', 0)}  "
+        f"records_clustered={len(clustered_ids)}  "
+        f"records_unclustered={unclustered}",
+        file=sys.stderr,
     )
-    print(f"Written: {OUTPUT_PATH}")
-
-    _write_run_log(CACHE_DIR, "cluster_campaigns", {
-        "domains_processed": len(domains),
-        "favicons_obtained": len(favicon_hashes),
-        "clusters_identified": len(clusters),
-        "status": "ok",
-    })
+    print(f"[INFO] Wrote {len(high_conf)} campaigns → {OUTPUT_PATH}", file=sys.stderr)
+    print(
+        f"[INFO] Wrote {len(low_conf)} low-confidence clusters → {LOW_CONF_OUTPUT_PATH}",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
