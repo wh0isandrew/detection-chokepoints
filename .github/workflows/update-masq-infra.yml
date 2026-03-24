@@ -1,8 +1,6 @@
 name: Update Masq-Infra Data
 
 on:
-  schedule:
-    - cron: '0 6 * * 1'   # Every Monday 06:00 UTC
   workflow_dispatch:        # Allow manual trigger for on-demand runs
 
 permissions:
@@ -21,10 +19,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install requests httpx python-dotenv mmh3 shodan python-dateutil
+        run: pip install requests httpx python-dotenv mmh3 shodan python-dateutil tldextract anthropic pandas
 
-      # Restore cached DNS lookups, VT responses, and HA submission state
-      # across weekly runs so we don't re-query what we already know.
+      # Restore cached DNS lookups, VT responses, and enrichment state
+      # across runs so we don't re-query what we already know.
       - name: Restore enrichment cache
         uses: actions/cache@v4
         with:
@@ -33,41 +31,32 @@ jobs:
           restore-keys: |
             enrich-cache-
 
-      - name: Run infra data pipeline
+      - name: Collect IOC feeds
         env:
-          URLSCAN_API_KEY:  ${{ secrets.URLSCAN_API_KEY }}
-          SHODAN_API_KEY:   ${{ secrets.SHODAN_API_KEY }}
-          MB_API_KEY:       ${{ secrets.MB_API_KEY }}
-          VT_API_KEY:       ${{ secrets.VT_API_KEY }}
-          VALIDIN_API_KEY:  ${{ secrets.VALIDIN_API_KEY }}
-          URLHAUS_API_KEY:  ${{ secrets.URLHAUS_API_KEY }}
-        run: python scripts/update_masq_infra.py
+          URLSCAN_API_KEY:   ${{ secrets.URLSCAN_API_KEY }}
+          URLHAUS_API_KEY:   ${{ secrets.URLHAUS_API_KEY }}
+          THREATFOX_API_KEY: ${{ secrets.THREATFOX_API_KEY }}
+        run: python scripts/collect_ioc_feeds.py
 
-      - name: Ingest ClickGrab nightly reports
+      - name: Collect infrastructure hunts
         env:
-          # GITHUB_TOKEN for authenticated GitHub API + LFS Batch API access.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/ingest_clickgrab.py
+          SHODAN_API_KEY:  ${{ secrets.SHODAN_API_KEY }}
+          VALIDIN_API_KEY: ${{ secrets.VALIDIN_API_KEY }}
+          URLSCAN_API_KEY: ${{ secrets.URLSCAN_API_KEY }}
+        run: python scripts/collect_infra_hunts.py
 
-      - name: Enrich infrastructure (IPinfo Lite + VirusTotal)
+      - name: Fetch payload delivery chains
         env:
-          IPINFO_TOKEN: ${{ secrets.IPINFO_TOKEN }}
-          VT_API_KEY:   ${{ secrets.VT_API_KEY }}
-        run: python scripts/enrich_infra.py
+          URLSCAN_API_KEY: ${{ secrets.URLSCAN_API_KEY }}
+          VT_API_KEY:      ${{ secrets.VT_API_KEY }}
+        run: python scripts/fetch_payload_chains.py
 
-      - name: Query Hybrid Analysis for existing payload reports
+      - name: Triage records with Claude
         env:
-          HA_API_KEY: ${{ secrets.HA_API_KEY }}
-        run: python scripts/ha_lookup.py
-
-      # Sandbox step is opt-in: set the ENABLE_SANDBOX Actions variable to 'true'
-      # in repo Settings → Variables to activate. All Hybrid Analysis submissions
-      # are permanently public — only enable for already-confirmed-public IOCs.
-      - name: Submit payloads to Hybrid Analysis sandbox
-        if: vars.ENABLE_SANDBOX == 'true'
-        env:
-          HA_API_KEY: ${{ secrets.HA_API_KEY }}
-        run: python scripts/sandbox_submit.py
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VT_API_KEY:        ${{ secrets.VT_API_KEY }}
+          MB_API_KEY:        ${{ secrets.MB_API_KEY }}
+        run: python scripts/claude_triage.py
 
       - name: Cluster campaigns
         run: python scripts/cluster_campaigns.py
@@ -98,7 +87,7 @@ jobs:
           git commit -m "chore: update masq-infra data [${DATE}]"
           git push --force -u origin "$BRANCH"
 
-          PR_BODY=$(printf 'Weekly masq-infra pipeline update.\n\nRuns the full stack: URLScan/Shodan/VT infra fetch → ClickGrab ingestion → IPinfo+VT enrichment → Hybrid Analysis IOC lookup → campaign clustering → data merge.\n\nReview the stat changes below, then merge to publish to the live site.')
+          PR_BODY=$(printf 'Masq-infra pipeline update.\n\nRuns the full stack: IOC feed collection → infrastructure hunts → payload chain fetching → Claude triage → campaign clustering → data merge.\n\nReview the stat changes below, then merge to publish to the live site.')
           if ! gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q "OPEN"; then
             gh pr create \
               --title "chore: update masq-infra data [${DATE}]" \
