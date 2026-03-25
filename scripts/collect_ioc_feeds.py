@@ -196,8 +196,11 @@ def collect_malwarebazaar(api_key: str) -> list[dict]:
         if data.get("query_status") != "ok" or not data.get("data"):
             time.sleep(1)
             continue
-
-        for sample in data["data"]:
+        
+        samples = data.get("data") or []                                                                                                                                                                             
+        if not isinstance(samples, list):       
+            samples = []                                                                                                                                                                                             
+        for sample in samples:
             sha256 = sample.get("sha256_hash")
             file_type = sample.get("file_type")
             first_seen = (sample.get("first_seen") or "")[:10]
@@ -259,11 +262,12 @@ def collect_threatfox(api_key: str) -> list[dict]:
 
     time.sleep(0.5)
 
-    iocs = data.get("data") or []
+    iocs = data.get("data") or []                                                                                                                                                                                
+    if not isinstance(iocs, list):                                                                                                                                                                               
+      iocs = []                                                                                                                                                                                                
     for item in iocs:
         if (item.get("confidence_level") or 0) < 75:
-            continue
-
+            continue                                                                                                                                                                                             
         ioc_type = item.get("ioc_type", "")
         ioc_value = item.get("ioc_value", "")
 
@@ -325,9 +329,9 @@ def collect_urlhaus(api_key: str) -> list[dict]:
     time.sleep(0.5)
 
     urls = data.get("urls") or []
+    if not isinstance(urls, list):                                                                                                                                                                               
+      urls = []                                                                                                                                                                                                
     for item in urls:
-        if item.get("url_status") not in ("online", "unknown"):
-            continue
 
         domain = extract_domain(item.get("url"))
         if not domain:
