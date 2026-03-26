@@ -34,6 +34,7 @@ def _build_env(secrets: dict) -> dict:
         "URLSCAN_API_KEY":   secrets.get("urlscan", ""),
         "SHODAN_API_KEY":    secrets.get("shodan", ""),
         "ANTHROPIC_API_KEY": secrets.get("anthropic", ""),
+        "VALIDIN_API_KEY":   secrets.get("validin", ""),
     }
 
 
@@ -92,6 +93,30 @@ def render(secrets: dict) -> None:
                 st.success(f"Infrastructure hunt complete — **{count}** deduplicated records written.")
             else:
                 st.error(f"Script exited with code {rc}.\n\n```\n{stderr[-2000:]}\n```")
+
+        with st.expander("Validin DNS Pivots"):
+            st.caption(
+                "Expands confirmed delivery domains using Validin forward DNS. "
+                "Finds historical IP resolutions, co-hosted domains, and cert-linked "
+                "infrastructure. Requires IOC feeds to be collected first."
+            )
+            ioc_records = load_records(str(_CACHE / "ioc_records.json"))
+            st.write(f"{len(ioc_records)} confirmed records available for pivoting")
+            cb_pdns = st.checkbox("pDNS IP history", value=True, key="cb_pdns")
+            cb_cohost = st.checkbox("Co-hosted domain discovery", value=True, key="cb_cohost")
+            cb_cert = st.checkbox("Certificate fingerprint pivot", value=True, key="cb_cert")
+            st.caption("Limited to 100 API calls per run.")
+            if st.button("Run Validin Pivots", key="btn_validin"):
+                validin_env = {**env, "VALIDIN_ONLY": "true"}
+                with st.spinner("Running Validin pivots …"):
+                    rc, _, stderr = run_script(
+                        str(_SCRIPTS / "collect_infra_hunts.py"), validin_env
+                    )
+                if rc == 0:
+                    st.success("Validin pivots complete.")
+                else:
+                    st.error(f"Failed: {stderr[-2000:]}")
+            _ = cb_pdns, cb_cohost, cb_cert
 
     # Suppress unused-variable warnings for the checkboxes (UI state only)
     _ = cb_mb, cb_tf, cb_uh, cb_shodan, cb_urlscan

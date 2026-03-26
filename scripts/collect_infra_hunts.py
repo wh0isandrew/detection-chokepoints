@@ -56,6 +56,9 @@ SHODAN_OPEN_DIR_QUERIES = [
     'title:"Index of /" ".msi"',
 ]
 
+VALIDIN_API_BASE = "https://api.validin.com/api/v1"
+VALIDIN_CALL_BUDGET = 100
+
 # ---------------------------------------------------------------------------
 # Shared helpers (mirrored from collect_ioc_feeds.py for standalone use)
 # ---------------------------------------------------------------------------
@@ -174,6 +177,195 @@ def make_record(
         "triage_note": triage_note,
         "triage_source": triage_source,
     }
+
+
+# ---------------------------------------------------------------------------
+# Validin API helpers
+# ---------------------------------------------------------------------------
+
+def validin_get(endpoint: str, api_key: str) -> dict | None:
+    """Make a GET request to the Validin API and return parsed JSON or None."""
+    try:
+        resp = requests.get(
+            VALIDIN_API_BASE + endpoint,
+            headers={"Authorization": api_key},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+    except Exception as exc:
+        print(f"[WARN] Validin API error ({endpoint}): {exc}", file=sys.stderr)
+        result = None
+    finally:
+        time.sleep(1)
+    return result
+
+
+def is_cloudflare_ip(ip: str, asn_string: str | None) -> bool:
+    """Return True if the IP belongs to Cloudflare based on ASN string."""
+    if not asn_string:
+        return False
+    lower = asn_string.lower()
+    return any(marker in lower for marker in ("as13335", "cloudflarenet", "cloudflare"))
+
+
+def has_cs_headers(headers_string: str | None) -> bool:
+    """Return True if the HTTP response headers match known Cobalt Strike patterns."""
+    if not headers_string:
+        return False
+    has_404 = "404 Not Found" in headers_string
+    has_zero_len = "Content-Length: 0" in headers_string
+    has_keepalive_or_plain = (
+        "Keep-Alive: timeout=10" in headers_string
+        or "Content-Type: text/plain" in headers_string
+    )
+    return has_404 and has_zero_len and has_keepalive_or_plain
+
+
+# ---------------------------------------------------------------------------
+# Validin pDNS and co-host collection
+# ---------------------------------------------------------------------------
+
+def collect_validin_pdns(
+    domains: list[str],
+    ips: list[str],
+    api_key: str,
+    budget: dict,
+) -> list[dict]:
+    """Collect pDNS IP history for domains and co-hosted domains for IPs."""
+    pdns_candidates: list[dict] = []
+    cohost_candidates: list[dict] = []
+    calls_used = 0
+
+    for domain in domains:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+        records = resp.get("records") or resp.get("results") or []
+        for entry in records:
+            ip = entry.get("ip_address") or entry.get("value")
+            if not ip or ip in ips:
+                continue
+            pdns_candidates.append({
+                "domain": domain,
+                "ip": ip,
+                "source": "validin_pdns",
+                "confidence": 30,
+                "chain_observed": False,
+                "first_seen": None,
+                "last_seen": None,
+                "payload_class": "unknown",
+                "payload_family": None,
+                "lure_type": "unknown",
+                "note": f"Historical IP resolution for confirmed delivery domain {domain}",
+            })
+
+    for ip in ips:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/ip/{ip}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+        records = resp.get("records") or resp.get("results") or []
+        for entry in records:
+            cohosted_domain = entry.get("domain") or entry.get("value")
+            if not cohosted_domain or cohosted_domain in domains:
+                continue
+            matched = any(brand in cohosted_domain.lower() for brand in BRAND_LURES)
+            if matched:
+                cohost_candidates.append({
+                    "domain": cohosted_domain,
+                    "ip": ip,
+                    "source": "validin_cohost",
+                    "confidence": 25,
+                    "chain_observed": False,
+                    "first_seen": None,
+                    "last_seen": None,
+                    "payload_class": "unknown",
+                    "payload_family": None,
+                    "lure_type": "unknown",
+                    "note": f"Co-hosted with confirmed delivery domain. Shared IP: {ip}",
+                })
+
+    print(
+        f"[INFO] Validin pDNS: {len(pdns_candidates)} pDNS candidates, "
+        f"{len(cohost_candidates)} co-host candidates, "
+        f"{calls_used} API calls used",
+        file=sys.stderr,
+    )
+    return pdns_candidates + cohost_candidates
+
+
+def collect_validin_cert_pivot(
+    domains: list[str],
+    api_key: str,
+    budget: dict,
+) -> list[dict]:
+    """Pivot on certificate fingerprints found in pDNS responses."""
+    candidates: list[dict] = []
+    pivots_attempted = 0
+    calls_used = 0
+
+    for domain in domains:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+
+        # Extract certificate fingerprints from response
+        fingerprints: list[str] = []
+        for cert in resp.get("certificates") or []:
+            fp = cert.get("fingerprint") or cert.get("sha256")
+            if fp:
+                fingerprints.append(fp)
+        for fp in resp.get("certificate_fingerprints") or []:
+            if fp and fp not in fingerprints:
+                fingerprints.append(fp)
+
+        for fingerprint in fingerprints:
+            if budget["remaining"] <= 0:
+                break
+            pivots_attempted += 1
+            cert_resp = validin_get(f"/intelligence/certificate/{fingerprint}", api_key)
+            budget["remaining"] -= 1
+            calls_used += 1
+            if not cert_resp:
+                continue
+            records = cert_resp.get("records") or cert_resp.get("results") or []
+            for entry in records:
+                pivoted_ip = entry.get("ip_address") or entry.get("value")
+                if not pivoted_ip:
+                    continue
+                candidates.append({
+                    "domain": domain,
+                    "ip": pivoted_ip,
+                    "source": "validin_cert_pivot",
+                    "confidence": 35,
+                    "chain_observed": False,
+                    "first_seen": None,
+                    "last_seen": None,
+                    "payload_class": "unknown",
+                    "payload_family": None,
+                    "lure_type": "unknown",
+                    "note": f"Cert fingerprint pivot from {domain}. Fingerprint: {fingerprint}",
+                })
+
+    print(
+        f"[INFO] Validin cert pivot: {pivots_attempted} pivots attempted, "
+        f"{len(candidates)} candidates found, "
+        f"{calls_used} API calls used",
+        file=sys.stderr,
+    )
+    return candidates
 
 
 # ---------------------------------------------------------------------------
@@ -394,6 +586,42 @@ def _urlscan_hit_to_record(hit: dict, source: str) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Validin pivot orchestrator
+# ---------------------------------------------------------------------------
+
+def collect_validin_pivots(confirmed_records: list[dict], api_key: str) -> list[dict]:
+    """Run pDNS and cert-pivot collection seeded from confirmed IOC records."""
+    confirmed_sources = {"malwarebazaar", "threatfox", "urlhaus"}
+    domains = [
+        r["domain"] for r in confirmed_records
+        if r.get("domain") and r.get("source") in confirmed_sources
+    ]
+    ips = [
+        r["ip"] for r in confirmed_records
+        if r.get("ip") and r.get("source") in confirmed_sources
+    ]
+
+    budget: dict = {"remaining": VALIDIN_CALL_BUDGET}
+    pdns_results = collect_validin_pdns(domains, ips, api_key, budget)
+    cert_results = collect_validin_cert_pivot(domains, api_key, budget)
+
+    all_candidates = pdns_results + cert_results
+
+    # Deduplicate: skip domains already in confirmed records; keep highest
+    # confidence when a domain appears multiple times across candidates.
+    confirmed_domains = {r["domain"] for r in confirmed_records if r.get("domain")}
+    best: dict[str, dict] = {}
+    for cand in all_candidates:
+        domain = cand.get("domain")
+        if not domain or domain in confirmed_domains:
+            continue
+        if domain not in best or cand["confidence"] > best[domain]["confidence"]:
+            best[domain] = cand
+
+    return list(best.values())
+
+
+# ---------------------------------------------------------------------------
 # Deduplication (by domain)
 # ---------------------------------------------------------------------------
 
@@ -416,41 +644,76 @@ def main() -> None:
 
     shodan_key  = os.environ.get("SHODAN_API_KEY",  "").strip()
     urlscan_key = os.environ.get("URLSCAN_API_KEY", "").strip()
+    validin_key = os.environ.get("VALIDIN_API_KEY", "").strip()
 
-    shodan_fav:  list[dict] = []
-    shodan_dirs: list[dict] = []
-    urlscan_recs: list[dict] = []
+    if os.environ.get("VALIDIN_ONLY") == "true":
+        # Skip Shodan and URLScan, only run Validin
+        # Load confirmed records from IOC cache
+        ioc_path = CACHE_DIR / "ioc_records.json"
+        if ioc_path.exists():
+            confirmed = json.loads(ioc_path.read_text())
+        else:
+            confirmed = []
+        all_records: list[dict] = []
+        if validin_key:
+            validin_results = collect_validin_pivots(confirmed, validin_key)
+            all_records.extend(validin_results)
+        else:
+            print("[WARN] VALIDIN_API_KEY not set", file=sys.stderr)
 
-    if shodan_key:
-        print("[INFO] Running Shodan favicon hunt …", file=sys.stderr)
-        shodan_fav = hunt_shodan_favicons(shodan_key)
-        print("[INFO] Running Shodan open-dir hunt …", file=sys.stderr)
-        shodan_dirs = hunt_shodan_open_dirs(shodan_key)
+        OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+        print(
+            f"[SUMMARY] validin={len(all_records)}  after_dedup={len(all_records)}",
+            file=sys.stderr,
+        )
+        print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
     else:
-        print("[WARN] SHODAN_API_KEY not set — skipping Shodan hunts", file=sys.stderr)
+        shodan_fav:  list[dict] = []
+        shodan_dirs: list[dict] = []
+        urlscan_recs: list[dict] = []
 
-    if urlscan_key:
-        print("[INFO] Running URLScan hunts …", file=sys.stderr)
-        urlscan_recs = hunt_urlscan(urlscan_key)
-    else:
-        print("[WARN] URLSCAN_API_KEY not set — skipping URLScan hunts", file=sys.stderr)
+        if shodan_key:
+            print("[INFO] Running Shodan favicon hunt …", file=sys.stderr)
+            shodan_fav = hunt_shodan_favicons(shodan_key)
+            print("[INFO] Running Shodan open-dir hunt …", file=sys.stderr)
+            shodan_dirs = hunt_shodan_open_dirs(shodan_key)
+        else:
+            print("[WARN] SHODAN_API_KEY not set — skipping Shodan hunts", file=sys.stderr)
 
-    raw_total = len(shodan_fav) + len(shodan_dirs) + len(urlscan_recs)
-    all_records = deduplicate(shodan_fav + shodan_dirs + urlscan_recs)
-    dupes_removed = raw_total - len(all_records)
+        if urlscan_key:
+            print("[INFO] Running URLScan hunts …", file=sys.stderr)
+            urlscan_recs = hunt_urlscan(urlscan_key)
+        else:
+            print("[WARN] URLSCAN_API_KEY not set — skipping URLScan hunts", file=sys.stderr)
 
-    OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+        raw_total = len(shodan_fav) + len(shodan_dirs) + len(urlscan_recs)
+        all_records = deduplicate(shodan_fav + shodan_dirs + urlscan_recs)
+        dupes_removed = raw_total - len(all_records)
 
-    print(
-        f"[SUMMARY] shodan_favicon={len(shodan_fav)}  "
-        f"shodan_open_dir={len(shodan_dirs)}  "
-        f"urlscan={len(urlscan_recs)}  "
-        f"total_raw={raw_total}  "
-        f"after_dedup={len(all_records)}  "
-        f"dupes_removed={dupes_removed}",
-        file=sys.stderr,
-    )
-    print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
+        # Normal flow: add Validin after other hunts
+        if validin_key:
+            ioc_path = CACHE_DIR / "ioc_records.json"
+            if ioc_path.exists():
+                confirmed = json.loads(ioc_path.read_text())
+            else:
+                confirmed = []
+            validin_results = collect_validin_pivots(confirmed, validin_key)
+            all_records.extend(validin_results)
+        else:
+            print("[WARN] VALIDIN_API_KEY not set — skipping Validin pivots", file=sys.stderr)
+
+        OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+
+        print(
+            f"[SUMMARY] shodan_favicon={len(shodan_fav)}  "
+            f"shodan_open_dir={len(shodan_dirs)}  "
+            f"urlscan={len(urlscan_recs)}  "
+            f"total_raw={raw_total}  "
+            f"after_dedup={len(all_records)}  "
+            f"dupes_removed={dupes_removed}",
+            file=sys.stderr,
+        )
+        print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
 
 
 if __name__ == "__main__":

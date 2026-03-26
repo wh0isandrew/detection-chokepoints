@@ -27,6 +27,7 @@ from app.components import (  # noqa: E402
     infrastructure_tab,
     payloads_tab,
     samples_tab,
+    validin_tab,
 )
 from app.utils.helpers import REPO_ROOT, load_secrets  # noqa: E402
 
@@ -88,6 +89,7 @@ with st.sidebar:
         "☠️  Payloads",
         "🔗  Campaigns",
         "🏗  Infrastructure",
+        "🔎  Validin Pivots",
         "🗂  Samples",
     ]
 
@@ -138,5 +140,7 @@ elif selected == "🔗  Campaigns":
     campaigns_tab.render()
 elif selected == "🏗  Infrastructure":
     infrastructure_tab.render()
+elif selected == "🔎  Validin Pivots":
+    validin_tab.render()
 elif selected == "🗂  Samples":
     samples_tab.render()
