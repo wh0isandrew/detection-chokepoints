@@ -586,6 +586,42 @@ def _urlscan_hit_to_record(hit: dict, source: str) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Validin pivot orchestrator
+# ---------------------------------------------------------------------------
+
+def collect_validin_pivots(confirmed_records: list[dict], api_key: str) -> list[dict]:
+    """Run pDNS and cert-pivot collection seeded from confirmed IOC records."""
+    confirmed_sources = {"malwarebazaar", "threatfox", "urlhaus"}
+    domains = [
+        r["domain"] for r in confirmed_records
+        if r.get("domain") and r.get("source") in confirmed_sources
+    ]
+    ips = [
+        r["ip"] for r in confirmed_records
+        if r.get("ip") and r.get("source") in confirmed_sources
+    ]
+
+    budget: dict = {"remaining": VALIDIN_CALL_BUDGET}
+    pdns_results = collect_validin_pdns(domains, ips, api_key, budget)
+    cert_results = collect_validin_cert_pivot(domains, api_key, budget)
+
+    all_candidates = pdns_results + cert_results
+
+    # Deduplicate: skip domains already in confirmed records; keep highest
+    # confidence when a domain appears multiple times across candidates.
+    confirmed_domains = {r["domain"] for r in confirmed_records if r.get("domain")}
+    best: dict[str, dict] = {}
+    for cand in all_candidates:
+        domain = cand.get("domain")
+        if not domain or domain in confirmed_domains:
+            continue
+        if domain not in best or cand["confidence"] > best[domain]["confidence"]:
+            best[domain] = cand
+
+    return list(best.values())
+
+
+# ---------------------------------------------------------------------------
 # Deduplication (by domain)
 # ---------------------------------------------------------------------------
 
@@ -608,41 +644,76 @@ def main() -> None:
 
     shodan_key  = os.environ.get("SHODAN_API_KEY",  "").strip()
     urlscan_key = os.environ.get("URLSCAN_API_KEY", "").strip()
+    validin_key = os.environ.get("VALIDIN_API_KEY", "").strip()
 
-    shodan_fav:  list[dict] = []
-    shodan_dirs: list[dict] = []
-    urlscan_recs: list[dict] = []
+    if os.environ.get("VALIDIN_ONLY") == "true":
+        # Skip Shodan and URLScan, only run Validin
+        # Load confirmed records from IOC cache
+        ioc_path = CACHE_DIR / "ioc_records.json"
+        if ioc_path.exists():
+            confirmed = json.loads(ioc_path.read_text())
+        else:
+            confirmed = []
+        all_records: list[dict] = []
+        if validin_key:
+            validin_results = collect_validin_pivots(confirmed, validin_key)
+            all_records.extend(validin_results)
+        else:
+            print("[WARN] VALIDIN_API_KEY not set", file=sys.stderr)
 
-    if shodan_key:
-        print("[INFO] Running Shodan favicon hunt …", file=sys.stderr)
-        shodan_fav = hunt_shodan_favicons(shodan_key)
-        print("[INFO] Running Shodan open-dir hunt …", file=sys.stderr)
-        shodan_dirs = hunt_shodan_open_dirs(shodan_key)
+        OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+        print(
+            f"[SUMMARY] validin={len(all_records)}  after_dedup={len(all_records)}",
+            file=sys.stderr,
+        )
+        print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
     else:
-        print("[WARN] SHODAN_API_KEY not set — skipping Shodan hunts", file=sys.stderr)
+        shodan_fav:  list[dict] = []
+        shodan_dirs: list[dict] = []
+        urlscan_recs: list[dict] = []
 
-    if urlscan_key:
-        print("[INFO] Running URLScan hunts …", file=sys.stderr)
-        urlscan_recs = hunt_urlscan(urlscan_key)
-    else:
-        print("[WARN] URLSCAN_API_KEY not set — skipping URLScan hunts", file=sys.stderr)
+        if shodan_key:
+            print("[INFO] Running Shodan favicon hunt …", file=sys.stderr)
+            shodan_fav = hunt_shodan_favicons(shodan_key)
+            print("[INFO] Running Shodan open-dir hunt …", file=sys.stderr)
+            shodan_dirs = hunt_shodan_open_dirs(shodan_key)
+        else:
+            print("[WARN] SHODAN_API_KEY not set — skipping Shodan hunts", file=sys.stderr)
 
-    raw_total = len(shodan_fav) + len(shodan_dirs) + len(urlscan_recs)
-    all_records = deduplicate(shodan_fav + shodan_dirs + urlscan_recs)
-    dupes_removed = raw_total - len(all_records)
+        if urlscan_key:
+            print("[INFO] Running URLScan hunts …", file=sys.stderr)
+            urlscan_recs = hunt_urlscan(urlscan_key)
+        else:
+            print("[WARN] URLSCAN_API_KEY not set — skipping URLScan hunts", file=sys.stderr)
 
-    OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+        raw_total = len(shodan_fav) + len(shodan_dirs) + len(urlscan_recs)
+        all_records = deduplicate(shodan_fav + shodan_dirs + urlscan_recs)
+        dupes_removed = raw_total - len(all_records)
 
-    print(
-        f"[SUMMARY] shodan_favicon={len(shodan_fav)}  "
-        f"shodan_open_dir={len(shodan_dirs)}  "
-        f"urlscan={len(urlscan_recs)}  "
-        f"total_raw={raw_total}  "
-        f"after_dedup={len(all_records)}  "
-        f"dupes_removed={dupes_removed}",
-        file=sys.stderr,
-    )
-    print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
+        # Normal flow: add Validin after other hunts
+        if validin_key:
+            ioc_path = CACHE_DIR / "ioc_records.json"
+            if ioc_path.exists():
+                confirmed = json.loads(ioc_path.read_text())
+            else:
+                confirmed = []
+            validin_results = collect_validin_pivots(confirmed, validin_key)
+            all_records.extend(validin_results)
+        else:
+            print("[WARN] VALIDIN_API_KEY not set — skipping Validin pivots", file=sys.stderr)
+
+        OUTPUT_PATH.write_text(json.dumps(all_records, indent=2, ensure_ascii=False))
+
+        print(
+            f"[SUMMARY] shodan_favicon={len(shodan_fav)}  "
+            f"shodan_open_dir={len(shodan_dirs)}  "
+            f"urlscan={len(urlscan_recs)}  "
+            f"total_raw={raw_total}  "
+            f"after_dedup={len(all_records)}  "
+            f"dupes_removed={dupes_removed}",
+            file=sys.stderr,
+        )
+        print(f"[INFO] Wrote {len(all_records)} records → {OUTPUT_PATH}", file=sys.stderr)
 
 
 if __name__ == "__main__":
