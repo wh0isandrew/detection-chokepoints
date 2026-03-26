@@ -223,6 +223,152 @@ def has_cs_headers(headers_string: str | None) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Validin pDNS and co-host collection
+# ---------------------------------------------------------------------------
+
+def collect_validin_pdns(
+    domains: list[str],
+    ips: list[str],
+    api_key: str,
+    budget: dict,
+) -> list[dict]:
+    """Collect pDNS IP history for domains and co-hosted domains for IPs."""
+    pdns_candidates: list[dict] = []
+    cohost_candidates: list[dict] = []
+    calls_used = 0
+
+    for domain in domains:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+        records = resp.get("records") or resp.get("results") or []
+        for entry in records:
+            ip = entry.get("ip_address") or entry.get("value")
+            if not ip or ip in ips:
+                continue
+            pdns_candidates.append({
+                "domain": domain,
+                "ip": ip,
+                "source": "validin_pdns",
+                "confidence": 30,
+                "chain_observed": False,
+                "first_seen": None,
+                "last_seen": None,
+                "payload_class": "unknown",
+                "payload_family": None,
+                "lure_type": "unknown",
+                "note": f"Historical IP resolution for confirmed delivery domain {domain}",
+            })
+
+    for ip in ips:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/ip/{ip}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+        records = resp.get("records") or resp.get("results") or []
+        for entry in records:
+            cohosted_domain = entry.get("domain") or entry.get("value")
+            if not cohosted_domain or cohosted_domain in domains:
+                continue
+            matched = any(brand in cohosted_domain.lower() for brand in BRAND_LURES)
+            if matched:
+                cohost_candidates.append({
+                    "domain": cohosted_domain,
+                    "ip": ip,
+                    "source": "validin_cohost",
+                    "confidence": 25,
+                    "chain_observed": False,
+                    "first_seen": None,
+                    "last_seen": None,
+                    "payload_class": "unknown",
+                    "payload_family": None,
+                    "lure_type": "unknown",
+                    "note": f"Co-hosted with confirmed delivery domain. Shared IP: {ip}",
+                })
+
+    print(
+        f"[INFO] Validin pDNS: {len(pdns_candidates)} pDNS candidates, "
+        f"{len(cohost_candidates)} co-host candidates, "
+        f"{calls_used} API calls used",
+        file=sys.stderr,
+    )
+    return pdns_candidates + cohost_candidates
+
+
+def collect_validin_cert_pivot(
+    domains: list[str],
+    api_key: str,
+    budget: dict,
+) -> list[dict]:
+    """Pivot on certificate fingerprints found in pDNS responses."""
+    candidates: list[dict] = []
+    pivots_attempted = 0
+    calls_used = 0
+
+    for domain in domains:
+        if budget["remaining"] <= 0:
+            break
+        resp = validin_get(f"/intelligence/pdns/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not resp:
+            continue
+
+        # Extract certificate fingerprints from response
+        fingerprints: list[str] = []
+        for cert in resp.get("certificates") or []:
+            fp = cert.get("fingerprint") or cert.get("sha256")
+            if fp:
+                fingerprints.append(fp)
+        for fp in resp.get("certificate_fingerprints") or []:
+            if fp and fp not in fingerprints:
+                fingerprints.append(fp)
+
+        for fingerprint in fingerprints:
+            if budget["remaining"] <= 0:
+                break
+            pivots_attempted += 1
+            cert_resp = validin_get(f"/intelligence/certificate/{fingerprint}", api_key)
+            budget["remaining"] -= 1
+            calls_used += 1
+            if not cert_resp:
+                continue
+            records = cert_resp.get("records") or cert_resp.get("results") or []
+            for entry in records:
+                pivoted_ip = entry.get("ip_address") or entry.get("value")
+                if not pivoted_ip:
+                    continue
+                candidates.append({
+                    "domain": domain,
+                    "ip": pivoted_ip,
+                    "source": "validin_cert_pivot",
+                    "confidence": 35,
+                    "chain_observed": False,
+                    "first_seen": None,
+                    "last_seen": None,
+                    "payload_class": "unknown",
+                    "payload_family": None,
+                    "lure_type": "unknown",
+                    "note": f"Cert fingerprint pivot from {domain}. Fingerprint: {fingerprint}",
+                })
+
+    print(
+        f"[INFO] Validin cert pivot: {pivots_attempted} pivots attempted, "
+        f"{len(candidates)} candidates found, "
+        f"{calls_used} API calls used",
+        file=sys.stderr,
+    )
+    return candidates
+
+
+# ---------------------------------------------------------------------------
 # Shodan hunting
 # ---------------------------------------------------------------------------
 
