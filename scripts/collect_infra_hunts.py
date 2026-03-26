@@ -56,6 +56,9 @@ SHODAN_OPEN_DIR_QUERIES = [
     'title:"Index of /" ".msi"',
 ]
 
+VALIDIN_API_BASE = "https://api.validin.com/api/v1"
+VALIDIN_CALL_BUDGET = 100
+
 # ---------------------------------------------------------------------------
 # Shared helpers (mirrored from collect_ioc_feeds.py for standalone use)
 # ---------------------------------------------------------------------------
@@ -174,6 +177,49 @@ def make_record(
         "triage_note": triage_note,
         "triage_source": triage_source,
     }
+
+
+# ---------------------------------------------------------------------------
+# Validin API helpers
+# ---------------------------------------------------------------------------
+
+def validin_get(endpoint: str, api_key: str) -> dict | None:
+    """Make a GET request to the Validin API and return parsed JSON or None."""
+    try:
+        resp = requests.get(
+            VALIDIN_API_BASE + endpoint,
+            headers={"Authorization": api_key},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        result = resp.json()
+    except Exception as exc:
+        print(f"[WARN] Validin API error ({endpoint}): {exc}", file=sys.stderr)
+        result = None
+    finally:
+        time.sleep(1)
+    return result
+
+
+def is_cloudflare_ip(ip: str, asn_string: str | None) -> bool:
+    """Return True if the IP belongs to Cloudflare based on ASN string."""
+    if not asn_string:
+        return False
+    lower = asn_string.lower()
+    return any(marker in lower for marker in ("as13335", "cloudflarenet", "cloudflare"))
+
+
+def has_cs_headers(headers_string: str | None) -> bool:
+    """Return True if the HTTP response headers match known Cobalt Strike patterns."""
+    if not headers_string:
+        return False
+    has_404 = "404 Not Found" in headers_string
+    has_zero_len = "Content-Length: 0" in headers_string
+    has_keepalive_or_plain = (
+        "Keep-Alive: timeout=10" in headers_string
+        or "Content-Type: text/plain" in headers_string
+    )
+    return has_404 and has_zero_len and has_keepalive_or_plain
 
 
 # ---------------------------------------------------------------------------
