@@ -369,6 +369,172 @@ def collect_validin_cert_pivot(
 
 
 # ---------------------------------------------------------------------------
+# Validin CloudFlare origin IP unmasking
+# ---------------------------------------------------------------------------
+
+def collect_validin_cf_origins(
+    domains: list[str],
+    api_key: str,
+    budget: dict,
+) -> list[dict]:
+    """Unmask real origin IPs behind CloudFlare-fronted delivery domains."""
+    origin_records: list[dict] = []
+    cohost_records: list[dict] = []
+    cf_fronted_checked = 0
+    origin_ips_found = 0
+    cf_certs_confirmed = 0
+    suspicious_headers_found = 0
+    calls_used = 0
+
+    for domain in domains:
+        if budget["remaining"] <= 0:
+            break
+
+        # Step 1 — check if domain is CF-fronted
+        pdns_resp = validin_get(f"/intelligence/pdns/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not pdns_resp:
+            continue
+
+        pdns_records = pdns_resp.get("records") or pdns_resp.get("results") or []
+        resolved: list[tuple[str, str]] = []
+        for entry in pdns_records:
+            ip = entry.get("ip_address") or entry.get("value") or ""
+            asn = entry.get("asn") or ""
+            if ip:
+                resolved.append((ip, asn))
+
+        if not resolved:
+            continue
+
+        # If any resolved IP is not CloudFlare, skip — not a CF-fronted domain
+        if any(not is_cloudflare_ip(ip, asn) for ip, asn in resolved):
+            continue
+
+        cf_fronted_checked += 1
+
+        if budget["remaining"] <= 0:
+            break
+
+        # Step 2 — find non-CF IPs in host-pair connections
+        pairs_resp = validin_get(f"/intelligence/host_pairs/domain/{domain}", api_key)
+        budget["remaining"] -= 1
+        calls_used += 1
+        if not pairs_resp:
+            continue
+
+        pair_records = pairs_resp.get("records") or pairs_resp.get("results") or []
+        candidate_origins: list[tuple[str, str]] = []
+        for entry in pair_records:
+            ip = entry.get("ip_address") or entry.get("value") or ""
+            asn = entry.get("asn") or ""
+            if ip and not is_cloudflare_ip(ip, asn):
+                candidate_origins.append((ip, asn))
+
+        if not candidate_origins:
+            continue
+
+        # Step 3 — verify each candidate origin IP
+        for candidate_ip, candidate_asn in candidate_origins:
+            if budget["remaining"] <= 0:
+                break
+
+            host_resp = validin_get(f"/intelligence/host_responses/ip/{candidate_ip}", api_key)
+            budget["remaining"] -= 1
+            calls_used += 1
+            if not host_resp:
+                continue
+
+            host_records = host_resp.get("records") or host_resp.get("results") or []
+
+            cf_origin_cert = False
+            http_suspicious = False
+
+            for entry in host_records:
+                issuer = (
+                    entry.get("certificate_issuer")
+                    or entry.get("issuer")
+                    or ""
+                )
+                if (
+                    "CloudFlare, Inc." in issuer
+                    and "CloudFlare Origin SSL Certificate Authority" in issuer
+                ):
+                    cf_origin_cert = True
+
+                banner = (
+                    entry.get("banner")
+                    or entry.get("data")
+                    or entry.get("headers")
+                    or ""
+                )
+                if has_cs_headers(banner):
+                    http_suspicious = True
+
+                # Co-hosted domains on the origin IP
+                cohosted = entry.get("domain") or entry.get("hostname") or ""
+                if cohosted and cohosted not in domains:
+                    cohost_records.append({
+                        "domain": cohosted,
+                        "ip": candidate_ip,
+                        "source": "validin_cf_cohost",
+                        "confidence": 30,
+                        "chain_observed": False,
+                        "payload_class": "unknown",
+                        "payload_family": None,
+                        "lure_type": "unknown",
+                        "note": (
+                            f"Shares CF origin IP {candidate_ip} with confirmed domain {domain}"
+                        ),
+                    })
+
+            confidence = 25
+            if cf_origin_cert:
+                confidence += 15
+                cf_certs_confirmed += 1
+            if http_suspicious:
+                confidence += 15
+                suspicious_headers_found += 1
+
+            note = (
+                f"CloudFlare origin IP unmasked via Validin SNI crawl. "
+                f"Domain {domain} fronted by CF. Origin at {candidate_ip}."
+            )
+            if cf_origin_cert:
+                note += " CF Origin cert confirmed."
+            if http_suspicious:
+                note += " CS-like HTTP headers on origin."
+
+            origin_records.append({
+                "domain": domain,
+                "ip": candidate_ip,
+                "asn": candidate_asn,
+                "source": "validin_cf_origin",
+                "cf_masked": True,
+                "cf_origin_cert": cf_origin_cert,
+                "http_headers_suspicious": http_suspicious,
+                "confidence": confidence,
+                "chain_observed": False,
+                "payload_class": "unknown",
+                "payload_family": None,
+                "lure_type": "unknown",
+                "note": note,
+            })
+            origin_ips_found += 1
+
+    print(
+        f"[INFO] Validin CF origin: {cf_fronted_checked} CF-fronted domains checked, "
+        f"{origin_ips_found} origin IPs found, "
+        f"{cf_certs_confirmed} CF certs confirmed, "
+        f"{suspicious_headers_found} suspicious headers found, "
+        f"{calls_used} API calls used",
+        file=sys.stderr,
+    )
+    return origin_records + cohost_records
+
+
+# ---------------------------------------------------------------------------
 # Shodan hunting
 # ---------------------------------------------------------------------------
 
