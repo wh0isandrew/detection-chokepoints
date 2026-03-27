@@ -773,6 +773,20 @@ def collect_validin_pivots(confirmed_records: list[dict], api_key: str) -> list[
 
     all_candidates = pdns_results + cert_results
 
+    if budget["remaining"] > 20:
+        cf_results = collect_validin_cf_origins(domains, api_key, budget)
+        all_candidates.extend(cf_results)
+        print(
+            f"[INFO] CF origin unmasking complete. Budget remaining: {budget['remaining']}",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            "[WARN] Validin call budget exhausted before CF origin unmasking could run. "
+            "Increase VALIDIN_CALL_BUDGET or run separately.",
+            file=sys.stderr,
+        )
+
     # Deduplicate: skip domains already in confirmed records; keep highest
     # confidence when a domain appears multiple times across candidates.
     confirmed_domains = {r["domain"] for r in confirmed_records if r.get("domain")}
