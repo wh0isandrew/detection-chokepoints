@@ -232,6 +232,7 @@ permalink: /trends/masq-infra/
     <li><a href="#campaigns">Campaigns</a></li>
     <li><a href="#infrastructure">Infrastructure</a></li>
     <li><a href="#samples">Samples</a></li>
+    <li><a href="#trends">Trends</a></li>
     <li><a href="#chokepoints">Chokepoints</a></li>
   </ul>
 </div>
@@ -656,7 +657,22 @@ http.favicon.hash:-1899664115</code></pre>
 </div>
 </section>
 
+{% if site.data.masq_infra_history %}
+<section id="trends">
+<h2>Weekly Trends</h2>
+<div id="mi-chart-volume"></div>
+<div id="mi-chart-lures"></div>
+</section>
+{% endif %}
+
 </div>
+
+{% if site.data.masq_infra_history %}
+<script>
+  window.MASQ_HISTORY = {{ site.data.masq_infra_history | jsonify }};
+</script>
+<script src="{{ '/assets/js/masq-infra-history.js' | relative_url }}"></script>
+{% endif %}
 
 <script>
 (function() {

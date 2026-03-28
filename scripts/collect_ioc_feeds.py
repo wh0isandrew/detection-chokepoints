@@ -33,7 +33,7 @@ REQUEST_TIMEOUT = 30
 # ---------------------------------------------------------------------------
 
 _STEALER = {"lumma", "redline", "vidar", "stealc", "amos", "risepro", "raccoon", "metastealer"}
-_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesl a"}
+_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesla"}
 _RMM     = {"anydesk", "screenconnect", "netsupport"}
 _LOADER  = {"amadey", "smokeloader", "privateloader"}
 
@@ -54,7 +54,7 @@ def classify_family(family: str) -> str:
     """Map a malware family name to its broad payload class."""
     key = family.lower().replace(" ", "").replace("-", "").replace("_", "")
     # handle common aliases
-    key = key.replace("agenttesl a", "agenttesl a")  # keep whitespace-normalised key
+    # classify_family already strips spaces, so "Agent Tesla" -> "agenttesla"
     if key in _STEALER:
         return "stealer"
     if key in _C2:
@@ -316,7 +316,7 @@ def collect_urlhaus(api_key: str) -> list[dict]:
         session.headers["Auth-Key"] = api_key
 
     try:
-        resp = session.post(
+        resp = session.get(
             "https://urlhaus-api.abuse.ch/v1/urls/recent/limit/500/",
             timeout=REQUEST_TIMEOUT,
         )
@@ -414,20 +414,26 @@ def main() -> None:
     else:
         print("[WARN] MB_API_KEY not set — skipping MalwareBazaar", file=sys.stderr)
 
+    # ThreatFox also accepts the abuse.ch shared key
+    if not tf_key and mb_key:
+        print("[INFO] THREATFOX_API_KEY not set — using MB_API_KEY for ThreatFox (abuse.ch shared key)", file=sys.stderr)
+        tf_key = mb_key
     if tf_key:
         print("[INFO] Collecting ThreatFox …", file=sys.stderr)
         tf_records = collect_threatfox(tf_key)
     else:
-        print("[WARN] THREATFOX_API_KEY not set — skipping ThreatFox", file=sys.stderr)
-        # ThreatFox works without a key too; attempt unauthenticated
-        print("[INFO] Attempting ThreatFox without auth key …", file=sys.stderr)
+        print("[WARN] THREATFOX_API_KEY not set — attempting unauthenticated", file=sys.stderr)
         tf_records = collect_threatfox("")
 
+    # URLhaus and MalwareBazaar share the same abuse.ch auth key
+    if not uh_key and mb_key:
+        print("[INFO] URLHAUS_API_KEY not set — using MB_API_KEY for URLhaus (abuse.ch shared key)", file=sys.stderr)
+        uh_key = mb_key
     if uh_key:
         print("[INFO] Collecting URLhaus …", file=sys.stderr)
         uh_records = collect_urlhaus(uh_key)
     else:
-        print("[WARN] URLHAUS_API_KEY not set — skipping URLhaus", file=sys.stderr)
+        print("[WARN] Neither URLHAUS_API_KEY nor MB_API_KEY set — skipping URLhaus", file=sys.stderr)
 
     raw_total = len(mb_records) + len(tf_records) + len(uh_records)
     all_records = deduplicate(mb_records + tf_records + uh_records)

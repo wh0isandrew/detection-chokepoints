@@ -35,6 +35,7 @@ def _build_env(secrets: dict) -> dict:
         "SHODAN_API_KEY":    secrets.get("shodan", ""),
         "ANTHROPIC_API_KEY": secrets.get("anthropic", ""),
         "VALIDIN_API_KEY":   secrets.get("validin", ""),
+        "VT_API_KEY":        secrets.get("vt", ""),
     }
 
 

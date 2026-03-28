@@ -56,11 +56,11 @@ def _extract_row(data: dict) -> tuple:
     row = {
         "week":                 week_key,
         "generated_at":         generated_at,
-        "total_domains":        data.get("meta", {}).get("record_count", 0),
+        "total_domains":        data.get("meta", {}).get("record_count") or data.get("meta", {}).get("sample_size", 0),
         "campaigns_identified": len(data.get("campaigns", [])),
-        "lets_encrypt_pct":     0.0,
+        "lets_encrypt_pct":     data.get("stats", {}).get("tls_lets_encrypt_pct", 0.0),
         "lure_types":           lure_types,
-        "traffic_sources":      {},
+        "traffic_sources":      {e["source"]: e["count"] for e in (data.get("traffic_sources") or []) if "source" in e and "count" in e},
         "top_asns":             top_asns,
         "payload_families":     payload_families,
     }
