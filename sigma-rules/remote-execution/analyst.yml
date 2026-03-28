@@ -38,6 +38,9 @@ detection:
       - '%COMSPEC%'
       - 'cmd.exe /Q /c'
       - 'cmd.exe /C'
+    # NOTE: The |re: modifier is not part of the official Sigma specification.
+    # This filter requires SIEM-specific implementation (KQL, SPL).
+    # See companion queries in analyst notes for production-ready regex matching.
   filter_random_service:
     # Impacket psexec generates random 8-char service names like "TrPFXzGH"
     # This regex check should be done at SIEM level; approximated here

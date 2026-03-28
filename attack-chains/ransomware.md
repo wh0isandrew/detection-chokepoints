@@ -118,7 +118,7 @@ actors:
     impact: "VSS delete + fastest-in-class encrypt"
   - name: Akira
     status: Active
-    initial_access: "VPN compromise (no MFA / cred stuffing)"
+    initial_access: "VPN compromise (no MFA) / Veeam CVE-2024-40711 / SonicWall exploitation"
     credential_access: "LSASS dump + credential file harvest"
     lateral_movement: "RDP hop + AnyDesk"
     defense_evasion: "Defender disable via PowerShell"

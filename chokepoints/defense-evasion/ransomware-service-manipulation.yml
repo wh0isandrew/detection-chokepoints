@@ -29,13 +29,13 @@ Variations:
     FirstSeen: "2022"
     Status: Inactive
     SourceURL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
-    NotesShort: "Collapsed February 2025 after internal chat logs leaked; members migrated to CACTUS and SafePay"
-    Notes: "Targets AV, EDR, Veeam backup, SQL databases; avg TTR 6-12 hours; collapsed February 2025 after internal Matrix chat logs (196k messages) leaked by disgruntled member; former members migrated to CACTUS and SafePay"
+    NotesShort: "Last victim posted January 2025; internal chat logs leaked February 2025; inactive by March 2025. Members migrated to CACTUS and SafePay"
+    Notes: "Targets AV, EDR, Veeam backup, SQL databases; avg TTR 6-12 hours; last victim posted January 2025; internal Matrix chat logs leaked February 2025; considered inactive by March 2025 after (196k messages) leaked by disgruntled member; former members migrated to CACTUS and SafePay"
   - Name: Alphv/BlackCat
     FirstSeen: "2021"
     Status: Defunct
     SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
-    NotesShort: "FBI-disrupted December 2023; exited via scam after $22M Change Healthcare ransom"
+    NotesShort: "FBI-disrupted December 2023; resumed operations, attacked Change Healthcare February 2024; exit-scammed affiliates March 2024 after $22M ransom"
     Notes: "Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure"
   - Name: Akira
     FirstSeen: "2023"

@@ -80,6 +80,10 @@ detection:
       - 'kavfs.exe'
       - 'ntrtscan.exe'
       - 'TRAPS.exe'
+    # NOTE: This selection catches netsh-based WFP filter manipulation only.
+    # The compiled EDRSilencer binary calls WFP APIs (FwpmFilterAdd0) directly
+    # without invoking netsh.exe. For compiled-variant detection, monitor for
+    # fwpuclnt.dll loads by non-system processes or EDR heartbeat loss.
   # Selection C: EDRSilencer — WFP filter add via netsh to block EDR network communication
   selection_wfp_filter:
     Image|endswith: '\netsh.exe'

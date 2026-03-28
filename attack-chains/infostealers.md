@@ -122,7 +122,7 @@ actors:
     exfiltration: "HTTP POST to admin panel"
     monetization: "IAB sale / direct buyer negotiation"
   - name: Raccoon
-    status: Disrupted
+    status: Disrupted (operator arrested)
     distribution: "Phishing / malvertising"
     execution: "User-executed EXE or MSI"
     collection: "Browsers + email clients + crypto wallets"
