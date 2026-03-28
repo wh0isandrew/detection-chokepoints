@@ -64,7 +64,7 @@ VALIDIN_CALL_BUDGET = 100
 # ---------------------------------------------------------------------------
 
 _STEALER = {"lumma", "redline", "vidar", "stealc", "amos", "risepro", "raccoon", "metastealer"}
-_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesl a"}
+_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesla"}
 _RMM     = {"anydesk", "screenconnect", "netsupport"}
 _LOADER  = {"amadey", "smokeloader", "privateloader"}
 

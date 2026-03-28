@@ -68,7 +68,7 @@ CDN_DOMAINS = {
 # ---------------------------------------------------------------------------
 
 _STEALER = {"lumma", "redline", "vidar", "stealc", "amos", "risepro", "raccoon", "metastealer"}
-_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesl a"}
+_C2      = {"asyncrat", "remcos", "cobaltstrike", "darkcrystal", "njrat", "agenttesla"}
 _RMM     = {"anydesk", "screenconnect", "netsupport"}
 _LOADER  = {"amadey", "smokeloader", "privateloader"}
 

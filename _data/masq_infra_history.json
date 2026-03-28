@@ -179,7 +179,7 @@
   "2026-12": {
     "week": "2026-12",
     "generated_at": "2026-03-22T06:12:06Z",
-    "total_domains": 0,
+    "total_domains": 1569,
     "campaigns_identified": 0,
     "lets_encrypt_pct": 91.2,
     "lure_types": {
