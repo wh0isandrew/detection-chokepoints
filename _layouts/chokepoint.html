@@ -382,36 +382,134 @@ layout: default
   </div>
   {% endif %}
 
-  <!-- ── Variations ─────────────────────────────────────────────── -->
-  {% if cp.Variations %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Variations</h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change:</p>
-    <div class="var-grid">
+  <!-- ── Variations & Evolution (Combined) ──────────────────────── -->
+  {% if cp.Variations or cp.EvolutionTimeline %}
+  <section class="mb-10" id="variations-evolution">
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">
+      Variations &amp; Evolution
+      <span class="count" style="font-size:.75rem;font-weight:600;color:var(--text-dim);background:var(--bg-input);border:1px solid var(--border);border-radius:999px;padding:.1rem .55rem;text-transform:none;letter-spacing:0">
+        {% if cp.Variations %}{{ cp.Variations.size }} variant{% if cp.Variations.size != 1 %}s{% endif %}{% endif %}{% if cp.Variations and cp.EvolutionTimeline %} · {% endif %}{% if cp.EvolutionTimeline %}{{ cp.EvolutionTimeline.size }} event{% if cp.EvolutionTimeline.size != 1 %}s{% endif %}{% endif %}
+      </span>
+    </h2>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change. Click a variant to highlight its entries on the timeline.</p>
+
+    <!-- Variant chip strip -->
+    {% if cp.Variations %}
+    <div class="variant-summary" id="chipStrip">
       {% for v in cp.Variations %}
-      <div class="var-card">
-        <div class="var-card-header">
-          <span class="var-card-name">{{ v.Name }}</span>
-          <span class="status-badge status-{{ v.Status | downcase }}">{{ v.Status }}</span>
+      {% assign status_lower = v.Status | downcase %}
+      {% if status_lower contains 'disrupted' %}
+        {% assign dot_class = 'dot-disrupted' %}
+      {% elsif status_lower contains 'active' %}
+        {% assign dot_class = 'dot-active' %}
+      {% else %}
+        {% assign dot_class = 'dot-inactive' %}
+      {% endif %}
+      <button class="variant-chip" data-variant="{{ v.VariantId }}">
+        <span class="chip-dot {{ dot_class }}"></span>
+        {{ v.Name }}
+        <span class="chip-year">{{ v.FirstSeen }}</span>
+      </button>
+      {% endfor %}
+      <button class="clear-filter" id="clearFilter">&#x2715; Clear filter</button>
+    </div>
+    {% endif %}
+
+    <!-- Combined chronological timeline -->
+    <div class="combined-timeline" id="combinedTimeline">
+      {% comment %}
+        Build a merged array: variants become entries with type=variant,
+        evolution events keep type from EventType field.
+        We render variants first (by FirstSeen desc) then events (by Date desc),
+        but since Jekyll can't easily merge+sort arrays, we render both in
+        reverse order and let them interleave visually.
+      {% endcomment %}
+
+      {% comment %} Render Evolution Timeline entries (newest first) {% endcomment %}
+      {% for event in cp.EvolutionTimeline reversed %}
+      {% assign evt_type = event.EventType | default: 'event' %}
+      <div class="ct-entry {% if evt_type == 'variant' %}is-variant{% endif %}"
+           data-variants="{{ event.Variants | join: ' ' }}">
+        <div class="ct-card">
+          <div class="ct-header">
+            <span class="ct-date">{{ event.Date }}</span>
+            {% if evt_type == 'takedown' %}
+            <span class="ct-type-tag tag-takedown">Takedown</span>
+            {% elsif evt_type == 'variant' %}
+            <span class="ct-type-tag tag-variant">New Variant</span>
+            {% else %}
+            <span class="ct-type-tag tag-event">Event</span>
+            {% endif %}
+          </div>
+          <div class="ct-title">{{ event.Event }}</div>
+          <div class="ct-body">{{ event.Change }}</div>
+          {% if event.DetectionImpact %}
+          <div class="ct-detail">
+            <div class="ct-detail-row">
+              <span class="ct-detail-label">Detection</span>
+              <span class="ct-detail-value">{{ event.DetectionImpact }}</span>
+            </div>
+          </div>
+          {% endif %}
         </div>
-        <div class="var-card-meta">
-          <span class="var-first-seen">{{ v.FirstSeen }}</span>
+      </div>
+      {% endfor %}
+
+      {% comment %} Render Variation entries (with intel links) {% endcomment %}
+      {% for v in cp.Variations %}
+      {% assign status_lower = v.Status | downcase %}
+      {% if status_lower contains 'disrupted' %}
+        {% assign status_class = 'status-disrupted' %}
+      {% elsif status_lower contains 'active' %}
+        {% assign status_class = 'status-active' %}
+      {% else %}
+        {% assign status_class = '' %}
+      {% endif %}
+      <div class="ct-entry is-variant" data-variants="{{ v.VariantId }}">
+        <div class="ct-card">
+          <div class="ct-header">
+            <span class="ct-date">{{ v.FirstSeen }}</span>
+            <span class="ct-type-tag tag-variant">Variant</span>
+            <span class="status-badge {{ status_class }}">{{ v.Status }}</span>
+          </div>
+          <div class="ct-title">{{ v.Name }}</div>
+          {% if v.Notes %}
+          <div class="ct-body">{{ v.Notes }}</div>
+          {% elsif v.NotesShort %}
+          <div class="ct-body">{{ v.NotesShort }}</div>
+          {% endif %}
+          {% if v.IntelLinks %}
+          <div class="ct-intel">
+            <span class="ct-intel-label">Intel</span>
+            {% for link in v.IntelLinks %}
+            <a class="ct-intel-link" href="{{ link.URL }}" target="_blank" rel="noopener">
+              <svg class="intel-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 1h6v6M15 1L7 9"/></svg>
+              <span>{{ link.Title }} <span class="ct-intel-source">{{ link.Source }}</span></span>
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if v.SourceURL %}
+          <a class="ct-intel-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener" style="margin-top:.4rem">
+            <svg class="intel-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 1h6v6M15 1L7 9"/></svg>
+            <span>Primary Source <span class="ct-intel-source">{{ v.SourceURL | split: '/' | slice: 2,1 }}</span></span>
+          </a>
+          {% endif %}
         </div>
-        {% if v.NotesShort %}
-        <p class="var-notes-short">{{ v.NotesShort }}</p>
-        {% endif %}
-        {% if v.Notes and v.Notes != v.NotesShort %}
-        <button class="var-expand-btn" data-expanded="false">More ▾</button>
-        <div class="var-notes-full hidden">{{ v.Notes }}</div>
-        {% endif %}
-        {% if v.SourceURL %}
-        <a href="{{ v.SourceURL }}" target="_blank" rel="noopener" class="variant-source-link">Source →</a>
-        {% endif %}
       </div>
       {% endfor %}
     </div>
+
+    <!-- The Constant -->
+    {% if cp.TheConstant %}
+    <div class="constant-box" style="margin-top:2rem;padding:1rem 1.25rem;background:rgba(240,136,62,.06);border:1px solid rgba(240,136,62,.2);border-radius:8px">
+      <span style="display:block;font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:.3rem">The Constant</span>
+      <span style="font-size:.88rem;color:var(--text);font-style:italic">{{ cp.TheConstant }}</span>
+    </div>
+    {% endif %}
   </section>
   {% endif %}
+
 
   <!-- ── Detection Strategy ─────────────────────────────────────── -->
   <section class="mb-10">
@@ -581,37 +679,6 @@ layout: default
         </div>
       </div>
       {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- ── Evolution Timeline ─────────────────────────────────────── -->
-  {% if cp.EvolutionTimeline %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
-        aria-expanded="false"
-        aria-controls="timeline-body"
-        data-target="timeline-body">
-      <span class="collapsible-chevron">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
-      Evolution Timeline
-      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.EvolutionTimeline.size }} event{% if cp.EvolutionTimeline.size != 1 %}s{% endif %} — click to expand)</span>
-    </h2>
-    <div class="collapsible-body collapsed mt-4" id="timeline-body">
-      <p class="section-intro mb-5">Techniques and tooling evolve; the underlying detection chokepoint does not.</p>
-      <div class="timeline flex flex-col gap-4">
-        {% for event in cp.EvolutionTimeline reversed %}
-        <div class="timeline-item flex gap-4 items-start">
-          <div class="timeline-date font-mono text-sm min-w-[6rem] pt-0.5">{{ event.Date }}</div>
-          <div class="timeline-content">
-            <h4>{% if event.IntelRef %}<a href="{{ event.IntelRef }}" target="_blank" rel="noopener">{{ event.Event }}</a>{% else %}{{ event.Event }}{% endif %}</h4>
-            <p><strong>Change:</strong> {{ event.Change }}</p>
-            <p><strong>Detection impact:</strong> {{ event.DetectionImpact }}</p>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
     </div>
   </section>
   {% endif %}
@@ -829,16 +896,40 @@ document.querySelectorAll('.collapsible-header').forEach(header => {
   });
 });
 
-/* Variation card expand/collapse */
-document.querySelectorAll('.var-expand-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const expanded = btn.dataset.expanded === 'true';
-    const full = btn.nextElementSibling;
-    btn.dataset.expanded = String(!expanded);
-    btn.textContent = expanded ? 'More ▾' : 'Less ▴';
-    full.classList.toggle('hidden', expanded);
-  });
-});
+/* Variant chip → timeline filtering */
+(function() {
+  const chips = document.querySelectorAll('.variant-chip[data-variant]');
+  const entries = document.querySelectorAll('.ct-entry');
+  const clearBtn = document.getElementById('clearFilter');
+  if (!chips.length || !entries.length) return;
+  let activeVariant = null;
+
+  function setFilter(variant) {
+    if (activeVariant === variant) { clearFilter(); return; }
+    activeVariant = variant;
+    chips.forEach(c => c.classList.toggle('selected', c.dataset.variant === variant));
+    if (clearBtn) clearBtn.classList.add('visible');
+    entries.forEach(entry => {
+      const variants = (entry.dataset.variants || '').split(' ').filter(Boolean);
+      const matches = variants.includes(variant);
+      entry.classList.remove('dimmed', 'highlighted');
+      entry.classList.add(matches ? 'highlighted' : 'dimmed');
+    });
+    const first = document.querySelector('.ct-entry.highlighted');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function clearFilter() {
+    activeVariant = null;
+    chips.forEach(c => c.classList.remove('selected'));
+    if (clearBtn) clearBtn.classList.remove('visible');
+    entries.forEach(e => e.classList.remove('dimmed', 'highlighted'));
+  }
+
+  chips.forEach(chip => chip.addEventListener('click', () => setFilter(chip.dataset.variant)));
+  if (clearBtn) clearBtn.addEventListener('click', clearFilter);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && activeVariant) clearFilter(); });
+})();
 
 </script>
 

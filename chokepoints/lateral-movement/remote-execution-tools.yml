@@ -1,327 +1,385 @@
----
 Name: Remote Execution Tools (HackTools)
 Id: d4e6f8a0-2b3c-5d7e-9f1a-4c6b8d0e2f4a
 MitreIds:
-  - T1021.002
-  - T1021.003
-  - T1021.006
-  - T1047
-  - T1053.005
-  - T1569.002
+- T1021.002
+- T1021.003
+- T1021.006
+- T1047
+- T1053.005
+- T1569.002
 Tactics:
-  - Lateral Movement
-  - Execution
+- Lateral Movement
+- Execution
 Techniques:
-  - "Remote Services: SMB/Windows Admin Shares"
-  - "Remote Services: Distributed Component Object Model"
-  - "Remote Services: Windows Remote Management"
-  - "Windows Management Instrumentation"
-  - "Scheduled Task/Job: Scheduled Task"
-  - "System Services: Service Execution"
+- 'Remote Services: SMB/Windows Admin Shares'
+- 'Remote Services: Distributed Component Object Model'
+- 'Remote Services: Windows Remote Management'
+- Windows Management Instrumentation
+- 'Scheduled Task/Job: Scheduled Task'
+- 'System Services: Service Execution'
 DetectionPriority: HIGH
 ThreatPrevalence: HIGH
 DetectionDifficulty: MEDIUM
-Description: >
-  Offensive security tools (Impacket, NetExec, CrackMapExec, Evil-WinRM) used for
-  remote code execution across Windows environments. These frameworks wrap legitimate
-  Windows protocols (SMB, WMI, WinRM, RPC) to execute code on remote systems using
-  valid admin credentials. Despite tool diversity, the chokepoint is invariant: valid
-  admin credentials, network access to target ports, and a remote execution primitive
-  (service creation, WMI process, scheduled task) are always required.
-LastUpdated: "2026-03-07"
-Author: "@iimp0ster"
+Description: 'Offensive security tools (Impacket, NetExec, CrackMapExec, Evil-WinRM) used for remote code execution across
+  Windows environments. These frameworks wrap legitimate Windows protocols (SMB, WMI, WinRM, RPC) to execute code on remote
+  systems using valid admin credentials. Despite tool diversity, the chokepoint is invariant: valid admin credentials, network
+  access to target ports, and a remote execution primitive (service creation, WMI process, scheduled task) are always required.
 
+  '
+LastUpdated: '2026-03-07'
+Author: '@iimp0ster'
 Variations:
-  - Name: Impacket
-    FirstSeen: "2015"
-    Status: Active
-    SourceURL: https://github.com/fortra/impacket
-    NotesShort: "Python suite with psexec/wmiexec/atexec/dcomexec modules; rdp_shadow added January 2025"
-    Notes: >
-      Python suite with multiple execution modules:
-      psexec.py (SMB service creation), smbexec.py (SMB + scheduled tasks),
-      wmiexec.py (WMI process creation), atexec.py (Task Scheduler),
-      dcomexec.py (DCOM), rdp_shadow.py (RDP session hijacking, added 2025-01)
-  - Name: CrackMapExec
-    FirstSeen: "2016"
-    Status: Archived
-    NotesShort: "Archived December 2023; superseded by NetExec — CME-specific signatures now stale"
-    Notes: "Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December 6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community updates"
-  - Name: NetExec
-    FirstSeen: "2023"
-    Status: Active
-    SourceURL: https://github.com/Pennyw0rth/NetExec
-    NotesShort: "Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features"
-    Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
-  - Name: Evil-WinRM
-    FirstSeen: "2019"
-    Status: Active
-    NotesShort: "Dedicated WinRM exploitation tool targeting port 5985/5986"
-    Notes: Dedicated WinRM exploitation tool; targets port 5985/5986
-  - Name: Metasploit psexec
-    FirstSeen: "2007"
-    Status: Active
-    NotesShort: "Original PsExec-style SMB execution via Metasploit framework"
-    Notes: Original PsExec-style SMB execution via Metasploit framework
-  - Name: Sliver
-    FirstSeen: "2020"
-    Status: Active
-    NotesShort: "Open-source C2 widely adopted by nation-state and ransomware actors as Cobalt Strike alternative"
-    Notes: "Open-source C2 framework widely adopted by nation-state and ransomware actors as a Cobalt Strike alternative; built-in lateral movement over SMB/WMI using the same execution primitives this chokepoint detects; used by threat actors following Fortra's crackdown on pirated Cobalt Strike licenses"
-  - Name: Havoc
-    FirstSeen: "2022"
-    Status: Active
-    NotesShort: "Modern C2 with strong EDR bypass features; uses same underlying Windows execution primitives"
-    Notes: "Modern open-source C2 framework with strong EDR bypass features and lateral movement capabilities; described as 'entry-level C2 for serious criminals'; increasingly observed in intrusions alongside or replacing Impacket; uses the same underlying Windows execution primitives (service creation, WMI, WinRM)"
+- Name: Impacket
+  FirstSeen: '2015'
+  Status: Active
+  SourceURL: https://github.com/fortra/impacket
+  NotesShort: Python suite with psexec/wmiexec/atexec/dcomexec modules; rdp_shadow added January 2025
+  Notes: 'Python suite with multiple execution modules: psexec.py (SMB service creation), smbexec.py (SMB + scheduled tasks),
+    wmiexec.py (WMI process creation), atexec.py (Task Scheduler), dcomexec.py (DCOM), rdp_shadow.py (RDP session hijacking,
+    added 2025-01)
 
+    '
+  VariantId: impacket
+- Name: CrackMapExec
+  FirstSeen: '2016'
+  Status: Archived
+  NotesShort: Archived December 2023; superseded by NetExec — CME-specific signatures now stale
+  Notes: Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December
+    6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community
+    updates
+  VariantId: crackmapexec
+- Name: NetExec
+  FirstSeen: '2023'
+  Status: Active
+  SourceURL: https://github.com/Pennyw0rth/NetExec
+  NotesShort: Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features
+  Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
+  VariantId: netexec
+- Name: Evil-WinRM
+  FirstSeen: '2019'
+  Status: Active
+  NotesShort: Dedicated WinRM exploitation tool targeting port 5985/5986
+  Notes: Dedicated WinRM exploitation tool; targets port 5985/5986
+  VariantId: evil-winrm
+- Name: Metasploit psexec
+  FirstSeen: '2007'
+  Status: Active
+  NotesShort: Original PsExec-style SMB execution via Metasploit framework
+  Notes: Original PsExec-style SMB execution via Metasploit framework
+  VariantId: metasploit-psexec
+- Name: Sliver
+  FirstSeen: '2020'
+  Status: Active
+  NotesShort: Open-source C2 widely adopted by nation-state and ransomware actors as Cobalt Strike alternative
+  Notes: Open-source C2 framework widely adopted by nation-state and ransomware actors as a Cobalt Strike alternative; built-in
+    lateral movement over SMB/WMI using the same execution primitives this chokepoint detects; used by threat actors following
+    Fortra's crackdown on pirated Cobalt Strike licenses
+  VariantId: sliver
+- Name: Havoc
+  FirstSeen: '2022'
+  Status: Active
+  NotesShort: Modern C2 with strong EDR bypass features; uses same underlying Windows execution primitives
+  Notes: Modern open-source C2 framework with strong EDR bypass features and lateral movement capabilities; described as 'entry-level
+    C2 for serious criminals'; increasingly observed in intrusions alongside or replacing Impacket; uses the same underlying
+    Windows execution primitives (service creation, WMI, WinRM)
+  VariantId: havoc
 Prerequisites:
-  - Network access to target on at least one required protocol port (SMB 445, WMI/RPC 135, WinRM 5985/5986)
-  - Remote execution surface enabled on target (Server service for SMB, WinRM service, WMI, or Task Scheduler)
-
+- Network access to target on at least one required protocol port (SMB 445, WMI/RPC 135, WinRM 5985/5986)
+- Remote execution surface enabled on target (Server service for SMB, WinRM service, WMI, or Task Scheduler)
 Chokepoints:
-  - Stage: Credential Acquisition
-    Invariant: Valid admin credentials (local or domain) must be obtained before any remote execution attempt
-    WhyCantBypass: All remote execution tools require authenticated access — no valid credentials means authentication failure at every attempted protocol regardless of which tool is used
-    LogSources:
-      - "Windows Security Event ID 4648 (Logon with Explicit Credentials)"
-      - "Windows Security Event ID 4769 (Kerberos Service Ticket Request)"
-    DetectionTier: Research
-    SigmaRef: ""
-  - Stage: Remote Execution Primitive
-    Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled task creation, or WinRM command
-    WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986) — no reachable port means no remote execution regardless of credential validity
-    LogSources:
-      - "Windows Security Event ID 4697 / System 7045 (Service Installed)"
-      - "Windows Security Event ID 5145 (IPC$/svcctl share access)"
-      - "Sysmon Event ID 1 (wmiprvse.exe or services.exe spawning cmd.exe/powershell.exe)"
-    DetectionTier: Analyst
-    SigmaRef: "sigma-rules/remote-execution/analyst.yml"
-    BypassNote: LOTL tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command) produce identical telemetry to Impacket but with signed Microsoft binaries — detection must be purely behavioral with no reliance on tool signatures
-  - Stage: Lateral Spread
-    Invariant: The same credential and execution primitive sequence repeats across multiple hosts in a short window or follows a deliberate pivot path
-    WhyCantBypass: Lateral movement by definition requires replication of the credential-plus-primitive pattern on each subsequent host — the telemetry is identical on every hop
-    LogSources:
-      - "Windows Security Event ID 4624 (multiple target hosts, short window)"
-      - "Sysmon Event ID 3 (same source IP, multiple RFC1918 destinations)"
-    DetectionTier: Hunt
-    SigmaRef: "sigma-rules/remote-execution/hunt.yml"
-
+- Stage: Credential Acquisition
+  Invariant: Valid admin credentials (local or domain) must be obtained before any remote execution attempt
+  WhyCantBypass: All remote execution tools require authenticated access — no valid credentials means authentication failure
+    at every attempted protocol regardless of which tool is used
+  LogSources:
+  - Windows Security Event ID 4648 (Logon with Explicit Credentials)
+  - Windows Security Event ID 4769 (Kerberos Service Ticket Request)
+  DetectionTier: Research
+  SigmaRef: ''
+- Stage: Remote Execution Primitive
+  Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled
+    task creation, or WinRM command
+  WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over
+    these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986)
+    — no reachable port means no remote execution regardless of credential validity
+  LogSources:
+  - Windows Security Event ID 4697 / System 7045 (Service Installed)
+  - Windows Security Event ID 5145 (IPC$/svcctl share access)
+  - Sysmon Event ID 1 (wmiprvse.exe or services.exe spawning cmd.exe/powershell.exe)
+  DetectionTier: Analyst
+  SigmaRef: sigma-rules/remote-execution/analyst.yml
+  BypassNote: LOTL tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command) produce identical telemetry to Impacket
+    but with signed Microsoft binaries — detection must be purely behavioral with no reliance on tool signatures
+- Stage: Lateral Spread
+  Invariant: The same credential and execution primitive sequence repeats across multiple hosts in a short window or follows
+    a deliberate pivot path
+  WhyCantBypass: Lateral movement by definition requires replication of the credential-plus-primitive pattern on each subsequent
+    host — the telemetry is identical on every hop
+  LogSources:
+  - Windows Security Event ID 4624 (multiple target hosts, short window)
+  - Sysmon Event ID 3 (same source IP, multiple RFC1918 destinations)
+  DetectionTier: Hunt
+  SigmaRef: sigma-rules/remote-execution/hunt.yml
 EvolutionTimeline:
-  - Date: "2016-Q1"
-    Event: CrackMapExec released as multi-protocol framework
-    Change: "Multi-protocol framework combining SMB, WMI, and WinRM in one tool; detection must cover all protocols."
-    DetectionImpact: Detection must cover multiple protocols, not just SMB
-  - Date: "2019-Q2"
-    Event: Evil-WinRM released as dedicated WinRM exploitation tool
-    Change: "Dedicated WinRM exploitation tool released; WinRM authentication spike detection becomes important."
-    DetectionImpact: WinRM authentication spike detection becomes important
-  - Date: "2023-Q3"
-    Event: NetExec forked from CrackMapExec
-    Change: "Active CrackMapExec fork adds LDAP and SSH support; no fundamental change to underlying Windows API behavior."
-    DetectionImpact: No fundamental change to underlying Windows API behaviors
-  - Date: "2023-Q4"
-    Event: CrackMapExec officially archived
-    Change: "CME archived December 6, 2023; behavioral detection remains valid but CME-specific hash/signature rules stop receiving updates."
-    DetectionImpact: Behavioral detection remains valid; tool-specific hash/signature-based detection for CME becomes stale
-  - Date: "2025-01"
-    Event: Impacket adds rdp_shadow.py (PR#2064)
-    Change: "Native RDP session hijacking (rdp_shadow.py) added to Impacket suite via PR#2064."
-    DetectionImpact: Existing RDP session manipulation detection (Event ID 4624 LogonType 10) applies
-
+- Date: 2016-Q1
+  Event: CrackMapExec released as multi-protocol framework
+  Change: Multi-protocol framework combining SMB, WMI, and WinRM in one tool; detection must cover all protocols.
+  DetectionImpact: Detection must cover multiple protocols, not just SMB
+  Variants: []
+  EventType: event
+- Date: 2019-Q2
+  Event: Evil-WinRM released as dedicated WinRM exploitation tool
+  Change: Dedicated WinRM exploitation tool released; WinRM authentication spike detection becomes important.
+  DetectionImpact: WinRM authentication spike detection becomes important
+  Variants: []
+  EventType: event
+- Date: 2023-Q3
+  Event: NetExec forked from CrackMapExec
+  Change: Active CrackMapExec fork adds LDAP and SSH support; no fundamental change to underlying Windows API behavior.
+  DetectionImpact: No fundamental change to underlying Windows API behaviors
+  Variants: []
+  EventType: event
+- Date: 2023-Q4
+  Event: CrackMapExec officially archived
+  Change: CME archived December 6, 2023; behavioral detection remains valid but CME-specific hash/signature rules stop receiving
+    updates.
+  DetectionImpact: Behavioral detection remains valid; tool-specific hash/signature-based detection for CME becomes stale
+  Variants: []
+  EventType: event
+- Date: 2025-01
+  Event: Impacket adds rdp_shadow.py (PR#2064)
+  Change: Native RDP session hijacking (rdp_shadow.py) added to Impacket suite via PR#2064.
+  DetectionImpact: Existing RDP session manipulation detection (Event ID 4624 LogonType 10) applies
+  Variants: []
+  EventType: event
 Detections:
-  - Level: Research
-    Description: Identify network logon events followed by service creation or remote process execution
-    LogSources:
-      - "Windows Security Event ID 4624 (Successful Logon)"
-      - "Windows Security Event ID 4688 (Process Creation)"
-      - "Windows System Event ID 7045 (Service Installed)"
-    Logic: >
-      Event ID: 4624
-      LogonType: 3 (Network)
-      Account: Member of local Administrators or Domain Admins
-      Within 60 seconds: Service creation (7045) OR process creation with elevated token
-    ExpectedFPRate: High
-    UseCase: Baseline normal admin activity; understand legitimate remote administration patterns
-    SigmaRule: sigma-rules/remote-execution/research.yml
+- Level: Research
+  Description: Identify network logon events followed by service creation or remote process execution
+  LogSources:
+  - Windows Security Event ID 4624 (Successful Logon)
+  - Windows Security Event ID 4688 (Process Creation)
+  - Windows System Event ID 7045 (Service Installed)
+  Logic: 'Event ID: 4624 LogonType: 3 (Network) Account: Member of local Administrators or Domain Admins Within 60 seconds:
+    Service creation (7045) OR process creation with elevated token
 
-  - Level: Hunt
-    Description: Network logon with suspicious service creation (random name or unusual path) or WMI parent process
-    LogSources:
-      - "Sysmon Event ID 1 (Process Creation)"
-      - "Windows Security Event ID 4624 (Logon)"
-      - "Windows Security Event ID 4697 (Service Installed)"
-      - "Windows System Event ID 7045 (Service Installed)"
-    Logic: >
-      Network Logon (4624, LogonType 3)
-      AND one of:
-        Service Created with:
-          - Name: matches random pattern (8-10 char alpha-numeric)
-          - Binary Path: \Windows\Temp\ OR \Users\Public\ OR \ProgramData\
-        OR Process Created with:
-          - Parent: wmiprvse.exe OR services.exe
-          - Image: cmd.exe OR powershell.exe
-          - Path: unusual system paths
-    ExpectedFPRate: Medium
-    UseCase: Active hunt for lateral movement campaigns; identifies PsExec-style and WMI execution
-    SigmaRule: sigma-rules/remote-execution/hunt.yml
-
-  - Level: Analyst
-    Description: Network logon + IPC$ access + suspicious service or multiple hosts in spray pattern
-    LogSources:
-      - "Sysmon Event ID 1 (Process Creation)"
-      - "Sysmon Event ID 3 (Network Connection)"
-      - "Windows Security Event ID 4624 (Logon)"
-      - "Windows Security Event ID 4697/7045 (Service)"
-      - "Windows Security Event ID 5145 (Detailed File Share)"
-    Logic: >
-      Network Logon (4624, LogonType 3)
-      + IPC$ share access (5145, ShareName = IPC$)
-      + Service creation with suspicious characteristics:
-          Name: 8-10 random alphanumeric characters
-          Binary: runs from \Windows\Temp\ OR \Users\Public\ OR command is cmd.exe/powershell.exe
-      OR + Pattern: same source IP accessing 3+ hosts within 10 minutes (spray)
-      Source IP: internal lateral movement (RFC1918 source to RFC1918 destination)
-    ExpectedFPRate: Low
-    UseCase: SOC alerting for active lateral movement; direct IR escalation trigger
-    SigmaRule: sigma-rules/remote-execution/analyst.yml
-
+    '
+  ExpectedFPRate: High
+  UseCase: Baseline normal admin activity; understand legitimate remote administration patterns
+  SigmaRule: sigma-rules/remote-execution/research.yml
+- Level: Hunt
+  Description: Network logon with suspicious service creation (random name or unusual path) or WMI parent process
+  LogSources:
+  - Sysmon Event ID 1 (Process Creation)
+  - Windows Security Event ID 4624 (Logon)
+  - Windows Security Event ID 4697 (Service Installed)
+  - Windows System Event ID 7045 (Service Installed)
+  Logic: "Network Logon (4624, LogonType 3) AND one of:\n  Service Created with:\n    - Name: matches random pattern (8-10\
+    \ char alpha-numeric)\n    - Binary Path: \\Windows\\Temp\\ OR \\Users\\Public\\ OR \\ProgramData\\\n  OR Process Created\
+    \ with:\n    - Parent: wmiprvse.exe OR services.exe\n    - Image: cmd.exe OR powershell.exe\n    - Path: unusual system\
+    \ paths\n"
+  ExpectedFPRate: Medium
+  UseCase: Active hunt for lateral movement campaigns; identifies PsExec-style and WMI execution
+  SigmaRule: sigma-rules/remote-execution/hunt.yml
+- Level: Analyst
+  Description: Network logon + IPC$ access + suspicious service or multiple hosts in spray pattern
+  LogSources:
+  - Sysmon Event ID 1 (Process Creation)
+  - Sysmon Event ID 3 (Network Connection)
+  - Windows Security Event ID 4624 (Logon)
+  - Windows Security Event ID 4697/7045 (Service)
+  - Windows Security Event ID 5145 (Detailed File Share)
+  Logic: "Network Logon (4624, LogonType 3) + IPC$ share access (5145, ShareName = IPC$) + Service creation with suspicious\
+    \ characteristics:\n    Name: 8-10 random alphanumeric characters\n    Binary: runs from \\Windows\\Temp\\ OR \\Users\\\
+    Public\\ OR command is cmd.exe/powershell.exe\nOR + Pattern: same source IP accessing 3+ hosts within 10 minutes (spray)\
+    \ Source IP: internal lateral movement (RFC1918 source to RFC1918 destination)\n"
+  ExpectedFPRate: Low
+  UseCase: SOC alerting for active lateral movement; direct IR escalation trigger
+  SigmaRule: sigma-rules/remote-execution/analyst.yml
 Intel:
-  - Name: MITRE ATT&CK — Impacket Software S0357
-    Tier: primary
-    URL: https://attack.mitre.org/software/S0357/
-    Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful to a defender than the raw GitHub repo for understanding real-world prevalence
-  - Name: MITRE ATT&CK — T1021.003 DCOM
-    Tier: primary
-    URL: https://attack.mitre.org/techniques/T1021/003/
-    Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
-  - Name: MITRE ATT&CK — T1569.002 Service Execution
-    Tier: primary
-    URL: https://attack.mitre.org/techniques/T1569/002/
-    Description: Technique definition for service-based remote execution (psexec/smbexec pattern); the primary detection signal in this chokepoint's hunt and analyst rules
-  - Name: Microsoft — Storm-0501 Ransomware Hybrid Cloud Attacks
-    Tier: primary
-    URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
-    Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete example of Impacket use in a 2024 ransomware campaign
-    LinkedFrom: ["Impacket"]
-  - Name: Impacket GitHub
-    Tier: primary
-    URL: https://github.com/fortra/impacket
-    Description: Monitor releases and PRs for new execution modules; source of truth for what capabilities the suite currently covers
-  - Name: NetExec GitHub
-    Tier: primary
-    URL: https://github.com/Pennyw0rth/NetExec
-    Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
-  - Name: SOC Investigation — Event ID 5145 Threat Hunting
-    Tier: primary
-    URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
-    Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$ access correlation
-    LinkedFrom: ["Remote Execution Primitive"]
-
+- Name: MITRE ATT&CK — Impacket Software S0357
+  Tier: primary
+  URL: https://attack.mitre.org/software/S0357/
+  Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful
+    to a defender than the raw GitHub repo for understanding real-world prevalence
+- Name: MITRE ATT&CK — T1021.003 DCOM
+  Tier: primary
+  URL: https://attack.mitre.org/techniques/T1021/003/
+  Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
+- Name: MITRE ATT&CK — T1569.002 Service Execution
+  Tier: primary
+  URL: https://attack.mitre.org/techniques/T1569/002/
+  Description: Technique definition for service-based remote execution (psexec/smbexec pattern); the primary detection signal
+    in this chokepoint's hunt and analyst rules
+- Name: Microsoft — Storm-0501 Ransomware Hybrid Cloud Attacks
+  Tier: primary
+  URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
+  Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete
+    example of Impacket use in a 2024 ransomware campaign
+  LinkedFrom:
+  - Impacket
+- Name: Impacket GitHub
+  Tier: primary
+  URL: https://github.com/fortra/impacket
+  Description: Monitor releases and PRs for new execution modules; source of truth for what capabilities the suite currently
+    covers
+- Name: NetExec GitHub
+  Tier: primary
+  URL: https://github.com/Pennyw0rth/NetExec
+  Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
+- Name: SOC Investigation — Event ID 5145 Threat Hunting
+  Tier: primary
+  URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
+  Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$
+    access correlation
+  LinkedFrom:
+  - Remote Execution Primitive
 RelatedChokepoints:
-  - ransomware-service-manipulation
-
+- ransomware-service-manipulation
 OsintSources:
-  - Platform: Shodan
-    Query: 'port:5985 product:"Microsoft HTTPAPI"'
-    URL: "https://www.shodan.io/search?query=port%3A5985+product%3A%22Microsoft+HTTPAPI%22"
-    Notes: "Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface — run a second query on port 5986 for the HTTPS variant."
-  - Platform: Shodan
-    Query: 'ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5 port:443'
-    URL: "https://www.shodan.io/search?query=ssl.jarm%3A07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5"
-    Notes: "Clusters of hosts sharing this default Cobalt Strike JARM fingerprint are likely team servers; more resilient to infrastructure rotation than IP/domain blocklists."
-  - Platform: GitHub Code Search
-    Query: '"wmiexec" OR "smbexec" OR "atexec" path:*.py'
-    URL: "https://github.com/search?q=%22wmiexec%22+OR+%22smbexec%22+OR+%22atexec%22+path%3A*.py&type=code"
-    Notes: "Finds community tools built on Impacket execution primitives; use for defender awareness of new modules extending the execution surface."
+- Platform: Shodan
+  Query: port:5985 product:"Microsoft HTTPAPI"
+  URL: https://www.shodan.io/search?query=port%3A5985+product%3A%22Microsoft+HTTPAPI%22
+  Notes: Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface — run
+    a second query on port 5986 for the HTTPS variant.
+- Platform: Shodan
+  Query: ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5 port:443
+  URL: https://www.shodan.io/search?query=ssl.jarm%3A07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5
+  Notes: Clusters of hosts sharing this default Cobalt Strike JARM fingerprint are likely team servers; more resilient to
+    infrastructure rotation than IP/domain blocklists.
+- Platform: GitHub Code Search
+  Query: '"wmiexec" OR "smbexec" OR "atexec" path:*.py'
+  URL: https://github.com/search?q=%22wmiexec%22+OR+%22smbexec%22+OR+%22atexec%22+path%3A*.py&type=code
+  Notes: Finds community tools built on Impacket execution primitives; use for defender awareness of new modules extending
+    the execution surface.
 KnownBypasses:
-  - Bypass: Using legitimate service names that blend in with existing services
-    Mitigation: Maintain a baseline of approved services; alert on any new service creation.
-  - Bypass: NTLM relay attacks instead of direct credential use
-    Mitigation: Enable SMB signing and LDAP signing; disable NTLM where operationally feasible.
-  - Bypass: Using legitimate admin tools (psexec.exe from Sysinternals)
-    Mitigation: Enforce software allowlisting and monitor hash for known-good vs. impersonated versions.
-  - Bypass: Living Off the Land — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
-    Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW for remote administration.
-  - Bypass: Kerberos-based lateral movement (Overpass-the-Hash, Pass-the-Ticket, Silver/Golden Tickets)
-    Mitigation: Enable AES encryption for Kerberos; protect the krbtgt account; monitor for anomalous TGS requests.
-
+- Bypass: Using legitimate service names that blend in with existing services
+  Mitigation: Maintain a baseline of approved services; alert on any new service creation.
+- Bypass: NTLM relay attacks instead of direct credential use
+  Mitigation: Enable SMB signing and LDAP signing; disable NTLM where operationally feasible.
+- Bypass: Using legitimate admin tools (psexec.exe from Sysinternals)
+  Mitigation: Enforce software allowlisting and monitor hash for known-good vs. impersonated versions.
+- Bypass: Living Off the Land — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
+  Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW for remote administration.
+- Bypass: Kerberos-based lateral movement (Overpass-the-Hash, Pass-the-Ticket, Silver/Golden Tickets)
+  Mitigation: Enable AES encryption for Kerberos; protect the krbtgt account; monitor for anomalous TGS requests.
 YaraRules:
-  - yara-rules/impacket-indicators.yar
-
+- yara-rules/impacket-indicators.yar
 RawLogs:
-  - Type: Windows Event Log
-    EventId: 4624
-    Source: Microsoft-Windows-Security-Auditing
-    Description: Network logon (Type 3) from attacker IP before remote execution
-    MatchedRules: [Research, Analyst]
-    Sample: |
-      EventID: 4624 (An account was successfully logged on)
-      TimeCreated: 2024-07-09T01:33:47.2284110Z
-      Channel: Security
+- Type: Windows Event Log
+  EventId: 4624
+  Source: Microsoft-Windows-Security-Auditing
+  Description: Network logon (Type 3) from attacker IP before remote execution
+  MatchedRules:
+  - Research
+  - Analyst
+  Sample: 'EventID: 4624 (An account was successfully logged on)
 
-      LogonType: 3
-      NewLogonUserName: Administrator
-      NewLogonDomain: CORP
-      AuthenticationPackageName: NTLM
-      LogonProcessName: NtLmSsp
-      IpAddress: 10.10.50.5
-      IpPort: 49221
-      # LogonType=3 (Network) from internal IP — pre-execution authentication
+    TimeCreated: 2024-07-09T01:33:47.2284110Z
 
-  - Type: Windows Event Log
-    EventId: 5145
-    Source: Microsoft-Windows-Security-Auditing
-    Description: IPC$ share access — PsExec/Impacket opens IPC$/svcctl before service creation
-    MatchedRules: [Analyst]
-    Sample: |
-      EventID: 5145 (A network share object was checked for access)
-      TimeCreated: 2024-07-09T01:33:47.4418230Z
-      Channel: Security
+    Channel: Security
 
-      SubjectUserName: Administrator
-      ShareName: \\*\IPC$
-      RelativeTargetName: svcctl
-      AccessList: %%4416 (ReadData)
-      IpAddress: 10.10.50.5
-      # IPC$/svcctl access = opening service control manager over SMB (PsExec/Impacket pattern)
 
-  - Type: Windows Event Log
-    EventId: 7045
-    Source: Service Control Manager
-    Description: Random-named service installed from TEMP path — classic PsExec/Impacket signature
-    MatchedRules: [Research, Hunt, Analyst]
-    Sample: |
-      EventID: 7045 (A new service was installed in the system)
-      TimeCreated: 2024-07-09T01:33:47.8834120Z
-      Channel: System
+    LogonType: 3
 
-      ServiceName: xvkbmrfe
-      ServiceFileName: C:\Windows\Temp\xvkbmrfe.exe
-      ServiceType: user mode service
-      ServiceStartType: demand start
-      ServiceAccount: LocalSystem
-      # 8-char random name + TEMP binary path = PsExec/Impacket/CrackMapExec pattern
+    NewLogonUserName: Administrator
 
-  - Type: Sysmon
-    EventId: 1
-    Source: Microsoft-Windows-Sysmon/Operational
-    Description: cmd.exe spawned from services.exe — service binary executing attacker commands
-    MatchedRules: [Hunt, Analyst]
-    Sample: |
-      EventID: 1 (Process Create)
-      UtcTime: 2024-07-09 01:33:48.227
-      ProcessId: 4096
-      Image: C:\Windows\System32\cmd.exe
-      CommandLine: cmd.exe /Q /c whoami 1>\\127.0.0.1\ADMIN$\__1720488827.18 2>&1
-      ParentProcessId: 612
-      ParentImage: C:\Windows\System32\services.exe
-      # services.exe → cmd.exe is the canonical PsExec parent chain
-      # Output redirected to ADMIN$ share — PsExec output capture pattern
+    NewLogonDomain: CORP
 
+    AuthenticationPackageName: NTLM
+
+    LogonProcessName: NtLmSsp
+
+    IpAddress: 10.10.50.5
+
+    IpPort: 49221
+
+    # LogonType=3 (Network) from internal IP — pre-execution authentication
+
+    '
+- Type: Windows Event Log
+  EventId: 5145
+  Source: Microsoft-Windows-Security-Auditing
+  Description: IPC$ share access — PsExec/Impacket opens IPC$/svcctl before service creation
+  MatchedRules:
+  - Analyst
+  Sample: 'EventID: 5145 (A network share object was checked for access)
+
+    TimeCreated: 2024-07-09T01:33:47.4418230Z
+
+    Channel: Security
+
+
+    SubjectUserName: Administrator
+
+    ShareName: \\*\IPC$
+
+    RelativeTargetName: svcctl
+
+    AccessList: %%4416 (ReadData)
+
+    IpAddress: 10.10.50.5
+
+    # IPC$/svcctl access = opening service control manager over SMB (PsExec/Impacket pattern)
+
+    '
+- Type: Windows Event Log
+  EventId: 7045
+  Source: Service Control Manager
+  Description: Random-named service installed from TEMP path — classic PsExec/Impacket signature
+  MatchedRules:
+  - Research
+  - Hunt
+  - Analyst
+  Sample: 'EventID: 7045 (A new service was installed in the system)
+
+    TimeCreated: 2024-07-09T01:33:47.8834120Z
+
+    Channel: System
+
+
+    ServiceName: xvkbmrfe
+
+    ServiceFileName: C:\Windows\Temp\xvkbmrfe.exe
+
+    ServiceType: user mode service
+
+    ServiceStartType: demand start
+
+    ServiceAccount: LocalSystem
+
+    # 8-char random name + TEMP binary path = PsExec/Impacket/CrackMapExec pattern
+
+    '
+- Type: Sysmon
+  EventId: 1
+  Source: Microsoft-Windows-Sysmon/Operational
+  Description: cmd.exe spawned from services.exe — service binary executing attacker commands
+  MatchedRules:
+  - Hunt
+  - Analyst
+  Sample: 'EventID: 1 (Process Create)
+
+    UtcTime: 2024-07-09 01:33:48.227
+
+    ProcessId: 4096
+
+    Image: C:\Windows\System32\cmd.exe
+
+    CommandLine: cmd.exe /Q /c whoami 1>\\127.0.0.1\ADMIN$\__1720488827.18 2>&1
+
+    ParentProcessId: 612
+
+    ParentImage: C:\Windows\System32\services.exe
+
+    # services.exe → cmd.exe is the canonical PsExec parent chain
+
+    # Output redirected to ADMIN$ share — PsExec output capture pattern
+
+    '
 EmulationScript:
   File: emulation/remote-execution-tools/emulate.ps1
   Language: powershell
   Description: Simulates network logon, IPC$ access, random-named service creation, and cmd.exe execution
   SafetyNotes: Requires Administrator. All activity targets localhost only. Run in isolated lab VM.
   AtomicRef: T1021.002
-
+TheConstant: Valid admin credentials → authenticated protocol (SMB/WMI/WinRM) → remote command execution
