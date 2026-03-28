@@ -128,6 +128,11 @@ if not secrets.get("urlscan") or not secrets.get("mb"):
     st.warning(
         "⚠️ URLSCAN_API_KEY or MB_API_KEY not configured. Collection will be limited."
     )
+if not secrets.get("github"):
+    st.warning(
+        "⚠️ GH_TOKEN not configured. Collected data cannot be published back to "
+        "the GitHub repo and will be lost when the app restarts."
+    )
 
 # ── Route to selected tab ─────────────────────────────────────────────────────
 if selected == "📡  Collection":
