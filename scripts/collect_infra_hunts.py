@@ -116,8 +116,8 @@ def extract_domain(url: str | None) -> str | None:
         ext = tldextract.extract(url)
         if ext.domain and ext.suffix:
             return f"{ext.domain}.{ext.suffix}"
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"[WARN] tldextract failed for {url!r}: {exc}", file=sys.stderr)
     return None
 
 

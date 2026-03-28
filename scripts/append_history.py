@@ -27,48 +27,40 @@ def _load_json(path: Path, default=None):
 
 def _extract_row(data: dict) -> tuple:
     """Return (week_key, row_dict) from a masq_infra snapshot."""
-    generated_at = data.get("generated_at", "")
+    generated_at = data.get("meta", {}).get("last_updated", "")
     try:
         dt = datetime.strptime(generated_at, "%Y-%m-%dT%H:%M:%SZ")
     except ValueError:
         dt = datetime.utcnow()
     week_key = dt.strftime("%G-%V")
 
-    summary = data.get("summary", {})
-    stats   = data.get("stats", {})
-
     lure_types = {
-        e["tag"]: e["count"]
-        for e in data.get("lure_types", [])
-        if "tag" in e and "count" in e
-    }
-    traffic_sources = {
-        e["source"]: e["count"]
-        for e in data.get("traffic_sources", [])
-        if "source" in e and "count" in e
+        e["lure_type"]: e["count"]
+        for e in (data.get("payload_summary", {}).get("lure_payload_matrix") or [])
+        if "lure_type" in e and "count" in e
     }
     top_asns = [
         {
             "asn":   e.get("asn", ""),
-            "org":   e.get("org", ""),
+            "org":   "",
             "count": e.get("count", 0),
-            "pct":   e.get("pct", 0.0),
+            "pct":   0.0,
         }
-        for e in data.get("asn_distribution", [])[:3]
+        for e in (data.get("infrastructure_summary", {}).get("top_asns") or [])[:3]
     ]
     payload_families = [
         {"family": e.get("family", ""), "count": e.get("count", 0)}
-        for e in data.get("payload_families", [])
+        for e in (data.get("payload_summary", {}).get("top_families") or [])
     ]
 
     row = {
         "week":                 week_key,
         "generated_at":         generated_at,
-        "total_domains":        summary.get("total_domains", 0),
-        "campaigns_identified": summary.get("campaigns_identified", 0),
-        "lets_encrypt_pct":     stats.get("tls_lets_encrypt_pct", 0.0),
+        "total_domains":        data.get("meta", {}).get("record_count", 0),
+        "campaigns_identified": len(data.get("campaigns", [])),
+        "lets_encrypt_pct":     0.0,
         "lure_types":           lure_types,
-        "traffic_sources":      traffic_sources,
+        "traffic_sources":      {},
         "top_asns":             top_asns,
         "payload_families":     payload_families,
     }
