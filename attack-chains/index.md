@@ -97,6 +97,45 @@ permalink: /attack-chains/
       </div>
     </a>
 
+    <a class="ac-index-card" href="{{ '/attack-chains/aitm/' | relative_url }}">
+      <span class="ac-card-badge aitm">AiTM</span>
+      <div class="ac-card-title">AiTM / Phishing Kit Attack Chain</div>
+      <p class="ac-card-desc">
+        Lure Delivery → Proxy Interception → Token Harvest → Account Takeover → Persistence &amp; Objectives.
+        Covers Tycoon 2FA, Evilginx, EvilProxy, Sneaky 2FA, and Device Code Flow — showing how
+        every kit bypasses MFA by stealing session tokens, not passwords.
+      </p>
+      <div class="ac-card-meta">
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          5 kits tracked
+        </span>
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          5 chokepoints
+        </span>
+        <span class="ac-card-meta-item">MFA bypass focus</span>
+        <span class="ac-card-cta">
+          View chain
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
   </div>
 
   <div class="mt-12 p-5 rounded-lg" style="background:var(--bg-card);border:1px solid var(--border);">

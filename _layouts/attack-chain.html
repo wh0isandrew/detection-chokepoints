@@ -43,37 +43,12 @@ layout: default
   {% if page.stages %}
 
   {% if page.show_ttp_overlap %}
-  <!-- TTP Overlap Flow Diagram -->
+  <!-- TTP Overlap Filter Diagram -->
   <section class="ac-section ac-ttp-overlap-section mb-10" aria-labelledby="ttp-overlap-title">
     <h2 class="ac-section-title" id="ttp-overlap-title">TTP Overlap Across Groups</h2>
-    {% include ttp-overlap-diagram.html %}
+    {% include ttp-vertical-diagram.html %}
   </section>
   {% endif %}
-
-  <!-- Attack Flow Visualization (SVG Swimlane) -->
-  <section class="ac-section ac-flowviz-section mb-8" aria-labelledby="af-section-title">
-    <h2 class="ac-section-title" id="af-section-title">Attack Flow</h2>
-    <p class="ac-section-desc">
-      Three swimlanes show the attacker's actions, mapped ATT&amp;CK techniques, and detection
-      posture at each stage.
-      <span class="af-legend">
-        <span class="af-legend-item">
-          <span class="af-legend-dot af-legend-dot--exploited" aria-hidden="true">●</span>
-          <span>Exploited <span class="af-legend-hint">(detection gap)</span></span>
-        </span>
-        <span class="af-legend-item">
-          <span class="af-legend-dot af-legend-dot--detected" aria-hidden="true">●</span>
-          <span>Detected <span class="af-legend-hint">(opportunity)</span></span>
-        </span>
-        <span class="af-legend-item">
-          <span class="af-legend-dot af-legend-dot--blocked" aria-hidden="true">●</span>
-          <span>Blocked <span class="af-legend-hint">(control active)</span></span>
-        </span>
-      </span>
-      <span class="af-hint">Hover or focus a stage for ATT&amp;CK detail.</span>
-    </p>
-    {% include attack-flow.html %}
-  </section>
 
   <!-- Chokepoint Stage Cards -->
   {% if page.chokepoints %}
@@ -199,9 +174,8 @@ layout: default
 </div>
 
 {% if page.stages %}
-<script src="{{ '/assets/js/attack-flow.js' | relative_url }}" defer></script>
 {% if page.show_ttp_overlap %}
-<script src="{{ '/assets/js/ttp-overlap.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/ttp-filter.js' | relative_url }}" defer></script>
 {% endif %}
 {% endif %}
 
@@ -476,5 +450,210 @@ layout: default
   background: rgba(248, 81, 73, 0.12);
   color: #f85149;
   border: 1px solid rgba(248, 81, 73, 0.25);
+}
+
+/* ── CSS variable aliases for TTP filter components ──────────────────── */
+.ac-page {
+  --surface: var(--bg-card, #161b22);
+  --border2: var(--border, #444d56);
+}
+
+/* ── TTP Filter Bar ───────────────────────────────────────────────────── */
+.ttp-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface, #161b22);
+  border: 1px solid var(--border2, #444d56);
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+}
+
+.ttp-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #c9d1d9);
+  padding: 0.25rem 0.45rem;
+  border-radius: 4px;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.ttp-filter-btn .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid var(--actor-color, #444d56);
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.ttp-filter-btn.active .dot {
+  background: var(--actor-color) !important;
+  transform: scale(1.2);
+}
+
+.ttp-filter-btn.faded {
+  opacity: 0.35;
+}
+
+.ttp-clear-btn {
+  margin-left: auto;
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border2, #444d56);
+  border-radius: 4px;
+  color: var(--text-muted, #8b949e);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ttp-clear-btn.visible {
+  display: inline-block;
+}
+
+.ttp-clear-btn:hover {
+  border-color: var(--text-muted, #8b949e);
+  color: var(--text-primary, #e6edf3);
+}
+
+/* ── TTP Vertical Flow Layout ────────────────────────────────────────── */
+.ttp-vertical-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.ttp-vertical-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 320px;
+}
+
+.ttp-stage-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted, #8b949e);
+  margin-bottom: 0.55rem;
+  margin-top: 0.1rem;
+}
+
+.ttp-stage-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 0.2rem;
+}
+
+/* ── TTP Cell ─────────────────────────────────────────────────────────── */
+.ttp-cell {
+  border: 1px solid var(--border, #30363d);
+  border-radius: 6px;
+  background: var(--surface, #161b22);
+  padding: 0.5rem 0.65rem;
+  min-width: 130px;
+  max-width: 175px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.ttp-cell--universal {
+  border-color: #e07b39;
+  border-width: 2px;
+}
+
+.ttp-cell-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.ttp-cell-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.ttp-cell-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #e6edf3);
+  line-height: 1.3;
+}
+
+.ttp-cell-id {
+  font-size: 0.69rem;
+  color: var(--text-muted, #8b949e);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* ── Stage Connector Arrow ───────────────────────────────────────────── */
+.stage-connector {
+  width: 2px;
+  height: 26px;
+  background: var(--border, #30363d);
+  position: relative;
+  margin: 0.15rem 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.stage-connector::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--border, #30363d);
+}
+
+/* ── Filter State Classes ────────────────────────────────────────────── */
+.ttp-cell.state-dim {
+  opacity: 0.15;
+}
+
+.ttp-cell.state-lit {
+  border-color: var(--lit-color) !important;
+  border-width: 2px !important;
+  background: color-mix(in srgb, var(--lit-color) 8%, var(--surface, #161b22));
+  box-shadow: 0 0 0 1px var(--lit-color);
+}
+
+.ttp-cell-dots .dot.dot-active {
+  transform: scale(1.45);
+  box-shadow: 0 0 0 2px var(--bg, #0d1117), 0 0 0 3.5px var(--dot-ring, currentColor);
+}
+
+.stage-connector.connector-dim {
+  opacity: 0.2;
+}
+
+.stage-connector.connector-dim::after {
+  opacity: 0.2;
 }
 </style>

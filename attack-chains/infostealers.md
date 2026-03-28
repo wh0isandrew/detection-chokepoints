@@ -140,12 +140,12 @@ chokepoints:
 
 ## References
 
-- [HudsonRock Infostealer Data](https://www.hudsonrock.com/)
-- [RedCanary Threat Detection Report](https://redcanary.com/)
-- MITRE ATT&CK: T1555 (Credentials from Password Stores)
-- MITRE ATT&CK: T1539 (Steal Web Session Cookie)
-- [Cyberint IAB Analysis](https://cyberint.com/)
+- [CISA: LummaC2 malware analysis report (2025)](https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-071a)
+- [Recorded Future: Infostealer ecosystem and IAB supply chain (2024)](https://www.recordedfuture.com/research/infostealer-ecosystem-research)
+- [Sekoia: StealC malware analysis](https://blog.sekoia.io/stealc-a-copycat-of-vidar-and-raccoon-infostealers-gaining-in-popularity-part-1/)
+- [ESET: RedLine Stealer disruption (Operation Magnus, 2024)](https://www.welivesecurity.com/en/eset-research/operation-magnus-disrupting-redline-and-meta-infostealer-infrastructure/)
 
 ## Related Attack Chains
 
 - [Ransomware]({{ '/attack-chains/ransomware/' | relative_url }}) - Often follows infostealer-provided access
+- [AiTM / Phishing Kits]({{ '/attack-chains/aitm/' | relative_url }}) - Session tokens harvested by infostealers enable AiTM-style account takeover

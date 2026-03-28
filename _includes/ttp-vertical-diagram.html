@@ -1,0 +1,84 @@
+{% comment %}
+  _includes/ttp-vertical-diagram.html
+  ──────────────────────────────────────────────────────────────────────
+  Renders the interactive vertical TTP overlap filter diagram.
+
+  Requires page.ttp_data_key to be set (e.g. "ransomware_ttp_overlap").
+  Data is read from site.data[page.ttp_data_key].
+
+  The diagram renders fully in HTML/CSS via Liquid; actor filter
+  interactions are handled client-side by assets/js/ttp-filter.js.
+{% endcomment %}
+
+{% assign ttp_data = site.data[page.ttp_data_key] %}
+{% if ttp_data %}
+
+<p class="ac-section-desc">
+  Each card represents a MITRE ATT&amp;CK technique. Dots indicate which
+  groups or families use it — cards with an orange border are universal
+  chokepoints used by every tracked actor.
+  <span class="af-hint">Click an actor below to filter.</span>
+</p>
+
+<!-- Actor filter bar -->
+<div class="ttp-filter-bar" role="group" aria-label="Filter by actor">
+  {% for group in ttp_data.groups %}
+  <button class="ttp-filter-btn"
+          type="button"
+          data-actor="{{ group.id }}"
+          style="--actor-color: {{ group.color }}"
+          aria-pressed="false">
+    <span class="dot" aria-hidden="true"></span>
+    {{ group.name }}
+  </button>
+  {% endfor %}
+  <button class="ttp-clear-btn" type="button" id="ttp-clear" aria-label="Clear actor filter">Clear</button>
+</div>
+
+<!-- Vertical flow diagram -->
+<div class="ttp-vertical-wrapper" role="region" aria-label="{{ page.title }} TTP overlap diagram">
+  <div class="ttp-vertical-flow">
+
+    {% for phase in ttp_data.phases %}
+
+    <div class="ttp-stage-label" aria-label="Stage: {{ phase.label }}">{{ phase.label }}</div>
+
+    <div class="ttp-stage-row">
+      {% for tech in phase.techniques %}
+      {% assign actor_list = tech.groups | join: "," %}
+      {% assign is_universal = false %}
+      {% if tech.groups.size == ttp_data.groups.size %}{% assign is_universal = true %}{% endif %}
+      <div class="ttp-cell{% if is_universal %} ttp-cell--universal{% endif %}"
+           data-actors="{{ actor_list }}"
+           role="listitem"
+           aria-label="{{ tech.name }} ({{ tech.id }})">
+        <div class="ttp-cell-dots">
+          {% for group in ttp_data.groups %}
+          {% assign used = false %}
+          {% if tech.groups contains group.id %}{% assign used = true %}{% endif %}
+          <span class="dot{% if used %} dot-used{% endif %}"
+                data-actor="{{ group.id }}"
+                style="{% if used %}background: {{ group.color }}; border-color: {{ group.color }};{% else %}background: transparent; border-color: {{ group.color }};{% endif %}"
+                aria-hidden="true"></span>
+          {% endfor %}
+        </div>
+        <div class="ttp-cell-name">{{ tech.name }}</div>
+        <div class="ttp-cell-id">{{ tech.id }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% unless forloop.last %}
+    <div class="stage-connector" aria-hidden="true"></div>
+    {% endunless %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+<script>
+  window.TTP_FILTER_GROUPS = {{ ttp_data.groups | jsonify }};
+</script>
+
+{% endif %}

@@ -1064,6 +1064,7 @@ pre .hljs { padding: 0 !important; }
 }
 .ac-card-badge.ransomware { background: rgba(218,54,51,.15); color: #da3633; border: 1px solid rgba(218,54,51,.35); }
 .ac-card-badge.infostealer { background: rgba(59,130,246,.15); color: #58a6ff; border: 1px solid rgba(59,130,246,.35); }
+.ac-card-badge.aitm { background: rgba(188,140,255,.15); color: #bc8cff; border: 1px solid rgba(188,140,255,.35); }
 .ac-card-title {
   font-size: 1.1rem;
   font-weight: 700;

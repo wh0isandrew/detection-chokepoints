@@ -1,0 +1,84 @@
+# AiTM / Phishing Kit TTP Overlap Data
+# Groups match the 5 kits in the AiTM attack chain actor convergence matrix.
+# TTP coverage sourced from public threat intelligence reports.
+
+groups:
+  - id: tycoon
+    name: "Tycoon 2FA"
+    color: "#f85149"
+  - id: evilginx
+    name: "Evilginx"
+    color: "#d29922"
+  - id: evilproxy
+    name: "EvilProxy"
+    color: "#3fb950"
+  - id: sneaky
+    name: "Sneaky 2FA"
+    color: "#bc8cff"
+  - id: devcode
+    name: "Device Code Flow"
+    color: "#58a6ff"
+
+phases:
+  - label: "Lure Delivery"
+    techniques:
+      - id: "T1566.002"
+        name: "Spearphishing Link"
+        groups: [tycoon, evilginx, evilproxy, sneaky]
+      - id: "T1566.001"
+        name: "Spearphishing Attachment"
+        groups: [sneaky, devcode]
+      - id: "T1583.001"
+        name: "Acquire Infrastructure"
+        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
+      - id: "T1608.005"
+        name: "Link Target (Typosquat)"
+        groups: [tycoon, evilproxy]
+
+  - label: "Proxy Interception"
+    techniques:
+      - id: "T1557.002"
+        name: "AiTM Phishing"
+        groups: [tycoon, evilginx, evilproxy, sneaky]
+      - id: "T1185"
+        name: "Browser Session Hijacking"
+        groups: [tycoon, evilginx, evilproxy]
+      - id: "T1078.004"
+        name: "Valid Cloud Accounts"
+        groups: [devcode]
+
+  - label: "Token Harvest"
+    techniques:
+      - id: "T1539"
+        name: "Steal Web Session Cookie"
+        groups: [tycoon, evilginx, evilproxy, sneaky]
+      - id: "T1528"
+        name: "Steal Application Access Token"
+        groups: [devcode]
+      - id: "T1111"
+        name: "MFA Interception"
+        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
+
+  - label: "Account Takeover"
+    techniques:
+      - id: "T1078"
+        name: "Valid Accounts"
+        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
+      - id: "T1534"
+        name: "Internal Spearphishing"
+        groups: [tycoon, evilginx, evilproxy]
+
+  - label: "Persistence & Objectives"
+    techniques:
+      - id: "T1098.001"
+        name: "Additional Cloud Credentials"
+        groups: [tycoon, evilginx, evilproxy, devcode]
+      - id: "T1564.008"
+        name: "Email Hiding Rules"
+        groups: [tycoon, evilproxy, sneaky]
+      - id: "T1098.003"
+        name: "Additional Cloud Roles"
+        groups: [evilginx, devcode]
+      - id: "T1098.005"
+        name: "Device Registration"
+        groups: [tycoon, evilginx, devcode]
