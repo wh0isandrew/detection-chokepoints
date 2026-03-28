@@ -210,7 +210,7 @@ def build_campaign(signal_type: str, signal_value: str, records: list) -> dict:
         "confidence":        score,
         "confidence_label":  confidence_label(score),
         "narrative":         None,
-        "record_ids":        [r["id"] for r in records],
+        "record_ids":        [r["id"] for r in records if "id" in r],
     }
 
 
@@ -231,7 +231,7 @@ def assign_records_to_clusters(records: list) -> list:
     for signal_type in PRIORITY_ORDER:
         for signal_value, group_records in all_groups[signal_type].items():
             # Only keep records not already claimed by a higher-priority cluster
-            eligible = [r for r in group_records if r["id"] not in assigned_ids]
+            eligible = [r for r in group_records if r.get("id") not in assigned_ids]
             if len(eligible) < 2:
                 continue
             campaign = build_campaign(signal_type, signal_value, eligible)

@@ -154,8 +154,8 @@ def compute_favicon_hash(domain: str) -> int | None:
         if resp.status_code == 200 and resp.content:
             encoded = base64.encodebytes(resp.content)
             return mmh3.hash(encoded)
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"[WARN] favicon fetch failed for {domain!r}: {exc}", file=sys.stderr)
     return None
 
 

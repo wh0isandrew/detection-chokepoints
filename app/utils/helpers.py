@@ -55,7 +55,8 @@ def load_records(path: str) -> list[dict]:
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
         return data if isinstance(data, list) else []
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
+        print(f"[WARN] Failed to parse {p}: {exc}", file=sys.stderr)
         return []
 
 
