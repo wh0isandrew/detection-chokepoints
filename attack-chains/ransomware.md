@@ -149,10 +149,13 @@ chokepoints:
 
 ## References
 
-- [Mandiant M-Trends 2025](https://www.mandiant.com/m-trends)
-- [Kaspersky: Common TTPs of Modern Ransomware](https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf)
-- MITRE ATT&CK: Ransomware Techniques
+- [Kaspersky: Common TTPs of Modern Ransomware (2022)](https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf)
+- [CISA Advisory: BlackBasta ransomware](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-131a)
+- [CISA Advisory: Akira ransomware](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-109a)
+- [CISA Advisory: Play ransomware](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-352a)
+- [DOJ: LockBit disruption operation (Feb 2024)](https://www.justice.gov/opa/pr/us-and-uk-disrupt-lockbit-ransomware-variant)
 
 ## Related Attack Chains
 
 - [Infostealers]({{ '/attack-chains/infostealers/' | relative_url }}) - Often precedes ransomware via IABs
+- [AiTM / Phishing Kits]({{ '/attack-chains/aitm/' | relative_url }}) - AiTM-compromised accounts sold to ransomware IABs
