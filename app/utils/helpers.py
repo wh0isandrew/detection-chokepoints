@@ -20,6 +20,7 @@ _KEY_MAP: dict[str, str] = {
     "urlhaus":   "URLHAUS_API_KEY",
     "validin":   "VALIDIN_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
+    "vt":        "VT_API_KEY",
 }
 
 

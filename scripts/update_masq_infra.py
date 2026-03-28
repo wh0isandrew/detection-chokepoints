@@ -647,7 +647,7 @@ def collect_malwarebazaar_brand_samples(brands: list[str], api_key: str) -> list
             if r.status_code != 200:
                 continue
             data = r.json()
-            if data.get("query_status") != "tag_info":
+            if data.get("query_status") != "ok":
                 continue
             for sample in (data.get("data") or []):
                 fname = re.sub(r"[^a-z0-9]", "", (sample.get("file_name") or "").lower())
@@ -931,11 +931,93 @@ def aggregate(
         for c in shodan_clusters[:10]
     ]
 
+    # Build records array for website compatibility (masq-infra.md template)
+    website_records = []
+    for r in sorted_records:
+        website_records.append({
+            "id":               r.get("domain", ""),
+            "domain":           r.get("domain"),
+            "ip":               None,
+            "asn":              r.get("asnname"),
+            "first_seen":       r.get("first_seen", ""),
+            "last_seen":        r.get("first_seen", ""),
+            "source":           "urlscan",
+            "payload_sha256":   r.get("payload_sha256"),
+            "payload_family":   r.get("malware_family"),
+            "payload_class":    "unknown",
+            "payload_file_type": r.get("file_type") or r.get("mime_type"),
+            "lure_brand":       None,
+            "lure_type":        r.get("lure_type", "unknown"),
+            "chain_observed":   bool(r.get("payload_host")),
+            "chain_depth":      2 if r.get("payload_host") else 0,
+            "chain":            [],
+            "cert_cn":          None,
+            "cert_issuer":      None,
+            "cert_self_signed": None,
+            "favicon_hash":     None,
+            "urlscan_uuid":     None,
+            "vt_detected":      r.get("urlscan_malicious"),
+            "vt_detection_count": None,
+            "confidence":       70 if r.get("payload_sha256") else 40,
+            "confidence_label": "high" if r.get("payload_sha256") else "medium",
+            "triage_note":      None,
+            "triage_source":    "automated",
+        })
+
+    # Build payload_summary for website compatibility
+    class_breakdown = Counter(wr.get("payload_class", "unknown") for wr in website_records)
+    for cls in ("stealer", "c2", "rmm", "loader", "unknown"):
+        class_breakdown.setdefault(cls, 0)
+    chain_obs = sum(1 for wr in website_records if wr.get("chain_observed"))
+    chain_pct = round(100.0 * chain_obs / len(website_records), 1) if website_records else 0.0
+
+    # Build lure_payload_matrix
+    lpm_counter = Counter()
+    for wr in website_records:
+        lt = wr.get("lure_type") or "unknown"
+        pc = wr.get("payload_class", "unknown")
+        lpm_counter[(lt, pc)] += 1
+    lure_payload_matrix = [
+        {"lure_type": lt, "payload_class": pc, "count": cnt, "top_family": None}
+        for (lt, pc), cnt in sorted(lpm_counter.items(), key=lambda x: -x[1])
+    ]
+
+    payload_summary = {
+        "class_breakdown":      dict(class_breakdown),
+        "top_families":         payload_families,
+        "lure_payload_matrix":  lure_payload_matrix,
+        "chain_observed_count": chain_obs,
+        "chain_observed_pct":   chain_pct,
+    }
+
+    # Build infrastructure_summary for website compatibility
+    domain_set = set(r.get("domain") for r in records if r.get("domain"))
+    infra_asn_counter = Counter()
+    for r in records:
+        asn = (r.get("asnname") or "").strip()
+        if asn and asn.lower() not in ("unknown", "none", ""):
+            infra_asn_counter[asn] += 1
+    top_asns_infra = [
+        {"asn": asn, "count": cnt}
+        for asn, cnt in infra_asn_counter.most_common(10)
+    ]
+
+    infrastructure_summary = {
+        "confirmed_domains": len(domain_set),
+        "confirmed_ips":     0,
+        "top_asns":          top_asns_infra,
+        "favicon_clusters":  favicon_clusters,
+    }
+
+    # Build campaign stubs from fingerprinted clusters
+    campaigns = []
+
     return {
         "meta": {
             "last_updated":  datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             "lookback_days": LOOKBACK_DAYS,
             "sample_size":   len(records),
+            "record_count":  len(records),
         },
         "stats": {
             "tls_lets_encrypt_pct":              crt_stats.get("lets_encrypt_pct", 0),
@@ -943,6 +1025,10 @@ def aggregate(
             "favicon_reuse_pct":                 favicon_reuse_pct,
             "favicon_clusters_found":            len(shodan_clusters),
         },
+        "records":                 website_records,
+        "campaigns":               campaigns,
+        "payload_summary":         payload_summary,
+        "infrastructure_summary":  infrastructure_summary,
         "hosting_providers": hosting_providers,
         "lure_types":        lure_types,
         "traffic_sources":   traffic_sources,
