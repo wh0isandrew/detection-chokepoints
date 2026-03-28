@@ -1,15 +1,25 @@
 """Collection tab — runs IOC feeds, infrastructure hunts, chain reconstruction,
-and AI triage scripts, then shows cache file status."""
+and AI triage scripts, then shows cache file status.
+
+On Streamlit Cloud the filesystem is ephemeral — collected data must be pushed
+back to the GitHub repo so the Jekyll/GitHub Pages site can serve it."""
 
 from __future__ import annotations
 
+import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st
 
-from app.utils.helpers import REPO_ROOT, load_records, run_script
+from app.utils.helpers import (
+    REPO_ROOT,
+    github_commit_data,
+    github_create_pr,
+    load_records,
+    run_script,
+)
 
 _SCRIPTS = Path(REPO_ROOT / "scripts")
 _CACHE = Path(REPO_ROOT / "cache")
@@ -35,6 +45,7 @@ def _build_env(secrets: dict) -> dict:
         "SHODAN_API_KEY":    secrets.get("shodan", ""),
         "ANTHROPIC_API_KEY": secrets.get("anthropic", ""),
         "VALIDIN_API_KEY":   secrets.get("validin", ""),
+        "VT_API_KEY":        secrets.get("vt", ""),
     }
 
 
@@ -183,3 +194,139 @@ def render(secrets: dict) -> None:
     cols = st.columns(len(cache_files))
     for col, (rel_path, label) in zip(cols, cache_files.items()):
         col.metric(label, _file_status(rel_path))
+
+    st.divider()
+
+    # ── Publish to GitHub ──────────────────────────────────────────────────
+    st.subheader("Publish to GitHub")
+    st.info(
+        "Streamlit Cloud has an **ephemeral filesystem** — collected data is lost "
+        "when the app restarts. Use this section to push `_data/masq_infra.json` "
+        "back to the GitHub repo so the GitHub Pages site displays the latest data."
+    )
+
+    gh_token = secrets.get("github", "")
+    if not gh_token:
+        st.warning(
+            "GH_TOKEN not configured in Streamlit secrets. "
+            "Add a GitHub personal access token with `contents: write` and "
+            "`pull-requests: write` permissions to enable publishing."
+        )
+    else:
+        masq_path = REPO_ROOT / "_data" / "masq_infra.json"
+        history_path = REPO_ROOT / "_data" / "masq_infra_history.json"
+
+        has_masq = masq_path.exists()
+        has_history = history_path.exists()
+
+        if not has_masq:
+            st.caption(
+                "_data/masq_infra.json not found. Run the full pipeline "
+                "(IOC Collection → Build Data export) first."
+            )
+
+        pub_col1, pub_col2 = st.columns(2)
+
+        with pub_col1:
+            if st.button(
+                "Commit directly to main",
+                key="btn_publish_direct",
+                disabled=not has_masq,
+            ):
+                files: dict[str, str] = {}
+                files["_data/masq_infra.json"] = masq_path.read_text(encoding="utf-8")
+                if has_history:
+                    files["_data/masq_infra_history.json"] = history_path.read_text(
+                        encoding="utf-8"
+                    )
+
+                ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+                msg = f"chore: update masq-infra data [{ts}]"
+
+                with st.spinner("Committing to GitHub …"):
+                    result = github_commit_data(gh_token, files, msg)
+
+                if result["ok"]:
+                    st.success(
+                        f"Committed to main ({result['sha'][:8]}). "
+                        "GitHub Pages will rebuild automatically."
+                    )
+                else:
+                    st.error(f"Commit failed: {result['error']}")
+
+        with pub_col2:
+            if st.button(
+                "Open a review PR",
+                key="btn_publish_pr",
+                disabled=not has_masq,
+            ):
+                date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                pr_branch = f"data/masq-infra-{date_str}"
+                ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+                msg = f"chore: update masq-infra data [{ts}]"
+
+                files = {}
+                files["_data/masq_infra.json"] = masq_path.read_text(encoding="utf-8")
+                if has_history:
+                    files["_data/masq_infra_history.json"] = history_path.read_text(
+                        encoding="utf-8"
+                    )
+
+                with st.spinner("Creating branch and PR …"):
+                    # Create the branch via the API
+                    import requests as req  # noqa: PLC0415
+                    from app.utils.helpers import _get_repo_slug, _GITHUB_API  # noqa: PLC0415
+
+                    slug = _get_repo_slug()
+                    headers = {
+                        "Authorization": f"token {gh_token}",
+                        "Accept": "application/vnd.github+json",
+                    }
+
+                    # Get main branch SHA
+                    r = req.get(
+                        f"{_GITHUB_API}/repos/{slug}/git/ref/heads/main",
+                        headers=headers, timeout=15,
+                    )
+                    if r.status_code != 200:
+                        st.error(f"Cannot resolve main branch: {r.status_code}")
+                    else:
+                        main_sha = r.json()["object"]["sha"]
+
+                        # Create or update the PR branch
+                        r = req.post(
+                            f"{_GITHUB_API}/repos/{slug}/git/refs",
+                            headers=headers, timeout=15,
+                            json={"ref": f"refs/heads/{pr_branch}", "sha": main_sha},
+                        )
+                        # 422 = branch already exists; update it instead
+                        if r.status_code == 422:
+                            req.patch(
+                                f"{_GITHUB_API}/repos/{slug}/git/refs/heads/{pr_branch}",
+                                headers=headers, timeout=15,
+                                json={"sha": main_sha, "force": True},
+                            )
+
+                        # Commit data to the PR branch
+                        result = github_commit_data(
+                            gh_token, files, msg, branch=pr_branch,
+                        )
+                        if not result["ok"]:
+                            st.error(f"Commit failed: {result['error']}")
+                        else:
+                            # Create the PR
+                            pr_result = github_create_pr(
+                                gh_token,
+                                head_branch=pr_branch,
+                                base_branch="main",
+                                title=f"chore: update masq-infra data [{date_str}]",
+                                body=(
+                                    "Pipeline data update from Streamlit Cloud.\n\n"
+                                    "Review the changes, then merge to publish "
+                                    "to the live site."
+                                ),
+                            )
+                            if pr_result["ok"]:
+                                st.success(f"PR created: {pr_result['url']}")
+                            else:
+                                st.error(f"PR failed: {pr_result['error']}")
