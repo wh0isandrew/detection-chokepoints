@@ -3,250 +3,435 @@ layout: default
 ---
 
 <style>
-/* ── Attack Chokepoints ─────────────────────────────────────────── */
-.chain-stages { position: relative; display: flex; flex-direction: column; gap: 0; }
+/* ── Attack Chokepoints accordion ────────────────────────────────── */
+.chokepoints-list { display: flex; flex-direction: column; gap: .5rem; }
 
-.chain-stage { position: relative; display: flex; flex-direction: column; gap: 0; }
-
-.chain-connector {
-  width: 2px;
-  height: 1.5rem;
-  background: var(--border);
-  margin-left: calc(1.25rem - 1px);
-  flex-shrink: 0;
-}
-
-.chain-card {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.chain-num {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
+.chokepoint-item {
   background: var(--bg-card);
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  font-weight: 800;
-  font-size: .9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+details.chokepoint-item[open] { border-color: var(--accent); }
+
+.chokepoint-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.chokepoint-header::-webkit-details-marker { display: none; }
+
+.cp-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-}
-
-.chain-body {
-  flex: 1;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 0;
-}
-
-.chain-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  flex-wrap: wrap;
-  margin-bottom: .5rem;
-}
-
-.chain-stage-name {
-  font-size: .9rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-}
-
-.chain-tier-badge {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: .6rem;
-  font-weight: 800;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  padding: .25rem .55rem .2rem;
-  border-radius: 5px;
-  line-height: 1.2;
   flex-shrink: 0;
 }
-.chain-tier-badge.tier-research  { background: rgba(88,166,255,.12); color: #58a6ff; border: 1px solid rgba(88,166,255,.3); }
-.chain-tier-badge.tier-hunt      { background: rgba(240,136,62,.12); color: #f0883e; border: 1px solid rgba(240,136,62,.3); }
-.chain-tier-badge.tier-analyst   { background: rgba(63,185,80,.12);  color: #3fb950; border: 1px solid rgba(63,185,80,.3); }
 
-.chain-tier-sub {
-  font-size: .55rem;
+.cp-title { font-weight: 600; font-size: .875rem; flex: 1; }
+
+.cp-maturity {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  padding: .12rem .4rem;
+  border-radius: 3px;
   font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: .04em;
-  opacity: .8;
-  text-transform: uppercase;
 }
+.mat-research { background: rgba(88,166,255,.1);  color: var(--link);   border: 1px solid rgba(88,166,255,.2); }
+.mat-hunt     { background: rgba(227,179,65,.1);  color: var(--high);   border: 1px solid rgba(227,179,65,.2); }
+.mat-analyst  { background: rgba(63,185,80,.1);   color: var(--medium); border: 1px solid rgba(63,185,80,.2); }
 
-.chain-invariant {
-  font-size: .875rem;
-  color: var(--text);
-  margin-bottom: .35rem;
-}
+.cp-chevron { color: var(--text-muted); font-size: .7rem; transition: transform .2s; flex-shrink: 0; }
+details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
 
-.chain-why {
-  font-size: .8rem;
-  color: var(--text-muted);
-  margin-bottom: .6rem;
-}
+.chokepoint-body { padding: 0 1rem 1rem; border-top: 1px solid var(--border); }
 
-.chain-logs {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 .6rem;
-  display: flex;
-  flex-direction: column;
-  gap: .2rem;
-}
-
-.chain-logs li {
-  font-size: .75rem;
-  color: var(--text-muted);
-  padding-left: 1rem;
-  position: relative;
-}
-
-.chain-logs li::before {
-  content: "›";
-  position: absolute;
-  left: 0;
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.chain-sigma-link {
-  display: inline-block;
-  font-size: .72rem;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  margin-top: .1rem;
-}
-.chain-sigma-link:hover { text-decoration: underline; }
-
-.chain-bypass-note {
-  display: flex;
-  align-items: flex-start;
-  gap: .5rem;
-  background: rgba(220, 38, 38, .08);
-  border: 1px solid rgba(220, 38, 38, .25);
-  border-radius: 7px;
-  padding: .6rem .9rem;
-  margin: .5rem 0 0 3.5rem;
-  font-size: .78rem;
-  color: #f87171;
+.cp-invariant {
+  background: rgba(240,136,62,.07);
+  border: 1px solid rgba(240,136,62,.2);
+  border-radius: 4px;
+  padding: .65rem .85rem;
+  margin: .75rem 0;
+  font-size: .82rem;
   line-height: 1.5;
-}
-
-.chain-bypass-note-icon {
-  flex-shrink: 0;
-  font-size: .85rem;
-  margin-top: .05rem;
-}
-
-/* ── Variation cards ────────────────────────────────────────────── */
-.var-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: .75rem;
-}
-
-.var-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1rem 1.15rem;
-}
-
-.var-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-  margin-bottom: .5rem;
-}
-
-.var-card-name {
-  font-size: .9rem;
-  font-weight: 700;
   color: var(--text);
 }
+.cp-invariant-label {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .3rem;
+}
 
-.var-card-meta {
+.cp-section-label {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin: .75rem 0 .35rem;
+}
+
+.prereq-list { list-style: none; display: flex; flex-direction: column; gap: .3rem; margin-bottom: .75rem; }
+.prereq-list li { font-size: .8rem; color: var(--text-muted); display: flex; gap: .5rem; align-items: flex-start; }
+.prereq-list li::before { content: '✓'; color: var(--medium); flex-shrink: 0; margin-top: .05rem; }
+
+.datasource-list { list-style: none; display: flex; flex-direction: column; gap: .2rem; }
+.datasource-list li { font-size: .78rem; color: var(--text-muted); padding-left: .85rem; position: relative; }
+.datasource-list li::before { content: '→'; position: absolute; left: 0; color: var(--link); font-size: .68rem; }
+
+.bypass-warning {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+  background: rgba(227,179,65,.07);
+  border: 1px solid rgba(227,179,65,.2);
+  border-radius: 4px;
+  padding: .55rem .75rem;
+  margin-top: .75rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.bypass-warning .warn-icon { color: var(--high); flex-shrink: 0; }
+
+.cp-rule-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .75rem;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--link);
+  text-decoration: none;
+  border: 1px solid rgba(88,166,255,.2);
+  padding: .25rem .6rem;
+  border-radius: 3px;
+  transition: background .15s;
+}
+.cp-rule-link:hover { background: rgba(88,166,255,.08); text-decoration: none; }
+
+/* ── Variation cards ─────────────────────────────────────────────── */
+.variations-list { display: flex; flex-direction: column; gap: .4rem; }
+
+.variant-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+
+.variant-header {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  margin-bottom: .5rem;
-  flex-wrap: wrap;
+  gap: .65rem;
+  padding: .65rem .85rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--bg-card);
 }
+.variant-header::-webkit-details-marker { display: none; }
 
-.var-first-seen {
-  font-size: .72rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono, monospace);
+.variant-name  { font-weight: 600; font-size: .85rem; flex: 1; }
+.variant-date  { font-family: var(--font-mono); font-size: .65rem; color: var(--text-muted); flex-shrink: 0; }
+
+.variant-status {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  padding: .1rem .35rem;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  flex-shrink: 0;
 }
+.status-active    { background: rgba(63,185,80,.1);   color: var(--medium);   border: 1px solid rgba(63,185,80,.2); }
+.status-disrupted { background: rgba(218,54,51,.08);  color: var(--critical); border: 1px solid rgba(218,54,51,.2); }
 
-.var-notes-short {
+.variant-chevron { color: var(--text-muted); font-size: .68rem; transition: transform .2s; flex-shrink: 0; }
+details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
+
+.variant-body {
+  padding: .75rem .85rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
   font-size: .82rem;
   color: var(--text-muted);
   line-height: 1.55;
-  margin-bottom: .35rem;
 }
-
-.var-expand-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: .72rem;
-  color: var(--accent);
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.var-notes-full {
-  font-size: .8rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-top: .4rem;
-  border-top: 1px solid var(--border);
-  padding-top: .4rem;
-}
-
-.var-notes-full.hidden { display: none; }
 
 .variant-source-link {
-  display: inline-block;
-  font-size: .72rem;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .65rem;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--link);
   text-decoration: none;
-  border: 1px solid rgba(88, 166, 255, .25);
-  border-radius: 4px;
-  padding: .15rem .5rem;
-  margin-top: .5rem;
+  border: 1px solid rgba(88,166,255,.2);
+  padding: .2rem .55rem;
+  border-radius: 3px;
+  transition: background .15s;
 }
-.variant-source-link:hover {
-  text-decoration: underline;
-  border-color: var(--accent);
+.variant-source-link:hover { background: rgba(88,166,255,.08); text-decoration: none; }
+
+/* ── Detection Strategy tabs ─────────────────────────────────────── */
+.detection-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
 }
 
-/* ── Intel flat list ─────────────────────────────────────────────── */
-.intel-flat-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
-.intel-flat-item { font-size: .875rem; line-height: 1.55; }
-.intel-flat-link { font-weight: 600; color: var(--accent); text-decoration: none; }
-.intel-flat-link:hover { text-decoration: underline; }
-.intel-flat-desc { color: var(--text-muted); }
+.det-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  margin-bottom: -1px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.det-tab:hover { color: var(--text); }
+.det-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+.fp-pill {
+  display: inline-block;
+  font-size: .58rem;
+  padding: .05rem .3rem;
+  border-radius: 2px;
+  margin-left: .3rem;
+  vertical-align: middle;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.fp-high   { background: rgba(218,54,51,.12);  color: var(--critical); }
+.fp-medium { background: rgba(227,179,65,.12); color: var(--high); }
+.fp-low    { background: rgba(63,185,80,.12);  color: var(--medium); }
+
+.det-panel { display: none; padding: 1.25rem 0 0; }
+.det-panel.active { display: block; }
+
+.det-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-bottom: .75rem;
+}
+
+.det-meta-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .65rem .85rem;
+}
+.det-meta-label {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .3rem;
+}
+.det-meta-value { font-size: .8rem; color: var(--text); line-height: 1.4; }
+
+.logsource-list { list-style: none; display: flex; flex-direction: column; gap: .2rem; }
+.logsource-list li { font-size: .78rem; color: var(--text-muted); padding-left: .85rem; position: relative; }
+.logsource-list li::before { content: '·'; position: absolute; left: 0; color: var(--border); }
+
+/* .sigma-block replaces .sigma-rule-block */
+.sigma-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+/* .sigma-header replaces .sigma-rule-header */
+.sigma-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem .85rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+/* .sigma-btn replaces .btn-sm */
+.sigma-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  padding: .18rem .5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color .15s, border-color .15s;
+  display: inline-flex;
+  align-items: center;
+}
+.sigma-btn:hover { color: var(--text); border-color: var(--border); text-decoration: none; }
+
+/* ── Raw Log Samples ─────────────────────────────────────────────── */
+.log-samples { display: flex; flex-direction: column; gap: .4rem; }
+
+.log-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .85rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--bg-card);
+  flex-wrap: wrap;
+}
+.log-header::-webkit-details-marker { display: none; }
+
+.log-eid {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  font-weight: 700;
+  padding: .1rem .4rem;
+  background: rgba(88,166,255,.1);
+  border: 1px solid rgba(88,166,255,.2);
+  color: var(--link);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.log-source { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); flex-shrink: 0; }
+.log-desc   { font-size: .8rem; flex: 1; }
+
+.rule-badges { display: flex; gap: .3rem; margin-left: auto; flex-shrink: 0; }
+.rule-badge {
+  font-family: var(--font-mono);
+  font-size: .6rem;
+  padding: .1rem .3rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.rb-research { background: rgba(88,166,255,.1);  color: var(--link); }
+.rb-hunt     { background: rgba(227,179,65,.1);  color: var(--high); }
+.rb-analyst  { background: rgba(63,185,80,.1);   color: var(--medium); }
+
+.log-chevron { color: var(--text-muted); font-size: .68rem; transition: transform .2s; flex-shrink: 0; }
+details.log-item[open] .log-chevron { transform: rotate(90deg); }
+
+.log-body {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  padding: .75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ── Emulation ───────────────────────────────────────────────────── */
+.emulation-wrapper {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.emulation-header {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .65rem .85rem;
+  background: var(--bg-card);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.emulation-header::-webkit-details-marker { display: none; }
+
+.emulation-attck {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.emulation-desc { font-size: .82rem; font-weight: 500; flex: 1; }
+.emulation-lang { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); flex-shrink: 0; }
+
+details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
+
+.emu-warning {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(227,179,65,.07);
+  border: 1px solid rgba(227,179,65,.2);
+  border-radius: 4px;
+  padding: .5rem .75rem;
+  margin-bottom: .75rem;
+  font-size: .78rem;
+  color: var(--high);
+}
+.emu-body { padding: .75rem 1rem; border-top: 1px solid var(--border); background: var(--bg); }
+
+/* ── OSINT Pivots ────────────────────────────────────────────────── */
+.osint-grid { display: flex; flex-direction: column; gap: .5rem; }
+
+.osint-top {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: .4rem;
+}
+
+.osint-source {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  font-weight: 700;
+  padding: .12rem .45rem;
+  border-radius: 3px;
+  background: rgba(88,166,255,.1);
+  border: 1px solid rgba(88,166,255,.2);
+  color: var(--link);
+  flex-shrink: 0;
+}
+
+.osint-desc { font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
 </style>
 
 {% assign cp = site.data.chokepoints | where: "_slug", page.slug | first %}
@@ -259,7 +444,7 @@ layout: default
 
 <article class="max-w-[960px] mx-auto px-6 py-10 pb-20">
 
-  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <!-- ── 1. Page Header ─────────────────────────────────────────── -->
   <header class="detail-header mb-10">
     <div class="flex items-center gap-3 mb-4">
       <a href="{{ '/' | relative_url }}" class="back-link text-sm">&larr; All Chokepoints</a>
@@ -292,527 +477,367 @@ layout: default
     </p>
   </header>
 
-  <!-- ── Prerequisites ─────────────────────────────────────────── -->
-  {% if cp.Prerequisites %}
-  <section class="mb-6">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
-      Prerequisites <span class="section-sub">(Environmental)</span>
-    </h2>
-    <ul class="prereq-list flex flex-col gap-2">
-      {% for prereq in cp.Prerequisites %}
-        <li class="flex items-start gap-2 text-[.9375rem]">
-          <span class="prereq-icon text-[.7rem] mt-1">&#10003;</span>
-          {{ prereq }}
-        </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
-
-  <!-- ── Attack Chokepoints ───────────────────────────────────────── -->
-  {% if cp.Chokepoints %}
+  <!-- ── 2. Attack Chokepoints ──────────────────────────────────── -->
   <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
-        aria-expanded="false"
-        aria-controls="attack-chokepoints-body"
-        data-target="attack-chokepoints-body">
-      <span class="collapsible-chevron">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
       Attack Chokepoints
-      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %} — click to expand)</span>
+      {% if cp.Chokepoints %}
+      <span class="section-sub">{{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %}</span>
+      {% endif %}
     </h2>
-    <div class="collapsible-body collapsed mt-5" id="attack-chokepoints-body">
-      <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
-      <div class="chain-stages">
-        {% for stage in cp.Chokepoints %}
-        <div class="chain-stage">
-          {% unless forloop.first %}
-          <div class="chain-connector"></div>
-          {% endunless %}
-          <div class="chain-card">
-            <div class="chain-num">{{ forloop.index }}</div>
-            <div class="chain-body">
-              <div class="chain-header">
-                <h4 class="chain-stage-name">{{ stage.Stage }}</h4>
-                <span class="chain-tier-badge tier-{{ stage.DetectionTier | downcase }}">
-                  {{ stage.DetectionTier }}
-                  <span class="chain-tier-sub">
-                    {%- if stage.DetectionTier == "Research" -%}Baseline
-                    {%- elsif stage.DetectionTier == "Hunt" -%}Active Hunt
-                    {%- else -%}SOC Alert
-                    {%- endif -%}
-                  </span>
-                </span>
-              </div>
-              <p class="chain-invariant">{{ stage.Invariant }}</p>
-              <p class="chain-why">{{ stage.WhyCantBypass }}</p>
-              {% if stage.LogSources %}
-              <ul class="chain-logs">
-                {% for src in stage.LogSources %}
-                <li>{{ src }}</li>
-                {% endfor %}
-              </ul>
-              {% endif %}
-              {% if stage.SigmaRef and stage.SigmaRef != "" %}
-              <a class="chain-sigma-link"
-                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ stage.SigmaRef }}"
-                 target="_blank" rel="noopener">View rule &rarr;</a>
-              {% endif %}
-            </div>
+
+    {% if cp.Chokepoints %}
+    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+    <div class="chokepoints-list">
+      {% for stage in cp.Chokepoints %}
+      <details class="chokepoint-item">
+        <summary class="chokepoint-header">
+          <span class="cp-number">{{ forloop.index }}</span>
+          <span class="cp-title">{{ stage.Stage }}</span>
+          <span class="cp-maturity mat-{{ stage.DetectionTier | downcase }}">{{ stage.DetectionTier }}</span>
+          <span class="cp-chevron">&#9654;</span>
+        </summary>
+        <div class="chokepoint-body">
+          {% if forloop.first and cp.Prerequisites %}
+          <div class="cp-section-label">Prerequisites</div>
+          <ul class="prereq-list">
+            {% for prereq in cp.Prerequisites %}
+            <li>{{ prereq }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+
+          <div class="cp-invariant">
+            <div class="cp-invariant-label">Invariant Condition</div>
+            {{ stage.Invariant }}
           </div>
+
+          {% if stage.LogSources %}
+          <div class="cp-section-label">Data Sources</div>
+          <ul class="datasource-list">
+            {% for src in stage.LogSources %}
+            <li>{{ src }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+
           {% if stage.BypassNote %}
-          <div class="chain-bypass-note">
-            <span class="chain-bypass-note-icon" aria-hidden="true">&#9888;</span>
+          <div class="bypass-warning">
+            <span class="warn-icon">&#9888;</span>
             <span><strong>Bypass risk:</strong> {{ stage.BypassNote }}</span>
           </div>
           {% endif %}
+
+          {% if stage.SigmaRef and stage.SigmaRef != "" %}
+          <a class="cp-rule-link"
+             href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ stage.SigmaRef }}"
+             target="_blank" rel="noopener">View rule &#8594;</a>
+          {% endif %}
         </div>
-        {% endfor %}
-      </div>
+      </details>
+      {% endfor %}
     </div>
+
+    {% else %}
+    <!-- TODO: Attack Chokepoints content needed — no source material found -->
+    <p class="section-intro">Attack Chokepoints data not yet structured for this page. See the YAML source for prerequisites and detection logic.</p>
+    {% endif %}
   </section>
-  {% endif %}
 
-  <!-- ── The Constant (legacy) ──────────────────────────────────── -->
-  {% if cp.TheConstant %}
-  <div class="constant-box rounded-xl px-6 py-5 mb-10">
-    <p class="constant-box-label">The Constant</p>
-    <p class="constant-box-value text-base">{{ cp.TheConstant }}</p>
-  </div>
-  {% endif %}
-
-  <!-- ── Variations & Evolution (Combined) ──────────────────────── -->
-  {% if cp.Variations or cp.EvolutionTimeline %}
-  <section class="mb-10" id="variations-evolution">
+  <!-- ── 3. Variations ─────────────────────────────────────────── -->
+  {% if cp.Variations %}
+  <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">
-      Variations &amp; Evolution
-      <span class="count" style="font-size:.75rem;font-weight:600;color:var(--text-dim);background:var(--bg-input);border:1px solid var(--border);border-radius:999px;padding:.1rem .55rem;text-transform:none;letter-spacing:0">
-        {% if cp.Variations %}{{ cp.Variations.size }} variant{% if cp.Variations.size != 1 %}s{% endif %}{% endif %}{% if cp.Variations and cp.EvolutionTimeline %} · {% endif %}{% if cp.EvolutionTimeline %}{{ cp.EvolutionTimeline.size }} event{% if cp.EvolutionTimeline.size != 1 %}s{% endif %}{% endif %}
-      </span>
+      Variations
+      <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
     </h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change. Click a variant to highlight its entries on the timeline.</p>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change.</p>
 
-    <!-- Variant chip strip -->
-    {% if cp.Variations %}
-    <div class="variant-summary" id="chipStrip">
+    <div class="variations-list">
       {% for v in cp.Variations %}
       {% assign status_lower = v.Status | downcase %}
       {% if status_lower contains 'disrupted' %}
-        {% assign dot_class = 'dot-disrupted' %}
-      {% elsif status_lower contains 'active' %}
-        {% assign dot_class = 'dot-active' %}
+        {% assign vstatus_class = 'status-disrupted' %}
       {% else %}
-        {% assign dot_class = 'dot-inactive' %}
+        {% assign vstatus_class = 'status-active' %}
       {% endif %}
-      <button class="variant-chip" data-variant="{{ v.VariantId }}">
-        <span class="chip-dot {{ dot_class }}"></span>
-        {{ v.Name }}
-        <span class="chip-year">{{ v.FirstSeen }}</span>
-      </button>
-      {% endfor %}
-      <button class="clear-filter" id="clearFilter">&#x2715; Clear filter</button>
-    </div>
-    {% endif %}
-
-    <!-- Combined chronological timeline -->
-    <div class="combined-timeline" id="combinedTimeline">
-      {% comment %}
-        Build a merged array: variants become entries with type=variant,
-        evolution events keep type from EventType field.
-        We render variants first (by FirstSeen desc) then events (by Date desc),
-        but since Jekyll can't easily merge+sort arrays, we render both in
-        reverse order and let them interleave visually.
-      {% endcomment %}
-
-      {% comment %} Render Evolution Timeline entries (newest first) {% endcomment %}
-      {% for event in cp.EvolutionTimeline reversed %}
-      {% assign evt_type = event.EventType | default: 'event' %}
-      <div class="ct-entry {% if evt_type == 'variant' %}is-variant{% endif %}"
-           data-variants="{{ event.Variants | join: ' ' }}">
-        <div class="ct-card">
-          <div class="ct-header">
-            <span class="ct-date">{{ event.Date }}</span>
-            {% if evt_type == 'takedown' %}
-            <span class="ct-type-tag tag-takedown">Takedown</span>
-            {% elsif evt_type == 'variant' %}
-            <span class="ct-type-tag tag-variant">New Variant</span>
-            {% else %}
-            <span class="ct-type-tag tag-event">Event</span>
-            {% endif %}
-          </div>
-          <div class="ct-title">{{ event.Event }}</div>
-          <div class="ct-body">{{ event.Change }}</div>
-          {% if event.DetectionImpact %}
-          <div class="ct-detail">
-            <div class="ct-detail-row">
-              <span class="ct-detail-label">Detection</span>
-              <span class="ct-detail-value">{{ event.DetectionImpact }}</span>
-            </div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
-
-      {% comment %} Render Variation entries (with intel links) {% endcomment %}
-      {% for v in cp.Variations %}
-      {% assign status_lower = v.Status | downcase %}
-      {% if status_lower contains 'disrupted' %}
-        {% assign status_class = 'status-disrupted' %}
-      {% elsif status_lower contains 'active' %}
-        {% assign status_class = 'status-active' %}
-      {% else %}
-        {% assign status_class = '' %}
-      {% endif %}
-      <div class="ct-entry is-variant" data-variants="{{ v.VariantId }}">
-        <div class="ct-card">
-          <div class="ct-header">
-            <span class="ct-date">{{ v.FirstSeen }}</span>
-            <span class="ct-type-tag tag-variant">Variant</span>
-            <span class="status-badge {{ status_class }}">{{ v.Status }}</span>
-          </div>
-          <div class="ct-title">{{ v.Name }}</div>
-          {% if v.Notes %}
-          <div class="ct-body">{{ v.Notes }}</div>
-          {% elsif v.NotesShort %}
-          <div class="ct-body">{{ v.NotesShort }}</div>
-          {% endif %}
-          {% if v.IntelLinks %}
-          <div class="ct-intel">
-            <span class="ct-intel-label">Intel</span>
-            {% for link in v.IntelLinks %}
-            <a class="ct-intel-link" href="{{ link.URL }}" target="_blank" rel="noopener">
-              <svg class="intel-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 1h6v6M15 1L7 9"/></svg>
-              <span>{{ link.Title }} <span class="ct-intel-source">{{ link.Source }}</span></span>
-            </a>
-            {% endfor %}
-          </div>
-          {% endif %}
+      <details class="variant-item">
+        <summary class="variant-header">
+          <span class="variant-name">{{ v.Name }}</span>
+          <span class="variant-date">{{ v.FirstSeen }}</span>
+          <span class="variant-status {{ vstatus_class }}">{{ v.Status }}</span>
+          <span class="variant-chevron">&#9654;</span>
+        </summary>
+        <div class="variant-body">
+          {{ v.Notes | default: v.NotesShort }}
           {% if v.SourceURL %}
-          <a class="ct-intel-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener" style="margin-top:.4rem">
-            <svg class="intel-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 1h6v6M15 1L7 9"/></svg>
-            <span>Primary Source <span class="ct-intel-source">{{ v.SourceURL | split: '/' | slice: 2,1 }}</span></span>
-          </a>
+          <br>
+          <a class="variant-source-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener">
+            Primary source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+          {% else %}
+          <!-- TODO: source link missing for {{ v.Name }} -->
+          <br>
+          <a class="variant-source-link" href="#">Source link needed &#8594;</a>
           {% endif %}
         </div>
-      </div>
+      </details>
       {% endfor %}
     </div>
-
-    <!-- The Constant -->
-    {% if cp.TheConstant %}
-    <div class="constant-box" style="margin-top:2rem;padding:1rem 1.25rem;background:rgba(240,136,62,.06);border:1px solid rgba(240,136,62,.2);border-radius:8px">
-      <span style="display:block;font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:.3rem">The Constant</span>
-      <span style="font-size:.88rem;color:var(--text);font-style:italic">{{ cp.TheConstant }}</span>
-    </div>
-    {% endif %}
   </section>
   {% endif %}
 
-
-  <!-- ── Detection Strategy ─────────────────────────────────────── -->
+  <!-- ── 4. Detection Strategy ─────────────────────────────────── -->
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Detection Strategy</h2>
     <p class="section-intro mb-5">Build detections iteratively. Start broad to understand your
-       baseline, then tighten to production-ready.</p>
+       baseline, then tighten to production-ready alerting.</p>
 
-    {% assign levels = "Research,Hunt,Analyst" | split: "," %}
-    <div class="sigma-tabs">
-      <div class="tab-buttons" role="tablist">
-        {% for level in levels %}
-          {% assign level_lower = level | downcase %}
-          <button class="tab-btn text-sm font-medium px-5 py-2.5 cursor-pointer {% if level == 'Research' %}active{% endif %}"
-                  role="tab"
-                  data-tab="{{ level_lower }}"
-                  aria-selected="{% if level == 'Research' %}true{% else %}false{% endif %}">
-            {{ level }}
-            {% assign fp_map = "High,Medium,Low" | split: "," %}
-            {% assign fp_idx = forloop.index0 %}
-            <span class="tab-fp fp-{{ level_lower }}">{{ fp_map[fp_idx] }} FP</span>
-          </button>
-        {% endfor %}
-      </div>
-
-      {% for level in levels %}
-        {% assign level_lower = level | downcase %}
-        {% assign detection = cp.Detections | where: "Level", level | first %}
-        {% assign sigma_key = "_sigma_" | append: level_lower %}
-
-        <div class="tab-panel rounded-b-xl p-6 {% if level == 'Research' %}active{% endif %}"
-             id="tab-{{ level_lower }}" role="tabpanel">
-
-          {% if detection %}
-          <div class="detection-meta mb-5">
-            <p class="detection-goal mb-4"><strong>Goal:</strong> {{ detection.Description }}</p>
-            <div class="detection-two-col grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-              <div>
-                <h4>Log Sources</h4>
-                <ul class="log-sources mt-2">
-                  {% for src in detection.LogSources %}
-                    <li>{{ src }}</li>
-                  {% endfor %}
-                </ul>
-              </div>
-              <div>
-                <p><strong>FP Rate:</strong> {{ detection.ExpectedFPRate }}</p>
-                <p class="mt-2"><strong>Use Case:</strong> {{ detection.UseCase }}</p>
-              </div>
-            </div>
-            {% if detection.Logic %}
-            <h4 class="mb-2">Detection Logic</h4>
-            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-plaintext">{{ detection.Logic | strip }}</code></pre>
-            {% endif %}
-          </div>
-          {% endif %}
-
-          <div class="sigma-rule-block">
-            <div class="sigma-rule-header mb-3">
-              <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
-              <div class="sigma-actions">
-                {% if detection.SigmaRule %}
-                <a class="btn-sm"
-                   href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}"
-                   target="_blank" rel="noopener">View on GitHub</a>
-                <a class="btn-sm"
-                   href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule }}"
-                   download>Download</a>
-                {% endif %}
-                <button class="btn-sm copy-btn" data-target="sigma-{{ level_lower }}">Copy</button>
-              </div>
-            </div>
-            {% assign sigma_content = cp[sigma_key] %}
-            {% if sigma_content %}
-            <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"
-                 id="sigma-{{ level_lower }}"><code class="language-yaml">{{ sigma_content | xml_escape }}</code></pre>
-            {% else %}
-            <p class="no-sigma">Sigma rule not yet available for this level.
-              <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
-                 target="_blank" rel="noopener">Contribute one</a>.
-            </p>
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
+    <div class="detection-tabs">
+      <button class="det-tab active" onclick="switchTab(this,'tab-preexec')">Pre-Execution <span class="fp-pill fp-medium">ETW</span></button>
+      <button class="det-tab" onclick="switchTab(this,'tab-research')">Research <span class="fp-pill fp-high">High FP</span></button>
+      <button class="det-tab" onclick="switchTab(this,'tab-hunt')">Hunt <span class="fp-pill fp-medium">Med FP</span></button>
+      <button class="det-tab" onclick="switchTab(this,'tab-analyst')">Analyst <span class="fp-pill fp-low">Low FP</span></button>
     </div>
-  </section>
 
-  <!-- ── Early Detection Layers ──────────────────────────────────── -->
-  {% if cp.EarlyDetections %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
-      Early Detection Layers
-    </h2>
-    <p class="section-intro mb-5">
-      Detect before the user pastes or executes — earlier in the kill chain than the
-      Sysmon-based rules above, using different data sources.
-    </p>
-
-    <div class="flex flex-col gap-6">
+    <!-- Pre-Execution Tab -->
+    <div class="det-panel active" id="tab-preexec">
+      {% if cp.EarlyDetections and cp.EarlyDetections.size > 0 %}
       {% for ed in cp.EarlyDetections %}
-      <div class="sigma-rule-block rounded-xl p-0 overflow-hidden">
-
-        <div class="tab-buttons" style="border-radius: 0; border-bottom: none;">
-          <span class="tab-btn active text-sm font-medium px-5 py-2.5" style="cursor:default">
-            {{ ed.Layer }}
-          </span>
+      {% if forloop.index > 1 %}<hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">{% endif %}
+      <div class="det-meta-row">
+        <div class="det-meta-card">
+          <div class="det-meta-label">Goal — {{ ed.Layer }}</div>
+          <div class="det-meta-value">{{ ed.Description }}</div>
         </div>
-
-        <div class="tab-panel active rounded-b-xl p-6">
-          <div class="detection-meta mb-5">
-            <p class="detection-goal mb-4"><strong>Goal:</strong> {{ ed.Description }}</p>
-            <div class="detection-two-col grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-              <div>
-                <h4>Log Sources</h4>
-                <ul class="log-sources mt-2">
-                  {% for src in ed.LogSources %}
-                    <li>{{ src }}</li>
-                  {% endfor %}
-                </ul>
-              </div>
-              <div>
-                <p><strong>FP Rate:</strong> {{ ed.ExpectedFPRate }}</p>
-                <p class="mt-2"><strong>Use Case:</strong> {{ ed.UseCase }}</p>
-                {% if ed.Notes %}
-                <p class="mt-2 text-sm" style="color:var(--text-dim)"><strong>Note:</strong> {{ ed.Notes }}</p>
-                {% endif %}
-              </div>
-            </div>
-            {% if ed.Logic %}
-            <h4 class="mb-2">Detection Logic</h4>
-            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-plaintext">{{ ed.Logic | strip }}</code></pre>
-            {% endif %}
-          </div>
-
-          <div class="sigma-rule-block">
-            <div class="sigma-rule-header mb-3">
-              {% if ed.IokRule %}
-                <span class="sigma-label">IOK Rule</span>
-              {% else %}
-                <span class="sigma-label">Sigma Rule</span>
-              {% endif %}
-              <div class="sigma-actions">
-                {% assign rule_path = ed.SigmaRule | default: ed.IokRule %}
-                {% if rule_path %}
-                <a class="btn-sm"
-                   href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ rule_path }}"
-                   target="_blank" rel="noopener">View on GitHub</a>
-                <a class="btn-sm"
-                   href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ rule_path }}"
-                   download>Download</a>
-                {% endif %}
-                {% assign copy_id = "early-rule-" | append: forloop.index %}
-                <button class="btn-sm copy-btn" data-target="{{ copy_id }}">Copy</button>
-              </div>
-            </div>
-            {% if ed._rule_content %}
-            <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"
-                 id="{{ copy_id }}"><code class="language-yaml">{{ ed._rule_content | xml_escape }}</code></pre>
-            {% else %}
-            <p class="no-sigma">Rule file not found.
-              <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
-                 target="_blank" rel="noopener">Contribute one</a>.
-            </p>
-            {% endif %}
-          </div>
-
+        <div class="det-meta-card">
+          <div class="det-meta-label">Log Sources</div>
+          <ul class="logsource-list">
+            {% for src in ed.LogSources %}
+            <li>{{ src }}</li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
+      <div class="det-meta-row">
+        <div class="det-meta-card">
+          <div class="det-meta-label">FP Rate</div>
+          <div class="det-meta-value">{{ ed.ExpectedFPRate }}</div>
+        </div>
+        <div class="det-meta-card">
+          <div class="det-meta-label">Use Case</div>
+          <div class="det-meta-value">{{ ed.UseCase }}{% if ed.Notes %}<br><small style="color:var(--text-muted)">Note: {{ ed.Notes }}</small>{% endif %}</div>
+        </div>
+      </div>
+      {% if ed.Logic %}
+      <div class="cp-section-label">Detection Logic</div>
+      <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ ed.Logic | strip }}</code></pre>
+      {% endif %}
+      <div class="sigma-block">
+        <div class="sigma-header">
+          {% if ed.IokRule %}
+          <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
+          {% else %}
+          <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
+          {% endif %}
+          <div class="sigma-actions">
+            {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
+            {% if ed_rule_path %}
+            <a class="sigma-btn"
+               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ ed_rule_path }}"
+               target="_blank" rel="noopener">GitHub &#8594;</a>
+            <a class="sigma-btn"
+               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ ed_rule_path }}"
+               download>Download</a>
+            {% endif %}
+            <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+        </div>
+        {% if ed._rule_content %}
+        <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ ed._rule_content | xml_escape }}</code></pre>
+        {% else %}
+        <p class="no-sigma" style="padding:.75rem 1rem">Rule file not found.
+          <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
+             target="_blank" rel="noopener">Contribute one</a>.
+        </p>
+        {% endif %}
+      </div>
       {% endfor %}
+      {% else %}
+      <!-- TODO: Pre-execution detection content needed -->
+      <p class="section-intro" style="color:var(--text-muted);font-size:.875rem">Pre-execution detection content not yet available for this chokepoint.
+        <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
+           target="_blank" rel="noopener">Contribute one</a>.
+      </p>
+      {% endif %}
     </div>
-  </section>
-  {% endif %}
 
-  <!-- ── Raw Logs ───────────────────────────────────────────────── -->
+    <!-- Research / Hunt / Analyst Tabs -->
+    {% assign det_levels = "Research,Hunt,Analyst" | split: "," %}
+    {% assign det_fp_classes = "fp-high,fp-medium,fp-low" | split: "," %}
+    {% for level in det_levels %}
+      {% assign level_lower = level | downcase %}
+      {% assign detection = cp.Detections | where: "Level", level | first %}
+      {% assign sigma_key = "_sigma_" | append: level_lower %}
+
+      <div class="det-panel" id="tab-{{ level_lower }}">
+
+        {% if detection %}
+        <div class="det-meta-row">
+          <div class="det-meta-card">
+            <div class="det-meta-label">Goal</div>
+            <div class="det-meta-value">{{ detection.Description }}</div>
+          </div>
+          <div class="det-meta-card">
+            <div class="det-meta-label">Log Sources</div>
+            <ul class="logsource-list">
+              {% for src in detection.LogSources %}
+              <li>{{ src }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="det-meta-row">
+          <div class="det-meta-card">
+            <div class="det-meta-label">FP Rate</div>
+            <div class="det-meta-value">{{ detection.ExpectedFPRate }}</div>
+          </div>
+          <div class="det-meta-card">
+            <div class="det-meta-label">Use Case</div>
+            <div class="det-meta-value">{{ detection.UseCase }}</div>
+          </div>
+        </div>
+        {% if detection.Logic %}
+        <div class="cp-section-label">Detection Logic</div>
+        <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
+        {% endif %}
+        {% endif %}
+
+        <div class="sigma-block">
+          <div class="sigma-header">
+            <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
+            <div class="sigma-actions">
+              {% if detection.SigmaRule %}
+              <a class="sigma-btn"
+                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}"
+                 target="_blank" rel="noopener">GitHub &#8594;</a>
+              <a class="sigma-btn"
+                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule }}"
+                 download>Download</a>
+              {% endif %}
+              <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+          </div>
+          {% assign sigma_content = cp[sigma_key] %}
+          {% if sigma_content %}
+          <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ sigma_content | xml_escape }}</code></pre>
+          {% else %}
+          <p class="no-sigma" style="padding:.75rem 1rem">Sigma rule not yet available for this level.
+            <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
+               target="_blank" rel="noopener">Contribute one</a>.
+          </p>
+          {% endif %}
+        </div>
+
+      </div>
+    {% endfor %}
+
+  </section>
+
+  <!-- ── 5. Raw Log Samples ─────────────────────────────────────── -->
   {% if cp.RawLogs %}
   <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
-        aria-expanded="false"
-        aria-controls="raw-logs-body"
-        data-target="raw-logs-body">
-      <span class="collapsible-chevron">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
       Raw Log Samples
-      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">({{ cp.RawLogs.size }} sample{% if cp.RawLogs.size != 1 %}s{% endif %} — click to expand)</span>
+      <span class="section-sub">{{ cp.RawLogs.size }} sample{% if cp.RawLogs.size != 1 %}s{% endif %}</span>
     </h2>
-    <div class="collapsible-body collapsed mt-4" id="raw-logs-body">
-      <p class="section-intro mb-5">Real-world log events produced by this technique and which sigma rules they trigger.</p>
+    <p class="section-intro mb-4">Real-world log events produced by this technique and which Sigma rules they trigger.</p>
+    <div class="log-samples">
       {% for log in cp.RawLogs %}
-      <div class="raw-log-item">
-        <div class="raw-log-meta">
-          <span class="raw-log-type">{{ log.Type }}</span>
-          {% if log.EventId %}<span class="raw-log-eid">EID {{ log.EventId }}</span>{% endif %}
+      <details class="log-item">
+        <summary class="log-header">
+          {% if log.EventId %}<span class="log-eid">EID {{ log.EventId }}</span>{% endif %}
+          <span class="log-source">{{ log.Type }}</span>
+          <span class="log-desc">{{ log.Description }}</span>
           {% if log.MatchedRules %}
-          <div class="rule-match-badges">
+          <div class="rule-badges">
             {% for rule in log.MatchedRules %}
-            <span class="rule-match-badge {{ rule | downcase }}">{{ rule }}</span>
+            <span class="rule-badge rb-{{ rule | downcase }}">{{ rule }}</span>
             {% endfor %}
           </div>
           {% endif %}
-          <span class="raw-log-desc">{{ log.Description }}</span>
-        </div>
-        {% if log.Sample %}
-        {% assign log_lang = "language-yaml" %}
-        <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ log_lang }}">{{ log.Sample | xml_escape }}</code></pre>
-        {% endif %}
-      </div>
+          <span class="log-chevron">&#9654;</span>
+        </summary>
+        <div class="log-body">{{ log.Sample | xml_escape }}</div>
+      </details>
       {% endfor %}
     </div>
   </section>
   {% endif %}
 
-  <!-- ── Emulation Script ────────────────────────────────────────── -->
+  <!-- ── 6. Emulation ──────────────────────────────────────────── -->
   {% if cp.EmulationScript and cp._emulation_content %}
   <section class="mb-10">
     {% assign emu = cp.EmulationScript %}
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-0 collapsible-header"
-        aria-expanded="false"
-        aria-controls="emulation-body"
-        data-target="emulation-body">
-      <span class="collapsible-chevron">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-      </span>
-      Emulation Script
-      <span class="section-sub text-xs font-normal normal-case tracking-normal ml-1" style="color:var(--text-dim)">(click to expand)</span>
-    </h2>
-    <div class="collapsible-body collapsed mt-4" id="emulation-body">
-      {% if emu.SafetyNotes %}
-      <div class="emulation-warning">
-        <span>&#9888;</span>
-        <span><strong>Lab use only.</strong> {{ emu.SafetyNotes }}</span>
-      </div>
-      {% endif %}
-      <div class="emulation-meta">
-        {% if emu.Language %}
-        <span class="emulation-badge lang-{{ emu.Language | downcase }}">{{ emu.Language }}</span>
-        {% endif %}
-        {% if emu.AtomicRef %}
-        <span class="emulation-badge">ATT&amp;CK: {{ emu.AtomicRef }}</span>
-        {% endif %}
-        {% if emu.Description %}
-        <span class="text-sm" style="color:var(--text-dim)">{{ emu.Description }}</span>
-        {% endif %}
-      </div>
-      <div class="sigma-rule-block">
-        <div class="sigma-rule-header mb-3">
-          <span class="sigma-label">{{ emu.Language | upcase | default: "Script" }}</span>
-          <div class="sigma-actions">
-            {% if emu.File %}
-            <a class="btn-sm"
-               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ emu.File }}"
-               target="_blank" rel="noopener">View on GitHub</a>
-            <a class="btn-sm"
-               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ emu.File }}"
-               download>Download</a>
-            {% endif %}
-            <button class="btn-sm copy-btn" data-target="emulation-code">Copy</button>
-          </div>
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">Emulation</h2>
+    <details class="emulation-wrapper">
+      <summary class="emulation-header">
+        {% if emu.AtomicRef %}<span class="emulation-attck">ATT&amp;CK: {{ emu.AtomicRef }}</span>{% endif %}
+        <span class="emulation-desc">{{ emu.Description }}</span>
+        <span class="emulation-lang">{{ emu.Language }} &#9654;</span>
+      </summary>
+      <div class="emu-body">
+        {% if emu.SafetyNotes %}
+        <div class="emu-warning">
+          <span>&#9888;</span>
+          <span><strong>Lab use only.</strong> {{ emu.SafetyNotes }}</span>
         </div>
-        {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
-        <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"
-             id="emulation-code"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
+        {% endif %}
+        <div class="sigma-block">
+          <div class="sigma-header">
+            <span class="sigma-label">{{ emu.Language | upcase | default: "Script" }}</span>
+            <div class="sigma-actions">
+              {% if emu.File %}
+              <a class="sigma-btn"
+                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ emu.File }}"
+                 target="_blank" rel="noopener">GitHub &#8594;</a>
+              <a class="sigma-btn"
+                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ emu.File }}"
+                 download>Download</a>
+              {% endif %}
+              <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+          </div>
+          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
+          <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
+        </div>
       </div>
-    </div>
+    </details>
   </section>
   {% endif %}
 
-  <!-- ── OSINT Sources ──────────────────────────────────────────── -->
+  <!-- ── 7. OSINT Pivots ────────────────────────────────────────── -->
   {% if cp.OsintSources %}
   <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">OSINT Sources</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">OSINT Pivots</h2>
+    <div class="osint-grid">
       {% for src in cp.OsintSources %}
       {% if src.URL %}
       <a class="osint-card rounded-xl p-4" href="{{ src.URL }}" target="_blank" rel="noopener">
       {% else %}
       <div class="osint-card rounded-xl p-4">
       {% endif %}
-        <span class="osint-platform">{{ src.Platform }}</span>
-        <code class="osint-query">{{ src.Query }}</code>
-        {% if src.Notes %}<p class="osint-notes">{{ src.Notes }}</p>{% endif %}
+        <div class="osint-top">
+          <span class="osint-source">{{ src.Platform }}</span>
+          <code class="osint-query">{{ src.Query }}</code>
+        </div>
+        {% if src.Notes %}<div class="osint-desc">{{ src.Notes }}</div>{% endif %}
       {% if src.URL %}</a>{% else %}</div>{% endif %}
       {% endfor %}
     </div>
   </section>
   {% endif %}
 
-  <!-- ── Intel Resources ────────────────────────────────────────── -->
-  {% if cp.Intel %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Intel Resources</h2>
-    <ul class="intel-flat-list">
-      {% for intel in cp.Intel %}
-      <li class="intel-flat-item">
-        <a href="{{ intel.URL }}" target="_blank" rel="noopener" class="intel-flat-link">{{ intel.Name }}</a>
-        {% if intel.Description %}<span class="intel-flat-desc"> — {{ intel.Description }}</span>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
-
-  <!-- ── Related Chokepoints ────────────────────────────────────── -->
+  <!-- ── 8. Related Chokepoints ─────────────────────────────────── -->
   {% if cp.RelatedChokepoints %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Related Chokepoints</h2>
@@ -831,7 +856,7 @@ layout: default
   </section>
   {% endif %}
 
-  <!-- ── References ─────────────────────────────────────────────── -->
+  <!-- ── References ────────────────────────────────────────────── -->
   {% if cp.References %}
   <section class="mb-10">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">References</h2>
@@ -853,84 +878,22 @@ layout: default
 document.addEventListener('DOMContentLoaded', function() {
   hljs.highlightAll();
 });
-</script>
-<script>
-/* Tab switching for sigma rules */
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const panel = btn.dataset.tab;
-    btn.closest('.sigma-tabs').querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b === btn);
-      b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
-    });
-    btn.closest('.sigma-tabs').querySelectorAll('.tab-panel').forEach(p => {
-      p.classList.toggle('active', p.id === 'tab-' + panel);
-    });
+
+function switchTab(btn, panelId) {
+  document.querySelectorAll('.det-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.det-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+function copyCode(btn) {
+  const code = btn.closest('.sigma-block').querySelector('.sigma-code');
+  navigator.clipboard.writeText(code.innerText || code.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1800);
   });
-});
-
-/* Copy sigma rule to clipboard */
-document.querySelectorAll('.copy-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const target = document.getElementById(btn.dataset.target);
-    if (!target) return;
-    try {
-      await navigator.clipboard.writeText(target.textContent);
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
-    } catch {
-      btn.textContent = 'Failed';
-    }
-  });
-});
-
-/* Collapsible sections (Raw Logs, Emulation Script) */
-document.querySelectorAll('.collapsible-header').forEach(header => {
-  header.addEventListener('click', () => {
-    const expanded = header.getAttribute('aria-expanded') === 'true';
-    header.setAttribute('aria-expanded', String(!expanded));
-    const body = document.getElementById(header.dataset.target);
-    if (body) body.classList.toggle('collapsed', expanded);
-  });
-});
-
-/* Variant chip → timeline filtering */
-(function() {
-  const chips = document.querySelectorAll('.variant-chip[data-variant]');
-  const entries = document.querySelectorAll('.ct-entry');
-  const clearBtn = document.getElementById('clearFilter');
-  if (!chips.length || !entries.length) return;
-  let activeVariant = null;
-
-  function setFilter(variant) {
-    if (activeVariant === variant) { clearFilter(); return; }
-    activeVariant = variant;
-    chips.forEach(c => c.classList.toggle('selected', c.dataset.variant === variant));
-    if (clearBtn) clearBtn.classList.add('visible');
-    entries.forEach(entry => {
-      const variants = (entry.dataset.variants || '').split(' ').filter(Boolean);
-      const matches = variants.includes(variant);
-      entry.classList.remove('dimmed', 'highlighted');
-      entry.classList.add(matches ? 'highlighted' : 'dimmed');
-    });
-    const first = document.querySelector('.ct-entry.highlighted');
-    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function clearFilter() {
-    activeVariant = null;
-    chips.forEach(c => c.classList.remove('selected'));
-    if (clearBtn) clearBtn.classList.remove('visible');
-    entries.forEach(e => e.classList.remove('dimmed', 'highlighted'));
-  }
-
-  chips.forEach(chip => chip.addEventListener('click', () => setFilter(chip.dataset.variant)));
-  if (clearBtn) clearBtn.addEventListener('click', clearFilter);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && activeVariant) clearFilter(); });
-})();
-
+}
 </script>
 
 {% endif %}
