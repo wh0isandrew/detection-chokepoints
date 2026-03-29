@@ -1,0 +1,81 @@
+title: Non-Default Scripting Interpreter Execution from Unusual Path
+id: b3f7a1d2-8c4e-4f9b-a2d6-1e5c9f0b3a8d
+status: experimental
+description: >
+  Detects execution of scripting interpreter binaries (Python, PHP, Node.js, Ruby, Perl,
+  Lua, AutoHotKey, and others) from non-standard filesystem paths. BYOSI (Bring Your Own
+  Scripting Interpreter) attacks deliver legitimately signed interpreter binaries to
+  user-writable directories and execute malicious scripts through them, bypassing EDR
+  solutions that focus on binary analysis. This research-level rule establishes a
+  baseline of all non-standard interpreter executions in the environment.
+references:
+  - https://github.com/oldkingcone/BYOSI
+  - https://github.com/MalwareSupportGroup/PolyDrop
+  - https://attack.mitre.org/techniques/T1059/006/
+  - https://attack.mitre.org/techniques/T1059/007/
+author: "@iimp0ster"
+date: 2026/03/29
+tags:
+  - attack.defense_evasion
+  - attack.execution
+  - attack.t1059.006
+  - attack.t1059.007
+  - attack.t1059
+  - detection.maturity.research
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_interpreters:
+    Image|endswith:
+      - '\python.exe'
+      - '\python3.exe'
+      - '\pythonw.exe'
+      - '\php.exe'
+      - '\php-cgi.exe'
+      - '\node.exe'
+      - '\ruby.exe'
+      - '\perl.exe'
+      - '\lua.exe'
+      - '\lua54.exe'
+      - '\luajit.exe'
+      - '\wish.exe'
+      - '\tclsh.exe'
+      - '\Rscript.exe'
+      - '\dart.exe'
+      - '\deno.exe'
+      - '\bun.exe'
+      - '\nim.exe'
+      - '\crystal.exe'
+      - '\AutoHotkey.exe'
+      - '\AutoHotkey64.exe'
+      - '\AutoHotkey32.exe'
+  selection_suspicious_paths:
+    Image|contains:
+      - '\Temp\'
+      - '\tmp\'
+      - '\Downloads\'
+      - '\AppData\Local\Temp\'
+      - '\AppData\Roaming\'
+      - '\Users\Public\'
+      - '\Windows\Temp\'
+      - '\ProgramData\'
+      - '\Recycle'
+  filter_known_dev_tools:
+    Image|contains:
+      - '\Program Files\'
+      - '\Program Files (x86)\'
+      - '\Chocolatey\'
+      - '\nvm\v'
+      - '\pyenv\'
+      - '\Anaconda'
+      - '\Miniconda'
+      - '\WinPython'
+      - '\scoop\apps\'
+  condition: selection_interpreters and selection_suspicious_paths and not filter_known_dev_tools
+falsepositives:
+  - Legitimate software installers that bundle scripting interpreters temporarily
+  - Developer testing from non-standard directories
+  - CI/CD runners executing interpreters from workspace directories
+  - Portable development environments (WinPython, portable Node.js)
+level: low
