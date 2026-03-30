@@ -1,0 +1,58 @@
+title: LSASS Memory Access by Non-System Process (Research Baseline)
+id: c08fffe8-ab3c-4e16-abd8-61e648faf95b
+status: experimental
+description: >
+  Detects any non-core-OS process opening a handle to lsass.exe with memory-read
+  access rights. This research-level rule establishes a baseline of all LSASS
+  access in the environment (AV/EDR products, WerFault, Task Manager, monitoring
+  tools, and actual attacks) all appear. Run this for one week to build an
+  environment-specific allowlist of legitimate LSASS accessors before tuning to
+  Hunt level. The chokepoint is invariant: every credential dumping tool (Mimikatz,
+  nanodump, comsvcs.dll, ProcDump, HandleKatz, direct syscall loaders) must obtain
+  a kernel handle to lsass.exe. Sysmon Event ID 10 captures this regardless of the
+  API path used.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+  - https://github.com/fortra/nanodump
+author: "@NovaSky0x1"
+date: 2026/03/30
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.t1003
+  - detection.maturity.research
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess|contains:
+      - '0x1FFFFF'  # PROCESS_ALL_ACCESS
+      - '0x1010'    # PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION (Mimikatz classic)
+      - '0x1410'    # PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION
+      - '0x0810'    # PROCESS_VM_READ | PROCESS_QUERY_INFORMATION (nanodump)
+      - '0x1038'    # PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION
+      - '0x1438'    # PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION
+      - '0x0040'    # PROCESS_DUP_HANDLE (handle duplication, HandleKatz, nanodump duphandle mode)
+      - '0x0010'    # PROCESS_VM_READ alone
+  filter_os_core:
+    SourceImage|startswith:
+      - 'C:\Windows\System32\csrss.exe'
+      - 'C:\Windows\System32\lsass.exe'
+      - 'C:\Windows\System32\services.exe'
+      - 'C:\Windows\System32\svchost.exe'
+      - 'C:\Windows\System32\wininit.exe'
+      - 'C:\Windows\System32\lsaiso.exe'
+      - 'C:\Windows\System32\smss.exe'
+      - 'C:\Windows\System32\winlogon.exe'
+  condition: selection and not filter_os_core
+falsepositives:
+  - Antivirus and EDR agents performing routine LSASS inspection (MsMpEng.exe, SentinelAgent.exe, CSFalconService.exe, CylanceSvc.exe)
+  - WerFault.exe collecting crash diagnostics for lsass.exe
+  - Task Manager (taskmgr.exe) when an administrator manually creates a process dump
+  - Performance and diagnostic tools (procexp64.exe, procmon64.exe, perfmon.exe)
+  - WMI provider host (wmiprvse.exe) during certain management queries
+  - Windows Defender Advanced Threat Protection sensor (MsSense.exe)
+level: informational
