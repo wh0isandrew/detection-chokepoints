@@ -2,20 +2,8 @@ title: Infostealer — Non-Browser Process Accesses Browser Credential DB from S
 id: 790a46d5-2643-4afe-9718-18742e7eecd7
 status: experimental
 description: >
-  Detects a non-browser process accessing browser credential database files (Chrome Login Data,
-  Cookies, Local State; Firefox logins.json or key4.db) where the accessing process originates
-  from a suspicious execution context — specifically: spawned by a script interpreter
-  (PowerShell, wscript, cscript, mshta), executing from a writable user-controlled path
-  (TEMP, Downloads, AppData\Roaming), or loaded as an unsigned binary. This intermediate
-  tier narrows the broad research baseline by requiring a suspicious parent or process
-  origin, dramatically reducing false positives from legitimate password managers while
-  retaining coverage across all major infostealer families.
-  ClickFix delivery (517% surge in 2025) spawns PowerShell or mshta.exe which executes
-  the infostealer — this rule captures that delivery context combined with the invariant
-  credential file access. The Chrome DevTools Protocol bypass (EDDIESTEALER) appears as
-  Chrome spawned with --remote-debugging-port by an unexpected parent process.
-  Also detects nss3.dll (Firefox NSS3 decryption library) loaded by any non-Mozilla
-  process — the Firefox equivalent of DPAPI credential decryption.
+  Detects non-browser processes accessing credential database files from suspicious
+  contexts — script interpreter parent, unsigned binary, or user-writable path origin.
 references:
   - https://attack.mitre.org/techniques/T1555/003/
   - https://attack.mitre.org/techniques/T1539/
@@ -87,13 +75,14 @@ detection:
       - '\MicrosoftEdgeUpdate.exe'
       - '\elevation_service.exe'
 
-  # Selection B: Chrome spawned with debug port by non-Chrome parent (CDP bypass — EDDIESTEALER)
+  # Selection B: Chrome spawned with debug port (CDP bypass — EDDIESTEALER)
   selection_cdp_bypass:
     Image|endswith: '\chrome.exe'
     CommandLine|contains: '--remote-debugging-port'
     ParentImage|endswith:
       - '.exe'
-    ParentImage|not|endswith:
+  filter_cdp_known_parents:
+    ParentImage|endswith:
       - '\chrome.exe'
       - '\msedge.exe'
       - '\explorer.exe'
@@ -104,7 +93,8 @@ detection:
     ImageLoaded|endswith: '\nss3.dll'
     Image|endswith:
       - '.exe'
-    Image|not|endswith:
+  filter_nss3_known_good:
+    Image|endswith:
       - '\firefox.exe'
       - '\thunderbird.exe'
       - '\seamonkey.exe'
@@ -115,8 +105,8 @@ detection:
   condition: >
     (selection_credential_path and (selection_suspicious_parent or selection_suspicious_path)
     and not filter_legitimate_browsers)
-    or selection_cdp_bypass
-    or selection_nss3_non_firefox
+    or (selection_cdp_bypass and not filter_cdp_known_parents)
+    or (selection_nss3_non_firefox and not filter_nss3_known_good)
 falsepositives:
   - Password managers installed in non-standard paths (unlikely for enterprise software)
   - Developer tools or automation scripts legitimately testing browser automation

@@ -2,13 +2,8 @@ title: Browser or Explorer Spawning Script Interpreter
 id: a7b3c9d2-5e8f-4a1b-9c6d-3f2e8b0a4d7e
 status: experimental
 description: >
-  Detects scripting interpreters (PowerShell, cmd, wscript, mshta) spawned directly by
-  web browsers, Windows Explorer, or Windows Terminal. This is a hunt-level rule
-  targeting the ClickFix chokepoint, where users are socially engineered to paste and
-  execute malicious commands. The Windows Terminal path (wt.exe parent) covers the
-  March 2026 variant disclosed by Microsoft Defender Experts (Lumma Stealer delivery
-  via Win+X→I terminal lure). Browsers and Explorer should rarely directly spawn
-  scripting interpreters in normal enterprise operations.
+  Detects scripting interpreters spawned by browsers, Explorer, or Windows Terminal.
+  Browsers should rarely spawn script interpreters in enterprise environments.
 references:
   - https://huntress.com/blog/dont-sweat-clickfix-techniques
   - https://staging.huntress.com/blog/dont-sweat-clickfix-techniques
@@ -56,7 +51,11 @@ detection:
     CommandLine|contains:
       - 'IEShims.dll'
       - 'ShellExecute'
-  condition: selection_interpreter and (selection_parent_browser or selection_parent_explorer) and not filter_known_legit
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_interpreter and (selection_parent_browser or selection_parent_explorer) and not filter_known_legit and not filter_legit_software
 falsepositives:
   - Browser extensions that invoke system shell for file processing (rare)
   - Shell integrations for file associations opened via browser download

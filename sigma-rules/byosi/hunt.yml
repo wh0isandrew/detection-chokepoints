@@ -2,12 +2,8 @@ title: Non-Default Interpreter Executing Script or Making Network Connection
 id: c4a8b2e3-9d5f-4a0c-b3e7-2f6d0a1c4b9e
 status: experimental
 description: >
-  Detects scripting interpreters running from non-standard paths that either reference
-  script files in their command line, use inline execution flags (-e, -c, --eval), or
-  establish outbound network connections. This hunt-level rule targets the BYOSI
-  chokepoint where attackers deliver signed interpreters and execute malicious scripts
-  through them. Correlates interpreter execution with script loading — the behavior
-  that distinguishes malicious BYOSI from benign interpreter presence.
+  Detects scripting interpreters from non-standard paths referencing script files,
+  using inline execution flags, or making outbound connections.
 references:
   - https://github.com/oldkingcone/BYOSI
   - https://github.com/MalwareSupportGroup/PolyDrop
@@ -87,7 +83,11 @@ detection:
       - '\npx.cmd'
     CommandLine|contains:
       - 'node_modules'
-  condition: selection_interpreters and selection_unusual_path and (selection_script_args or selection_inline_exec) and not filter_dev_tools and not filter_npm_yarn
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_interpreters and selection_unusual_path and (selection_script_args or selection_inline_exec) and not filter_dev_tools and not filter_npm_yarn and not filter_legit_software
 falsepositives:
   - Developers running scripts from temporary build directories
   - Software installers with embedded Python/Node.js scripts

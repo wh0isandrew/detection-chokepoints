@@ -2,10 +2,8 @@ title: Known RMM Tool Process Execution
 id: b8c2d4e6-f8a0-4b2c-9d3e-5f7a9b1c3d5e
 status: experimental
 description: >
-  Detects execution of known Remote Management and Monitoring (RMM) tool processes.
-  Research-level rule for baselining RMM tool usage across the environment. High false
-  positive rate expected due to legitimate IT use. Use to establish a baseline of
-  approved RMM instances before promoting to hunt-level detection.
+  Detects execution of known RMM tool processes. Baseline rule for mapping approved
+  vs. unapproved RMM usage across the environment.
 references:
   - https://attack.mitre.org/techniques/T1219/
 author: "@iimp0ster"
@@ -35,7 +33,11 @@ detection:
       - '\ScreenConnect.'
       - '\connectwisecontrol'
       - '\ConnectWiseControl'
-  condition: selection
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection and not filter_legit_software
 falsepositives:
   - Legitimate IT helpdesk use of RMM tools
   - Authorized remote support sessions

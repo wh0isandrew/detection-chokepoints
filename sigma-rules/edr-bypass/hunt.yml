@@ -2,19 +2,8 @@ title: EDR Bypass — Security Process Termination or Service Impairment via Adm
 id: b2e4d6f8-1a3c-5e7f-9b0d-3f5a7c9e1b2d
 status: experimental
 description: >
-  Detects command-line invocation of sc.exe, net.exe, net1.exe, or taskkill.exe
-  explicitly targeting named security agent processes or services for termination,
-  deletion, or forced kill. This pattern covers the behavioral execution step in
-  BYOVD-based EDR bypass (after the driver is loaded, the driver's userland loader
-  calls these utilities to terminate the now-unprotected EDR agent), PPL abuse
-  (PPLKiller strips Protected Process Light then terminates the process), and
-  direct service manipulation (Terminator/Spyboy variant that targets service names
-  directly). Also detects Process Explorer-style handle close (OpenProcess with
-  PROCESS_TERMINATE on security agent PIDs). Moderate false positive rate —
-  legitimate EDR management workflows can trigger, but typically via orchestration
-  tools, not ad-hoc command lines.
-  Correlate with Sysmon EID 6 (driver load) occurring within 5 minutes prior on
-  the same host for highest-confidence BYOVD indicator.
+  Detects sc.exe, net.exe, or taskkill.exe explicitly targeting security agent processes
+  or services for stop, delete, or forced kill operations.
 references:
   - https://attack.mitre.org/techniques/T1562/001/
   - https://attack.mitre.org/techniques/T1562/004/
@@ -41,7 +30,7 @@ detection:
     CommandLine|contains:
       - 'stop'
       - 'delete'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - 'SophosFileScanner'
       - 'SAVService'
       - 'SavService'
@@ -85,7 +74,7 @@ detection:
     CommandLine|contains:
       - '/IM'
       - '/F'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - 'MsMpEng.exe'
       - 'msmpeng.exe'
       - 'SophosFileScanner.exe'
@@ -104,7 +93,11 @@ detection:
       - 'ekrn.exe'
       - 'egui.exe'
       - 'kavfs.exe'
-  condition: selection_sc_stop or selection_taskkill
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: (selection_sc_stop or selection_taskkill) and not filter_legit_software
 falsepositives:
   - Authorized EDR/AV product upgrades performed by IT operations via orchestration tools
   - Legitimate product uninstallation by software management platforms (SCCM, Intune)

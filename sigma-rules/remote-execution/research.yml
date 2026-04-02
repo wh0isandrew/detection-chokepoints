@@ -1,12 +1,9 @@
-title: Network Logon Followed by Service Installation
+title: New Service Installation — Remote Execution Baseline
 id: e1f5a7b9-c1d3-4e5f-7a8b-9c0d1e2f3a4b
 status: experimental
 description: >
-  Detects Windows network logon events (Type 3) followed closely by service installation
-  events. Research-level rule for the remote execution tools chokepoint. This covers
-  PsExec-style execution via Impacket, CrackMapExec, NetExec, and native PsExec.exe.
-  High false positive rate expected — legitimate remote admin activity generates the
-  same pattern. Use to baseline normal admin behavior.
+  Detects new service installations (EID 7045). Baseline rule for mapping service
+  creation patterns. Logon correlation requires SIEM-side join with EID 4624.
 references:
   - https://attack.mitre.org/techniques/T1021/002/
   - https://attack.mitre.org/techniques/T1021/006/
@@ -25,7 +22,11 @@ detection:
   selection:
     EventID: 7045
     # Any new service installation — extremely broad
-  condition: selection
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    ImagePath|contains:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection and not filter_legit_software
 falsepositives:
   - Software installation via MSI packages
   - Windows Update installing drivers and services

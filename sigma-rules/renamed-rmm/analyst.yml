@@ -2,12 +2,8 @@ title: Masqueraded RMM Tool with Campaign-Themed Filename Downloaded via Browser
 id: d0e4f6a8-b0c2-4d4e-6f7a-8b9c0d1e2f3a
 status: experimental
 description: >
-  High-fidelity detection for renamed RMM tools delivered via browser download using
-  social engineering pretexts (tax, invoice, SSN/SSA, IT support). Detects when an
-  executable with a campaign-themed name is downloaded by a browser and contains
-  file metadata (OriginalFilename or signer) matching a known RMM vendor. This
-  combination of deceptive naming and legitimate signing is a strong indicator of
-  the renamed RMM tool technique.
+  Detects browser-downloaded executables with campaign-themed names whose PE metadata
+  (OriginalFilename or signer) matches a known RMM vendor.
 references:
   - https://attack.mitre.org/techniques/T1219/
 author: "@iimp0ster"
@@ -68,7 +64,11 @@ detection:
       - 'rustdesk'
       - 'MeshAgent'
       - 'meshagent'
-  condition: selection_path and selection_campaign_name and selection_rmm_metadata
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_path and selection_campaign_name and selection_rmm_metadata and not filter_legit_software
 falsepositives:
   - Legitimate tax or invoice software that happens to have RMM integration
   - IT staff downloading RMM tools with descriptive names for asset tracking

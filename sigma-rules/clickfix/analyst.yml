@@ -2,11 +2,9 @@ title: Browser-Spawned Script with Encoded Command — ClickFix/Clipboard Attack
 id: f1e2d3c4-b5a6-4789-a0b1-c2d3e4f5a6b7
 status: experimental
 description: >
-  High-fidelity detection for ClickFix and similar clipboard-based social engineering
-  attacks. Detects scripting interpreters with encoded or obfuscated command lines
-  spawned by browsers or Windows Explorer. This pattern is strongly indicative of a
-  user pasting and executing a malicious command copied from a threat actor-controlled
-  webpage. Minimal false positives expected in most enterprise environments.
+  Detects scripting interpreters with encoded/obfuscated commands spawned by browsers,
+  Explorer, or Windows Terminal. Stage 2 process creation only — correlate ProcessGuid
+  with hunt-network.yml for Stage 3.
 references:
   - https://huntress.com/blog/dont-sweat-clickfix-techniques
   - https://staging.huntress.com/blog/dont-sweat-clickfix-techniques
@@ -19,7 +17,7 @@ date: 2025/01/15
 tags:
   - attack.initial_access
   - attack.t1204.001
-  - attack.t1204.003
+  - attack.t1204.004
   - attack.defense_evasion
   - attack.t1027
   - detection.maturity.analyst
@@ -33,7 +31,9 @@ detection:
       - '\pwsh.exe'
       - '\cmd.exe'
       - '\wscript.exe'
+      - '\cscript.exe'
       - '\mshta.exe'
+      - '\rundll32.exe'
   selection_parent:
     ParentImage|endswith:
       - '\chrome.exe'
@@ -44,6 +44,8 @@ detection:
       - '\brave.exe'
       - '\vivaldi.exe'
       - '\explorer.exe'
+      - '\wt.exe'
+      - '\WindowsTerminal.exe'
   selection_encoded:
     CommandLine|contains:
       # PowerShell encoded command flags
@@ -72,6 +74,12 @@ detection:
       # cmd piping to powershell
       - '/c powershell'
       - '/c start'
+      # WebDAV variant patterns
+      - 'net use '
+      - '/persistent:no'
+      - 'rundll32 \\\\'
+      # DNS-staging variant patterns
+      - 'nslookup '
   filter_legit_software:
     # Known-good software that uses encoded commands during legitimate operation
     # Tune this list for your environment

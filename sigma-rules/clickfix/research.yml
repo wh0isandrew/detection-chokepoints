@@ -2,10 +2,8 @@ title: Scripting Interpreter Outbound Network Connection
 id: c4f8a2b1-3e7d-4a5c-8b9f-2d1e6f0a7c3b
 status: experimental
 description: >
-  Detects scripting interpreters (powershell.exe, cmd.exe, wscript.exe, etc.) making
-  outbound connections to external (non-RFC1918) addresses. Broad research-level rule
-  for the ClickFix chokepoint. Establishes baseline visibility into scripting interpreter
-  network behavior. High false positive rate expected — use for research and baselining only.
+  Detects scripting interpreters making outbound connections to external (non-RFC1918)
+  addresses. Broad baseline — high FP rate expected.
 references:
   - https://huntress.com/blog/dont-sweat-clickfix-techniques
   - https://mhaggis.github.io/ClickGrab/
@@ -39,6 +37,10 @@ detection:
       - '::1/128'
   filter_loopback:
     DestinationIp: '0.0.0.0'
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
   condition: selection and not 1 of filter_*
 falsepositives:
   - Legitimate administrative scripts making web requests (SCCM, Ansible, etc.)

@@ -1,12 +1,27 @@
 # Chokepoint Identification Framework
 
+> Framework adapted from [Matt Graeber's threat research methodology at Red Canary](https://redcanary.com/blog/threat-detection/threat-research-questions/).
+
 ## Core Principle
 
-**If an attacker wants to achieve objective X, they must satisfy conditions Y.**
+For every technique an attacker uses, ask: **what must be true — and of those conditions, which ones does the attacker have no control over?**
 
-Chokepoints are the Y conditions that cannot be bypassed regardless of tool choice.
+Those uncontrollable prerequisites are chokepoints. Chokepoint detections target these invariant behaviors — the things that don't change when the attacker rotates tools, obfuscates payloads, or switches infrastructure. This gives defenders the highest return on investment per rule written.
 
-## Identification Methodology
+## The 6-Step Framework
+
+For each technique you want to detect, work through these questions in order:
+
+1. **What is this technique at a technical level?**
+2. **What must be true for it to succeed?**
+3. **What does the attacker control?** (variables — tools, obfuscation, infrastructure)
+4. **What can't the attacker control?** ← **this is the chokepoint**
+5. **Can we observe it independent of intent?** (via logs, telemetry, network artifacts)
+6. **What are all possible variations?** (tools and methods that share this chokepoint)
+
+Steps 1-3 build understanding. Step 4 identifies the chokepoint. Steps 5-6 turn it into a detection.
+
+## Identification Methodology (Detailed)
 
 ### 1. Start with the Objective
 
@@ -26,13 +41,25 @@ For the objective to succeed, what **must** be true?
 - SMB service running on target
 - Ability to execute code remotely (service, scheduled task, WMI, etc.)
 
-### 3. Map to MITRE ATT&CK
+### 3. Separate Variables from Constants
+
+What does the attacker control (variables)?
+- Tool choice (Impacket, CrackMapExec, native PsExec)
+- Obfuscation (encoding, renaming binaries)
+- Infrastructure (C2 domains, staging servers)
+
+What can't the attacker control (chokepoints)?
+- The prerequisite conditions from step 2
+- OS-level telemetry events (process creation, network connections)
+- Parent-child process relationships
+
+### 4. Map to MITRE ATT&CK
 
 Which technique(s) does this cover?
 - Single technique (T1021.002 - SMB/Windows Admin Shares)
 - Multiple techniques (Credential Access + Lateral Movement + Execution)
 
-### 4. Document Variations
+### 5. Document Variations
 
 What tools/methods achieve the same objective using this chokepoint?
 
@@ -45,7 +72,7 @@ What tools/methods achieve the same objective using this chokepoint?
 
 All require the same prerequisites (the chokepoint), just different implementations.
 
-### 5. Build Detection Iterations
+### 6. Build Detection Iterations
 
 Start broad, refine to production-ready:
 

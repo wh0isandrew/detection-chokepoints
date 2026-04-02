@@ -40,14 +40,34 @@ Variations:
 
     '
   VariantId: impacket
+  Command:
+    Invocation: "python3 psexec.py domain/admin:Password123@192.168.1.10\npython3 wmiexec.py domain/admin:Password123@192.168.1.10\npython3 psexec.py -hashes :aad3b435b51404eeaad3b435b51404ee domain/admin@192.168.1.10"
+    Context: 'Python suite with psexec (SMB service), wmiexec (WMI), smbexec (temp service), atexec (Task Scheduler). psexec creates a service on the remote host via IPC$/svcctl.'
+    Artifacts:
+    - 'Security EID 4624: Network logon (Type 3) with admin account'
+    - 'Security EID 4672: Special privileges assigned'
+    - 'System EID 7045: Service installed (random name)'
+    - 'Security EID 5145: IPC$ and ADMIN$ share access'
+    - 'Sysmon EID 1: services.exe or wmiprvse.exe → cmd.exe'
+  ChokepointMapping: 'SMB auth (4624 Type 3) → IPC$/svcctl → service created (7045) → services.exe spawns cmd.exe'
 - Name: CrackMapExec
   FirstSeen: '2016'
-  Status: Archived
+  Status: Legacy
+  SourceURL: https://github.com/byt3bl33d3r/CrackMapExec
   NotesShort: Archived December 2023; superseded by NetExec — CME-specific signatures now stale
   Notes: Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December
     6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community
     updates
   VariantId: crackmapexec
+  Command:
+    Invocation: "cme smb 192.168.1.0/24 -u admin -p Password123 --exec-method smbexec -x \"whoami\"\ncme smb 192.168.1.0/24 -u admin -H <hash> --exec-method wmiexec -x \"whoami\"\ncme winrm 192.168.1.10 -u admin -p Password123 -x \"whoami\""
+    Context: 'Multi-protocol framework (archived Dec 2023, superseded by NetExec). Binary was crackmapexec or cme.'
+    Artifacts:
+    - 'Security EID 4624: Multiple Type 3 logons from same source IP in short window'
+    - 'Security EID 4625: Failed logons (credential spraying)'
+    - 'Sysmon EID 1: services.exe or wmiprvse.exe → cmd.exe across multiple hosts'
+    - 'Sysmon EID 3: Single source IP → multiple internal destinations on 445/135/5985'
+  ChokepointMapping: 'Credential spray (4624/4625 from single IP) → exec method per host → lateral spread pattern'
 - Name: NetExec
   FirstSeen: '2023'
   Status: Active
@@ -55,50 +75,120 @@ Variations:
   NotesShort: Active CrackMapExec fork; adds LDAP, SSH, and improved OPSEC features
   Notes: Active CrackMapExec fork; adds LDAP, SSH, improved OPSEC features
   VariantId: netexec
+  Command:
+    Invocation: "nxc smb 192.168.1.0/24 -u admin -p Password123 --exec-method smbexec -x \"whoami\"\nnxc smb 192.168.1.0/24 -u admin -H <hash> --exec-method wmiexec -x \"whoami\"\nnxc winrm 192.168.1.10 -u admin -p Password123 -x \"whoami\""
+    Context: 'Multi-protocol framework. Spray credentials across subnets. Supports SMB, WMI, WinRM, LDAP, SSH. Active fork of archived CrackMapExec.'
+    Artifacts:
+    - 'Security EID 4624: Multiple Type 3 logons from same source IP in short window'
+    - 'Security EID 4625: Failed logons (credential spraying)'
+    - 'Sysmon EID 1: services.exe or wmiprvse.exe → cmd.exe across multiple hosts'
+    - 'Sysmon EID 3: Single source IP → multiple internal destinations on 445/135/5985'
+  ChokepointMapping: 'Credential spray (4624/4625 from single IP) → exec method per host → lateral spread pattern'
 - Name: Evil-WinRM
   FirstSeen: '2019'
   Status: Active
+  SourceURL: https://github.com/Hackplayers/evil-winrm
   NotesShort: Dedicated WinRM exploitation tool targeting port 5985/5986
   Notes: Dedicated WinRM exploitation tool; targets port 5985/5986
   VariantId: evil-winrm
+  Command:
+    Invocation: "evil-winrm -i 192.168.1.10 -u admin -p Password123\nevil-winrm -i 192.168.1.10 -u admin -H aad3b435b51404eeaad3b435b51404ee"
+    Context: 'Dedicated WinRM exploitation tool. Uses port 5985/5986. Provides PowerShell session on target. Supports pass-the-hash.'
+    Artifacts:
+    - 'Security EID 4624: Network logon (Type 3) on port 5985/5986'
+    - 'Sysmon EID 1: wsmprovhost.exe → powershell.exe'
+    - 'Windows-WinRM/Operational: Session created'
+    - 'Sysmon EID 3: Inbound connection on 5985/5986'
+  ChokepointMapping: 'WinRM auth (5985) → wsmprovhost.exe spawns powershell.exe → command execution'
 - Name: Metasploit psexec
   FirstSeen: '2007'
   Status: Active
+  SourceURL: https://docs.metasploit.com/docs/using-metasploit/intermediate/exploit-modules/psexec.html
   NotesShort: Original PsExec-style SMB execution via Metasploit framework
   Notes: Original PsExec-style SMB execution via Metasploit framework
   VariantId: metasploit-psexec
+  Command:
+    Invocation: "use exploit/windows/smb/psexec\nset RHOSTS 192.168.1.10\nset SMBUser admin\nset SMBPass Password123\nset PAYLOAD windows/meterpreter/reverse_tcp\nexploit"
+    Context: 'Original psexec in Metasploit. Creates service, uploads payload via ADMIN$ share, executes via service start.'
+    Artifacts:
+    - 'Security EID 4624: Network logon (Type 3)'
+    - 'System EID 7045: Service installed with random name'
+    - 'Security EID 5145: ADMIN$ share access'
+    - 'Sysmon EID 1: services.exe → rundll32.exe or payload'
+    - 'Sysmon EID 11: Payload written to ADMIN$ share'
+  ChokepointMapping: 'SMB auth → ADMIN$ share write → service created (random name) → Meterpreter callback'
 - Name: Sliver
   FirstSeen: '2020'
   Status: Active
+  SourceURL: https://github.com/BishopFox/sliver
   NotesShort: Open-source C2 widely adopted by nation-state and ransomware actors as Cobalt Strike alternative
   Notes: Open-source C2 framework widely adopted by nation-state and ransomware actors as a Cobalt Strike alternative; built-in
     lateral movement over SMB/WMI using the same execution primitives this chokepoint detects; used by threat actors following
     Fortra's crackdown on pirated Cobalt Strike licenses
   VariantId: sliver
+  Command:
+    Invocation: "sliver > psexec -t <target> -s <service_name> -p <profile>\n# Or via WMI:\nsliver > execute-assembly -t <target> -- wmiexec\n# Implant types: session (interactive), beacon (async)\n# Transports: named pipes, mTLS, WireGuard, HTTPS, DNS"
+    Context: 'Open-source C2 by BishopFox. Growing adoption as CobaltStrike alternative. Implants are cross-compiled Go binaries.'
+    Artifacts:
+    - 'Security EID 4624: Network logon (Type 3)'
+    - 'System EID 7045: Service installed (Sliver psexec)'
+    - 'Sysmon EID 1: services.exe → Sliver implant binary'
+    - 'Sysmon EID 3: mTLS/WireGuard/HTTPS to C2'
+  ChokepointMapping: 'Auth via SMB/WMI → service or process created on target → Sliver implant callback to C2'
 - Name: Havoc
   FirstSeen: '2022'
   Status: Active
+  SourceURL: https://github.com/HavocFramework/Havoc
   NotesShort: Modern C2 with strong EDR bypass features; uses same underlying Windows execution primitives
   Notes: Modern open-source C2 framework with strong EDR bypass features and lateral movement capabilities; described as 'entry-level
     C2 for serious criminals'; increasingly observed in intrusions alongside or replacing Impacket; uses the same underlying
     Windows execution primitives (service creation, WMI, WinRM)
   VariantId: havoc
+  Command:
+    Invocation: "havoc > jump psexec <target>\nhavoc > jump winrm <target>\nhavoc > jump wmi <target>\n# Demon agent: position-independent shellcode\n# Supports sleep obfuscation, indirect syscalls, token manipulation"
+    Context: 'Open-source C2 with Demon agent. Supports PSExec, WinRM, WMI lateral movement. Agents use indirect syscalls and sleep obfuscation.'
+    Artifacts:
+    - 'Security EID 4624: Network logon (Type 3)'
+    - 'System EID 7045: Service installed (if psexec jump)'
+    - 'Sysmon EID 1: services.exe or wmiprvse.exe → Demon loader'
+    - 'Sysmon EID 3: HTTPS callback to Havoc teamserver'
+  ChokepointMapping: 'Auth via SMB/WMI/WinRM → service/process on target → Demon agent callback to teamserver'
 Prerequisites:
 - Network access to target on at least one required protocol port (SMB 445, WMI/RPC 135, WinRM 5985/5986)
 - Remote execution surface enabled on target (Server service for SMB, WinRM service, WMI, or Task Scheduler)
+AttackerControls:
+- Tool used (Impacket, NetExec, CrackMapExec, Evil-WinRM)
+- Protocol choice (SMB, WMI, WinRM, DCOM)
+- Execution method (psexec, smbexec, wmiexec, atexec)
+- Lateral movement scope and targeting
+- Credential source (dumped, sprayed, pass-the-hash)
+AttackerCannotControl:
+- Must have valid admin credentials for the target
+- Must authenticate over the network to the target
+- Must create a remote process or service on the target
+- Authentication event is logged on the target (4624 Type 3)
+- Process/service creation is logged on the target
 Chokepoints:
-- Stage: Credential Acquisition
+- Stage: Network Authentication
+  Input: Attacker has valid admin credentials (password, hash, or ticket)
   Invariant: Valid admin credentials (local or domain) must be obtained before any remote execution attempt
+  Observable: 'Windows Security EID 4624 (Logon Type 3 — Network) with admin account. EID 4672 (Special Privilege
+    Logon). Source IP is typically not a known admin workstation.'
   WhyCantBypass: All remote execution tools require authenticated access — no valid credentials means authentication failure
     at every attempted protocol regardless of which tool is used
   LogSources:
+  - Windows Security Event ID 4624 (Network Logon)
+  - Windows Security Event ID 4672 (Special Privilege Logon)
   - Windows Security Event ID 4648 (Logon with Explicit Credentials)
   - Windows Security Event ID 4769 (Kerberos Service Ticket Request)
   DetectionTier: Research
   SigmaRef: ''
-- Stage: Remote Execution Primitive
+- Stage: Remote Process/Service Creation
+  Input: Authenticated admin session established on target
   Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled
     task creation, or WinRM command
+  Observable: 'Sysmon EID 1 showing services.exe or wmiprvse.exe spawning cmd.exe/powershell.exe. Windows Security
+    EID 7045 (Service Installed) for psexec-style tools. EID 4688 with cross-logon session correlation.'
   WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over
     these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986)
     — no reachable port means no remote execution regardless of credential validity
@@ -111,8 +201,11 @@ Chokepoints:
   BypassNote: LOTL tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command) produce identical telemetry to Impacket
     but with signed Microsoft binaries — detection must be purely behavioral with no reliance on tool signatures
 - Stage: Lateral Spread
+  Input: Remote command interpreter is running on one or more targets
   Invariant: The same credential and execution primitive sequence repeats across multiple hosts in a short window or follows
     a deliberate pivot path
+  Observable: 'Windows Security EID 4624 showing the same account authenticating to multiple hosts within minutes.
+    Sysmon EID 3 showing same source IP connecting to multiple RFC1918 destinations on SMB/WinRM ports.'
   WhyCantBypass: Lateral movement by definition requires replication of the credential-plus-primitive pattern on each subsequent
     host — the telemetry is identical on every hop
   LogSources:

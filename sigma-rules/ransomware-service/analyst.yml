@@ -2,13 +2,8 @@ title: Ransomware Pre-Encryption — Bulk Service Termination Targeting Sophos F
 id: d6e0f2a4-b6c8-4d0e-2f4a-4b6c8d0e2f4a
 status: experimental
 description: >
-  High-fidelity detection for ransomware pre-encryption activity. Detects sc.exe
-  stopping the Sophos File Scanner service (SophosFileScanner) followed by service
-  deletion — a specific TTP observed in Alphv/BlackCat, BlackBasta, and LockBit
-  campaigns. This combination of stop + delete targeting a named security service
-  via a network logon session is a very strong pre-encryption indicator.
-  Inspired by the detection iteration demonstrated in the "Detection Chokepoints"
-  talk (BSidesSLC / Huntress).
+  Detects sc.exe stopping then deleting a named security service. Strong pre-encryption
+  indicator observed in Alphv/BlackCat, BlackBasta, and LockBit campaigns.
 references:
   - https://attack.mitre.org/techniques/T1562/001/
   - https://attack.mitre.org/techniques/T1489/
@@ -36,7 +31,11 @@ detection:
     CommandLine|contains|all:
       - 'delete'
       - 'SophosFileScanner'
-  condition: selection_sc_stop or selection_sc_delete
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: (selection_sc_stop or selection_sc_delete) and not filter_legit_software
 falsepositives:
   - Sophos product uninstallation by authorized IT staff
   - Sophos version upgrade process (stop old, install new)

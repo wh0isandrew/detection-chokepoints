@@ -1,20 +1,9 @@
 title: Web Shell — All Child Processes Spawned by Web Server Processes (Research Baseline)
-id: d4a6c8e0-3b5f-7a9c-1d2f-5h7i9j1k3m5n
+id: d4a6c8e0-3b5f-4a9c-1d2f-5b7c9d1e3051
 status: experimental
 description: >
-  Maximum-visibility rule capturing every process creation event where the parent
-  is a known web server worker process (IIS w3wp.exe, Apache httpd.exe, nginx,
-  PHP-CGI, Tomcat, JBoss). Designed as a baselining rule to build a complete
-  inventory of legitimate web server child processes before tuning toward
-  behavioral hunt and analyst rules. Web shells are present in 35% of Q4 2024 IR
-  incidents (Cisco Talos), and the ShellForge paper (arXiv 2601.22182) demonstrated
-  that adversarially generated shells achieve 93.9% evasion against VirusTotal
-  commercial engines — making behavioral process-creation detection essential over
-  file-content scanning. The invariant that enables durable detection is:
-  HTTP request → web server process → child OS interpreter. This rule captures
-  every instance of that parent-child relationship, making it the foundation for
-  identifying both the legitimate baseline and anomalous attacker-controlled execution.
-  High false positive rate expected; purpose is environmental baselining only.
+  Detects any child process spawned by a web server worker process. Baseline rule
+  for inventorying legitimate web server child processes.
 references:
   - https://attack.mitre.org/techniques/T1505/003/
   - https://media.defense.gov/2020/Jun/09/2002313081/-1/-1/0/CSI-DETECT-AND-PREVENT-WEB-SHELL-MALWARE-20200422.PDF
@@ -49,7 +38,11 @@ detection:
       - '\tomcat10.exe'
       - '\java.exe'
       - '\javaw.exe'
-  condition: selection_web_server_parent
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_web_server_parent and not filter_legit_software
 falsepositives:
   - Legitimate CMS-triggered processes (WordPress image resize, Drupal cron via PHP)
   - Deployment pipeline scripts invoked via web-triggered hooks (CI/CD webhook handlers)

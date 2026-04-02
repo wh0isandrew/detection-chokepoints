@@ -26,7 +26,7 @@ SIGMA_RULES_DIR = os.path.join(REPO_ROOT, "sigma-rules")
 DATA_DIR = os.path.join(REPO_ROOT, "_data")
 COLLECTION_DIR = os.path.join(REPO_ROOT, "_chokepoints")
 ASSETS_JS_DIR = os.path.join(REPO_ROOT, "assets", "js")
-SIGMA_LEVELS = ("research", "hunt", "analyst")
+SIGMA_LEVELS = ("research", "hunt", "hunt-network", "analyst")
 
 
 def extract_sigma_dir(detections):

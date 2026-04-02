@@ -17,6 +17,98 @@ permalink: /attack-chains/
     </p>
   </div>
 
+  <!-- Section 1: Why Map Attack Chains -->
+  <div class="ac-why-section">
+    <h2>Why Map Attack Chains?</h2>
+    <p>
+      When you map multiple threat actors against the same kill chain, a pattern emerges:
+      independent groups — different tools, different infrastructure, different affiliations —
+      all <em>converge on the same techniques</em> at each stage.
+    </p>
+    <p>
+      This isn't coincidence. Each stage has prerequisite conditions dictated by the OS and
+      network architecture, not by attacker choice. An attacker who needs to move laterally
+      <em>must authenticate</em> and <em>must create a remote process</em>. An attacker who wants
+      to encrypt files <em>must stop backup services</em> and <em>must delete shadow copies</em>.
+      The tooling varies. The prerequisites don't.
+    </p>
+    <p>
+      Mapping this convergence identifies the highest-ROI detection targets: techniques where
+      every actor overlaps are universal chokepoints — one detection rule covers every group
+      in the matrix.
+    </p>
+    <p class="ac-why-attribution">
+      Methodology adapted from Kaspersky's
+      <a href="https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf" target="_blank" rel="noopener">"Common TTPs of Modern Ransomware Groups"</a>
+      (2022), which demonstrated that 8 independent ransomware operations shared &gt;50% of their kill chain techniques.
+    </p>
+  </div>
+
+  <!-- Section 2: Cross-Chain Ecosystem Flow -->
+  <div class="ac-ecosystem">
+    <h2>Cross-Chain Ecosystem</h2>
+    <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
+      No chain exists in isolation. Infostealers harvest credentials that fund ransomware.
+      AiTM kits steal sessions that enable account takeover and BEC.
+    </p>
+    <div class="ac-ecosystem-flow">
+      <div class="ac-flow-row">
+        <a class="ac-flow-box" href="{{ '/attack-chains/infostealers/' | relative_url }}">Infostealer Chain</a>
+        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-label">credentials sold to IABs</span>
+        <span class="ac-flow-arrow">&rarr;</span>
+        <a class="ac-flow-box" href="{{ '/attack-chains/ransomware/' | relative_url }}">Ransomware Chain</a>
+      </div>
+      <div class="ac-flow-row">
+        <a class="ac-flow-box" href="{{ '/attack-chains/aitm/' | relative_url }}">AiTM / Phish Chain</a>
+        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-label">session tokens &rarr; account takeover</span>
+        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-box">BEC / Double Extortion</span>
+      </div>
+      <div class="ac-flow-example">
+        <strong>Real-world examples:</strong>
+        Snowflake breach (2024): infostealer creds &rarr; 165+ orgs compromised &middot;
+        RansomHub: ClickFix &rarr; stealer &rarr; IAB &rarr; ransomware &middot;
+        Scattered Spider: AiTM &rarr; Okta session &rarr; lateral movement &rarr; ransomware
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: How to read guide -->
+  <details class="ac-guide">
+    <summary class="ac-guide-toggle">
+      <span class="badge-legend-icon">?</span>
+      How to read an attack chain
+    </summary>
+    <div class="ac-guide-body">
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">Stages</span>
+        <span class="ac-guide-def">Kill chain phases from initial access to impact</span>
+      </div>
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">Actors</span>
+        <span class="ac-guide-def">Threat groups or families tracked in this chain</span>
+      </div>
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">TTP Overlap</span>
+        <span class="ac-guide-def">Color-coded cells show which actors use each technique</span>
+      </div>
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">Convergence</span>
+        <span class="ac-guide-def">Techniques used by ALL actors = highest detection ROI</span>
+      </div>
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">Chokepoint</span>
+        <span class="ac-guide-def">Links to the Detection Chokepoints page for that stage</span>
+      </div>
+      <div class="ac-guide-row">
+        <span class="ac-guide-term">Ecosystem</span>
+        <span class="ac-guide-def">Arrows show how chains feed into each other</span>
+      </div>
+    </div>
+  </details>
+
   <div class="ac-index-grid">
 
     <a class="ac-index-card" href="{{ '/attack-chains/ransomware/' | relative_url }}">
@@ -141,8 +233,8 @@ permalink: /attack-chains/
   <div class="mt-12 p-5 rounded-lg" style="background:var(--bg-card);border:1px solid var(--border);">
     <p style="font-size:.875rem;color:var(--text-muted);margin:0;">
       <strong style="color:var(--text);">More attack chains coming soon.</strong>
-      BEC / business email compromise, initial access broker (IAB) operations, and supply chain compromise
-      chains are in development. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> to propose or draft a new chain.
+      BEC / business email compromise and initial access broker (IAB) operations — the handoff
+      mechanisms shown in the ecosystem flow above — are in development. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> to propose or draft a new chain.
     </p>
   </div>
 

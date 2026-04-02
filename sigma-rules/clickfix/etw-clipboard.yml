@@ -2,13 +2,8 @@ title: Browser Process Writing Scripting Payload to Clipboard (ETW)
 id: f3b8e2d1-7c4a-4b9e-a2f6-1d8e5c0b3a7f
 status: experimental
 description: >
-  Detects browser processes writing PowerShell or command-interpreter keywords to the
-  Windows clipboard via ETW (Microsoft-Windows-Win32k SetClipboardData events). This is
-  the ClickFix chokepoint at the pre-execution layer — the clipboard write fires before
-  the user pastes and executes the payload. Covers all ClickFix variants (ClickFix,
-  FileFix, WebDAV ClickFix, Windows Terminal ClickFix, InstallFix, DNS-based ClickFix)
-  because clipboard seeding is an inescapable prerequisite for the attack regardless of
-  which paste target the lure page instructs the user to use.
+  Detects browser processes writing PowerShell/cmd keywords to the clipboard via ETW.
+  Pre-execution layer — fires before the user pastes.
 references:
   - https://gist.github.com/mattifestation/04e8299d8bc97ef825affe733310f7bd
   - https://github.com/mandiant/SilkETW
@@ -55,7 +50,11 @@ detection:
       - 'IEX'
       - 'Invoke-Expression'
       - '\\\\'   # UNC path prefix — WebDAV ClickFix variant
-  condition: selection_browser and selection_payload_keywords
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    ProcessName|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_browser and selection_payload_keywords and not filter_legit_software
 falsepositives:
   - Developer tools or documentation sites that copy script examples to clipboard (rare
     match against these specific keywords in combination with a browser process)
