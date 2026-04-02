@@ -24,7 +24,7 @@ Author: '@iimp0ster'
 Variations:
 - Name: BlackBasta
   FirstSeen: '2022'
-  Status: Inactive
+  Status: Legacy
   SourceURL: https://reliaquest.com/blog/decline-and-legacy-of-black-basta-whats-next-ransomware-phishing/
   NotesShort: Last victim posted January 2025; internal chat logs leaked February 2025; inactive by March 2025. Members migrated
     to CACTUS and SafePay
@@ -32,43 +32,105 @@ Variations:
     chat logs leaked February 2025; considered inactive by March 2025 after (196k messages) leaked by disgruntled member;
     former members migrated to CACTUS and SafePay
   VariantId: blackbasta
+  Command:
+    Invocation: "sc stop SophosService\nsc stop veeam\nsc stop MSSQLSERVER\nsc stop wbengine\nsc delete SophosService\nsc config veeam start= disabled"
+    Context: 'Executed via batch script or cmd.exe after gaining SYSTEM via Qakbot/Cobalt Strike. Targets AV, EDR, Veeam backup, SQL databases. Average TTR 6-12 hours from initial access.'
+    Artifacts:
+    - 'Sysmon EID 1: sc.exe with stop and security/backup service name'
+    - 'Sysmon EID 1: sc.exe with delete or config start= disabled'
+    - 'Windows System EID 7036: Multiple services stopped within 60 seconds'
+    - 'Windows System EID 7040: Service start type changed to disabled'
+  ChokepointMapping: 'SYSTEM access → sc.exe enumerates services → bulk sc stop/delete → encryption begins'
 - Name: Alphv/BlackCat
   FirstSeen: '2021'
-  Status: Defunct
+  Status: Legacy
   SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a
   NotesShort: FBI-disrupted December 2023; resumed operations, attacked Change Healthcare February 2024; exit-scammed affiliates
     March 2024 after $22M ransom
   Notes: Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited
     via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure
   VariantId: alphv-blackcat
+  Command:
+    Invocation: "# Windows Rust binary with embedded service list:\nnet stop \"Sophos Agent\" /y\nnet stop \"vss\" /y\nnet stop \"MSSQL$SQLEXPRESS\" /y\nwmic service where \"name like '%backup%'\" call stopservice"
+    Context: 'Cross-platform (Windows Rust, Linux C). Windows variant embeds a service kill list. Also uses vssadmin to delete shadow copies. FBI disruption Dec 2023, exit scam March 2024.'
+    Artifacts:
+    - 'Sysmon EID 1: net.exe or net1.exe with stop and service name'
+    - 'Sysmon EID 1: wmic.exe with service and stopservice'
+    - 'Sysmon EID 1: vssadmin.exe with delete shadows'
+    - 'Windows System EID 7036: Bulk service stops'
+  ChokepointMapping: 'SYSTEM → embedded kill list → net stop / wmic stopservice → vssadmin delete shadows → encryption'
 - Name: Akira
   FirstSeen: '2023'
   Status: Active
+  SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-109a
   NotesShort: Prioritizes Defender and backup agents; targets VPN appliances for initial access
   Notes: Prioritizes Defender and backup agents; targets VPN appliances for initial access
   VariantId: akira
+  Command:
+    Invocation: "powershell -Command \"Get-Service -Name *sophos*, *veeam*, *sql*, *backup* | Stop-Service -Force\"\nsc config WinDefend start= disabled\nnet stop WinDefend /y"
+    Context: 'Prioritizes Defender and backup agents. Initial access via VPN appliances (Cisco, Fortinet). Uses PowerShell for service manipulation alongside sc.exe.'
+    Artifacts:
+    - 'Sysmon EID 1: powershell.exe with Stop-Service -Force and wildcard service names'
+    - 'Sysmon EID 1: sc.exe with config WinDefend start= disabled'
+    - 'Windows System EID 7036: Defender + backup services stopped'
+  ChokepointMapping: 'Admin via VPN compromise → PowerShell Get-Service enumeration → Stop-Service -Force → sc config disable'
 - Name: Qilin
   FirstSeen: '2022'
   Status: Active
+  SourceURL: https://socradar.io/blog/dark-web-profile-qilin-agenda-ransomware/
   NotesShort: Rebranded from Agenda; surged with NHS/Synnovis attack June 2024
   Notes: Originally tracked as Agenda (Golang); rebranded to Qilin and rewrote in Rust in 2022; fully operational RaaS by
     February 2023; targets EDR, Veeam, databases; VMware ESXi variant active; surged to prominence with NHS/Synnovis attack
     June 2024
   VariantId: qilin
+  Command:
+    Invocation: "# Rust binary — service manipulation via Windows API, not sc.exe:\nqilin.exe --kill-services --paths \\\\DC\\SYSVOL\\domain\\scripts\\\n# ESXi variant:\nesxcli vm process list\nesxcli vm process kill --type=force --world-id=<id>"
+    Context: 'Rewritten in Rust (2022). Uses Windows API directly for service manipulation, reducing sc.exe command-line artifacts. ESXi variant kills VM processes before encrypting VMDK files.'
+    Artifacts:
+    - 'Windows System EID 7036: EDR/backup services stopped without sc.exe CLI'
+    - 'Sysmon EID 1: Qilin binary execution with --kill-services'
+    - 'ESXi: esxcli process kill events in hostd.log'
+  ChokepointMapping: 'SYSTEM → Windows API service stop (no sc.exe) → service state changes (EID 7036) → encryption'
 - Name: LockBit 3.0
   FirstSeen: '2022'
-  Status: Severely Disrupted
+  Status: Declining
   SourceURL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
   NotesShort: Operation Cronos seized 28 servers and 1,000+ decryption keys; significantly disrupted
   Notes: Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February
     2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity
   VariantId: lockbit-3-0
+  Command:
+    Invocation: "# Domain-wide via Group Policy scheduled task:\nschtasks /create /tn \"Windows Update\" /tr \"C:\\windows\\temp\\lockbit.exe\" /sc once /st 00:00 /ru SYSTEM\n# Kill list (50+ services):\nsc stop SophosFileScanner\nsc stop CrowdStrike\nsc stop SentinelAgent\nsc stop veeam\nsc stop MSSQLSERVER\nsc stop wbengine\nsc stop VSS\n# ... 40+ more services\nvssadmin delete shadows /all /quiet\nbcdedit /set {default} recoveryenabled No"
+    Context: 'Most comprehensive kill list (50+ services). Uses Group Policy for domain-wide deployment. Disables Windows recovery and deletes shadow copies. Operation Cronos (Feb 2024) seized infrastructure.'
+    Artifacts:
+    - 'Sysmon EID 1: 50+ sc.exe stop commands in rapid succession'
+    - 'Sysmon EID 1: vssadmin.exe delete shadows /all /quiet'
+    - 'Sysmon EID 1: bcdedit.exe /set recoveryenabled No'
+    - 'Sysmon EID 1: schtasks.exe /create with SYSTEM context'
+    - 'Windows System EID 7036: 50+ services stopped in under 5 minutes'
+    - 'Security EID 4698: Scheduled task created across multiple hosts'
+  ChokepointMapping: 'Domain admin → GPO scheduled task → 50+ sc stop commands → vssadmin + bcdedit → domain-wide encryption'
 Prerequisites:
 - Admin or SYSTEM privileges already established on target system
 - Target security, backup, and database services are running (cannot stop what is not running)
+AttackerControls:
+- Specific services targeted (VSS, SQL, backup agents)
+- Method of stopping services (sc.exe, net.exe, WMI, PowerShell)
+- Order and timing of service stops
+- Encryption algorithm and ransom note content
+- Lateral movement method used to reach the target
+AttackerCannotControl:
+- Must run with SYSTEM privileges
+- Must enumerate running services to find targets
+- Must stop services before encryption begins
+- Service state change events are logged by the OS
+- Bulk service stops in short time window are anomalous
 Chokepoints:
 - Stage: Service Enumeration
+  Input: Attacker has SYSTEM privileges on the target system
   Invariant: Actor enumerates running services to build the kill list via sc query, Get-Service, wmic, or equivalent
+  Observable: 'Sysmon EID 1 showing sc.exe query, wmic service get, or Get-Service commands. Multiple service
+    enumeration commands in rapid succession from the same process or user context.'
   WhyCantBypass: Ransomware cannot stop what it cannot find — service enumeration precedes every observed kill sequence across
     all documented families; sc.exe stop and delete require Admin or SYSTEM privileges, so no privilege escalation means immediate
     failure before enumeration can complete
@@ -77,9 +139,12 @@ Chokepoints:
   - Windows Security Event ID 4688 (Process Creation)
   DetectionTier: Research
   SigmaRef: sigma-rules/ransomware-service/research.yml
-- Stage: Service Stop and Disable
+- Stage: Bulk Service Stop
+  Input: Service kill list has been built via enumeration
   Invariant: Security, backup, and database services are stopped in rapid succession via sc.exe, net stop, taskkill, or WMI
     StopService — multiple services within a short window
+  Observable: 'Windows System EID 7036 showing multiple security/backup services transitioning to "stopped" state
+    within 60 seconds. Sysmon EID 1 showing repeated sc stop or net stop commands.'
   WhyCantBypass: Files locked by running services cannot be encrypted — stop must precede encryption in every observed ransomware
     family without exception
   LogSources:
@@ -91,12 +156,15 @@ Chokepoints:
   BypassNote: Purpose-built EDR killers (BYOVD drivers, EDRKillShifter) bypass service-stop detection by killing the EDR process
     at kernel level — monitor Sysmon EID 6 for suspicious driver loads immediately before bulk service termination
 - Stage: Service Deletion
+  Input: Target services have been stopped
   Invariant: Stopped services are deleted or permanently disabled to prevent automatic restart during the encryption phase
+  Observable: 'Sysmon EID 1 showing sc.exe delete or sc.exe config start= disabled commands targeting security
+    and backup services. Registry changes under HKLM\SYSTEM\CurrentControlSet\Services\ confirming service deletion.'
   WhyCantBypass: Without deletion, Windows service recovery policies restart stopped services and interfere with encryption
     — deletion is confirmed across all major documented families
   LogSources:
   - Sysmon Event ID 1 (sc.exe delete / sc.exe config start= disabled)
-  - Windows System Event ID 7036 (service removed)
+  - Sysmon Event ID 12/13 (Registry key deletion under Services hive)
   DetectionTier: Analyst
   SigmaRef: sigma-rules/ransomware-service/analyst.yml
 EvolutionTimeline:

@@ -2,10 +2,8 @@ title: Multiple Security or Backup Services Stopped or Deleted in Rapid Successi
 id: c5d9e1f3-a5b7-4c9d-1e3f-3a5b7c9d1e3f
 status: experimental
 description: >
-  Detects sc.exe, net.exe, or taskkill.exe used to stop or delete security/backup
-  services, with specific focus on service deletion within 60 seconds of a stop
-  command (a strong indicator of ransomware preparation). Also catches rapid-fire
-  service stops targeting multiple services within a 5-minute window.
+  Detects sc.exe/net.exe/taskkill.exe stopping or deleting security and backup services,
+  with focus on stop-then-delete sequences within 60 seconds.
 references:
   - https://attack.mitre.org/techniques/T1562.001/
   - https://attack.mitre.org/techniques/T1489/
@@ -65,7 +63,11 @@ detection:
       # Generic backup patterns
       - 'backup'
       - 'Backup'
-  condition: selection_stop_tools and selection_stop_action and selection_security_targets
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_stop_tools and selection_stop_action and selection_security_targets and not filter_legit_software
 falsepositives:
   - Planned maintenance by system administrators (compare against change management records)
   - AV/EDR product uninstallation during software upgrade cycles

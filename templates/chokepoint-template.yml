@@ -1,127 +1,319 @@
----
-# Detection Chokepoints YAML Entry Template
-# Copy this file to chokepoints/<tactic>/<technique-name>.yml and fill in all fields.
-# See schema/chokepoint-schema.yml for field definitions and valid values.
-# See CONTRIBUTING.md for the full submission process.
+# ─────────────────────────────────────────────────────────────────────────────
+# CHOKEPOINT PAGE TEMPLATE
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Use this template when creating a new chokepoint page for detection-chokepoints.
+# Every chokepoint page should follow this structure so readers get a consistent
+# experience regardless of which technique they're looking at.
+#
+# File location: chokepoints/<tactic>/<technique-slug>.yml
+# Example:       chokepoints/initial-access/clickfix-techniques.yml
+#
+# ─────────────────────────────────────────────────────────────────────────────
 
-Name: "[Technique Name]"
-Id: ""  # Generate a UUIDv4: python3 -c "import uuid; print(uuid.uuid4())"
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 1: METADATA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+Name: ""                            # Human-readable name (e.g., "ClickFix Techniques")
+Id: ""                              # Generate a UUIDv4: python3 -c "import uuid; print(uuid.uuid4())"
 MitreIds:
   - "T0000.000"
 Tactics:
-  - "[MITRE Tactic Name]"
+  - ""                              # MITRE tactic (e.g., "Initial Access")
 Techniques:
-  - "[Human-readable technique name]"
-DetectionPriority: HIGH      # CRITICAL | HIGH | MEDIUM | LOW
-ThreatPrevalence: HIGH       # VERY HIGH | HIGH | MEDIUM | LOW | EMERGING
-DetectionDifficulty: MEDIUM  # LOW | MEDIUM | HIGH
+  - ""                              # Human-readable technique name
+DetectionPriority: HIGH             # CRITICAL | HIGH | MEDIUM | LOW
+ThreatPrevalence: HIGH              # VERY HIGH | HIGH | MEDIUM | LOW | EMERGING
+DetectionDifficulty: MEDIUM         # LOW | MEDIUM | HIGH
 Description: >
-  One paragraph description of the chokepoint. Describe what the attacker is trying to
-  accomplish, what the invariant prerequisites are, and why this pattern persists across
-  tool variations.
+  # 2-4 sentences. What is this technique? Why does it matter?
+  # Keep it concrete — name the attacker behavior, not just the MITRE technique.
 LastUpdated: "YYYY-MM-DD"
 Author: "@your-handle"
 
-Chokepoints:
-  - Stage: "[Stage label — e.g. Clipboard Seeding]"
-    Invariant: "One sentence — what MUST happen at this stage regardless of tool or variant."
-    WhyCantBypass: "One sentence — why the attacker cannot skip or substitute this stage."
-    LogSources:
-      - "Sysmon Event ID X (Name)"
-      - "Windows Security Event ID Y (Name)"
-    DetectionTier: Hunt       # Research | Hunt | Analyst
-    SigmaRef: "sigma-rules/[technique]/hunt.yml"  # or "" if no rule exists yet
-  - Stage: "[Next stage]"
-    Invariant: "What must happen here."
-    WhyCantBypass: "Why it cannot be bypassed."
-    LogSources:
-      - "Log source"
-    DetectionTier: Analyst
-    SigmaRef: "sigma-rules/[technique]/analyst.yml"
-    BypassNote: "Known bypass risk — surfaced as red callout on the stage card."  # optional
-
-Variations:
-  - Name: "[Tool or method name]"
-    FirstSeen: "YYYY-QN"      # e.g., "2024-Q2" or "2024-06"
-    Status: Active             # Active | Emerging | Declining | Legacy
-    Notes: "Brief context about this variation"
-  - Name: "[Another tool/method]"
-    FirstSeen: "YYYY"
-    Status: Emerging
-    Notes: ""
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 2: ATTACK CHOKEPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Adapted from Matt Graeber's threat research methodology (Red Canary):
+#   "The why, what, and how of threat research and detection"
+#   https://redcanary.com/blog/threat-detection/threat-research-questions/
+#
+# Graeber's framework asks:
+#   1. What is the technique at a technical level? (define it precisely)
+#   2. What must be true for it to execute? (invariant conditions)
+#   3. What does the attacker control? (variables — tools, lures, infra)
+#   4. What can't the attacker control? (constants — the chokepoints)
+#   5. Can we observe the technique independent of intent? (visibility first)
+#   6. What are all possible variations? (enumerate permutations)
+#   7. What detection logic targets what the attacker has NO control over?
+#      → That's the robust detection. That's the chokepoint.
+#
+# APPLYING THIS TO A CHOKEPOINT PAGE:
+#   - The "AttackerControls" field lists what the attacker CAN change
+#     (lure design, obfuscation, infrastructure, delivery method).
+#   - The "AttackerCannotControl" field lists the invariant behaviors
+#     the attacker MUST perform — the chokepoints.
+#   - Each stage in Chokepoints maps to one invariant behavior
+#     from the AttackerCannotControl list.
+#
+# This separation is the core framework. If a contributor can't clearly
+# articulate what the attacker controls vs. what they can't, the chokepoint
+# hasn't been properly identified yet.
 
 Prerequisites:
-  - "First prerequisite — must be true for attack to succeed"
-  - "Second prerequisite — cannot be bypassed regardless of tool"
-  - "Third prerequisite"
+  - ""                              # Must be true for attack to succeed
+  - ""                              # Cannot be bypassed regardless of tool
 
-EvolutionTimeline:
-  - Date: "YYYY-QN"
-    Event: "Brief title of what happened"
-    Change: "What changed in this iteration"
-    DetectionImpact: "Effect on existing detections (e.g., 'No change' or 'New rule needed')"
-    TheConstant: "What did NOT change — the chokepoint condition"
-  - Date: "YYYY-QN"
-    Event: "Earlier event"
-    Change: "What changed"
-    DetectionImpact: ""
-    TheConstant: "The invariant chokepoint"
+# ── Framework analysis ──
+# Fill these two lists BEFORE writing the stages. They force you to
+# distinguish variables (what changes across variants) from constants
+# (what your detections should target).
+
+AttackerControls:                   # What the attacker CAN change between variants
+  - ""                              # e.g., "Lure design — CAPTCHA, install page, terminal UI"
+  - ""                              # e.g., "Payload obfuscation — base64, XOR, hex encoding"
+  - ""                              # e.g., "Paste target — Run dialog, File Explorer, terminal"
+  - ""                              # e.g., "Delivery method — phishing, malvertising, SEO"
+  - ""                              # e.g., "Infrastructure — domains, IPs, CDNs, WebDAV, DNS"
+
+AttackerCannotControl:              # The invariant behaviors — the chokepoints
+  - ""                              # e.g., "Must write a command to clipboard via browser API"
+  - ""                              # e.g., "Must spawn a scripting interpreter to execute"
+  - ""                              # e.g., "Must make outbound connection to fetch payload"
+
+# ── Chokepoint stages ──
+
+Chokepoints:
+  - Stage: ""                       # Observable behavior name (e.g., "Clipboard Seeding")
+                                    # NOT a kill chain phase name (e.g., "Delivery")
+    Input: >
+      # What state exists before this stage fires?
+      # What does the attacker need in place?
+
+    Invariant: >
+      # The invariant behavior. What MUST the attacker do?
+      # Use "must" language: "The page must write...", "The interpreter must spawn..."
+
+    Observable: >
+      # What artifact does this produce in telemetry?
+      # Name specific event IDs, log sources, field values.
+
+    WhyCantBypass: >
+      # What breaks if the attacker skips this step?
+      # This is the most important sentence in the stage.
+      # Example: "Without the clipboard write, the user has nothing to paste."
+
+    LogSources:
+      - ""                          # e.g., "Sysmon Event ID 1 (Process Creation)"
+      - ""                          # e.g., "Windows Security Event ID 4688"
+
+    DetectionTier: Hunt             # Research | Hunt | Analyst
+    SigmaRef: ""                    # Path to sigma rule file (e.g., "sigma-rules/[technique]/hunt.yml")
+
+    BypassNote: ""                  # Optional. Known evasion paths and mitigations.
+
+    TruePositive:                   # Optional — expandable real log example
+      Title: ""                     # e.g., "Sysmon EID 1 — PowerShell spawned by Chrome"
+      Log: |
+        # Paste a real (or realistic) log event here.
+        # Highlight the key fields that make this a true positive.
+        # Example:
+        #   EventID:     1 (Process Create)
+        #   Image:       C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        #   CommandLine: powershell.exe -NonInteractive -NoProfile -EncodedCommand aQBlAHg...
+        #   ParentImage: C:\Program Files\Google\Chrome\Application\chrome.exe
+      KeySignal: >
+        # 1-2 sentences explaining which field values confirm this is a true positive.
+        # Example: "ParentImage=chrome.exe spawning powershell.exe with -EncodedCommand."
+
+  - Stage: ""                       # Second stage
+    Input: ""
+    Invariant: ""
+    Observable: ""
+    WhyCantBypass: ""
+    LogSources: []
+    DetectionTier: Analyst
+    SigmaRef: ""
+
+  # Add more stages as needed. Most chokepoints have 2-4 stages.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 3: VARIATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Each variation is a tool/method that exploits this chokepoint.
+# The list grows; the chokepoint doesn't change.
+#
+# RULES FOR WRITING VARIATIONS:
+#   1. Every variation MUST include Notes and a ChokepointMapping.
+#   2. Lure and Payloads sections are OPTIONAL — they apply to initial access /
+#      social engineering techniques (ClickFix, Renamed RMM).
+#      Post-compromise techniques (EDR Bypass, Ransomware, Remote Execution)
+#      use the "Command" field instead.
+#   3. If a field is empty or absent, the template MUST NOT render that section.
+#      No placeholder text, no "content needed" messages, no empty boxes.
+#   4. Defang all IOCs: hxxps[://], [.]com, etc.
+#   5. Include a SourceURL link to the original research/report.
+#
+# WHICH FIELDS TO USE:
+#
+#   Initial access techniques (ClickFix, Renamed RMM):
+#     → Lure, LureTags (what the user sees)
+#     → Payloads (the clipboard/download command, per-platform)
+#     → ChokepointMapping
+#
+#   Post-compromise techniques (EDR Bypass, Ransomware, Remote Exec):
+#     → Command (CLI invocation, driver path, service stop commands)
+#     → ChokepointMapping
+#
+#   Persistence / credential access (Web Shells, Browser Theft, BYOSI):
+#     → Lure (optional — exploit vector or delivery method if applicable)
+#     → Command (shell characteristics, stealer chain, interpreter path)
+#     → ChokepointMapping
+
+Variations:
+  - Name: ""                        # e.g., "ClickFix (Original)"
+    FirstSeen: ""                   # e.g., "2024-Q1"
+    Status: Active                  # Active | Emerging | Declining | Legacy | Disrupted
+    SourceURL: ""                   # Full URL to the original report
+    NotesShort: ""                  # One-line summary for card header
+    Notes: >
+      # 2-3 sentences. What makes this variant different from others?
+    VariantId: ""                   # URL-safe slug (e.g., "clickfix-original")
+
+    # ── LURE (OPTIONAL — initial access / social engineering only) ──
+    # Omit entirely for post-compromise techniques.
+    Lure: >
+      # What does the user see on screen? Describe the visual elements,
+      # the social engineering narrative, and the user interaction flow.
+    LureTags:
+      - ""                          # e.g., "Cloudflare impersonation"
+      - ""                          # e.g., "Win+R instruction"
+
+    # ── PAYLOADS (OPTIONAL — clipboard/download-based delivery only) ──
+    # Omit entirely for post-compromise techniques.
+    Payloads:
+      - Platform: ""                # Windows | macOS | Linux
+        Command: ""                 # Defanged clipboard command
+        Note: >
+          # What does this command do? Execution chain, final payload.
+
+    # ── COMMAND (OPTIONAL — post-compromise techniques) ──
+    # Use this instead of Payloads for techniques where the attacker already
+    # has access and is executing tools/commands directly.
+    # Omit entirely for initial access techniques that use Payloads.
+    Command:
+      Invocation: ""                # The actual CLI command or tool invocation (defanged)
+      Context: >
+        # When/how is this command typically executed?
+        # e.g., "After BYOVD driver loads and strips kernel callbacks"
+      Artifacts:
+        - ""                        # e.g., "Sysmon EID 1: sc.exe with 'stop' + service name"
+        - ""                        # e.g., "Windows System EID 7036: service → stopped"
+
+    # ── CHOKEPOINT MAPPING ──
+    ChokepointMapping: >
+      # Map this variant back to the chokepoint stages.
+      # Format: "stage 1 behavior → stage 2 behavior → stage 3 behavior"
+      # Examples:
+      #   Initial access: "clipboard write → powershell.exe (parent: explorer.exe) → outbound HTTP"
+      #   EDR bypass: "admin privesc → driver load (zam64.sys) → sc stop SophosFileScanner"
+      #   Web shell: "aspx file write to wwwroot → w3wp.exe → cmd.exe child → whoami"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 4: DETECTION STRATEGY
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Detection rules at each maturity level. Reference the sigma/IOK rule files
+# in the repo rather than inlining full rules here.
 
 Detections:
   - Level: Research
-    Description: "One-line goal for this detection level"
+    Description: ""                 # One-line goal for this detection level
     LogSources:
-      - "Sysmon Event ID X (Name)"
-      - "Windows Security Event ID Y (Name)"
+      - ""
     Logic: >
-      Plain-English description of what to look for. Not a Sigma rule — just the
-      human-readable detection logic that the Sigma rule implements.
-    ExpectedFPRate: High
-    UseCase: "Who uses this and for what purpose"
-    SigmaRule: "sigma-rules/[technique]/research.yml"
+      # Plain-English description of what to look for. Not a Sigma rule —
+      # just the human-readable detection logic the Sigma rule implements.
+    ExpectedFPRate: High            # High | Medium | Low
+    UseCase: ""                     # Who uses this and for what purpose
+    SigmaRule: ""                   # Path to file in repo (e.g., "sigma-rules/[technique]/research.yml")
 
   - Level: Hunt
-    Description: "One-line goal"
+    Description: ""
     LogSources:
-      - "Sysmon Event ID X (Name)"
+      - ""
     Logic: >
-      More specific logic with context filters added.
+      # More specific logic with context filters added.
     ExpectedFPRate: Medium
-    UseCase: "Active threat hunting, campaign detection"
-    SigmaRule: "sigma-rules/[technique]/hunt.yml"
+    UseCase: ""
+    SigmaRule: ""
 
   - Level: Analyst
-    Description: "One-line goal"
+    Description: ""
     LogSources:
-      - "Multiple correlated sources"
+      - ""
     Logic: >
-      High-fidelity correlated logic. Should include time-window correlation and
-      multiple event types where applicable.
+      # High-fidelity correlated logic.
     ExpectedFPRate: Low
-    UseCase: "Automated SOC alerting; IR escalation trigger"
-    SigmaRule: "sigma-rules/[technique]/analyst.yml"
+    UseCase: ""
+    SigmaRule: ""
 
-Intel:
-  - Name: "[Resource name]"
-    Tier: primary          # primary | supporting
-    URL: "https://example.com"
-    Description: "How to use this resource for hunting this chokepoint"
-    # LinkedFrom: ["Variation or Stage name"]   # optional
+# Optional: pre-execution or IOK-layer detection
+EarlyDetections:
+  - Layer: ""                       # e.g., "Pre-Execution — ETW Clipboard Write"
+    Description: ""
+    LogSources:
+      - ""
+    ExpectedFPRate: ""
+    UseCase: ""
+    SigmaRule: ""                   # or IokRule: "" for IOK rules
 
-RelatedChokepoints:
-  - "other-chokepoint-filename-stem"  # No path, no extension
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 5: EVOLUTION TIMELINE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+EvolutionTimeline:
+  - Date: "YYYY-QN"
+    Event: ""                       # Brief title of what happened
+    Change: ""                      # What changed in this iteration
+    DetectionImpact: ""             # Effect on existing detections
+    TheConstant: ""                 # What did NOT change — the chokepoint condition
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 6: OSINT PIVOTS
+# ═══════════════════════════════════════════════════════════════════════════════
 
 OsintSources:
-  - Platform: URLScan
-    Query: ""
-    Notes: ""
-  - Platform: Shodan
-    Query: ""
-    Notes: ""
+  - Platform: ""                    # e.g., "URLScan", "VirusTotal Intelligence", "Shodan"
+    Query: ""                       # The actual query string
+    Notes: ""                       # What this finds and why
+    URL: ""                         # Direct link with query pre-populated (if possible)
 
-# DEPRECATED: KnownBypasses is no longer rendered in the layout.
-# Field definition preserved to maintain YAML data integrity for future migration.
-# KnownBypasses:
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 7: EMULATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+EmulationScript:
+  AtomicRef: ""                     # MITRE ATT&CK technique ID
+  Description: ""                   # What the emulation script does
+  File: ""                          # Path to script in repo (e.g., "emulation/[technique]/emulate.ps1")
+  Language: ""                      # powershell | python | bash
+  SafetyNotes: >
+    Lab use only. Run in isolated lab VM only.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 8: RELATED CHOKEPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+RelatedChokepoints:
+  - ""                              # Slug of related chokepoint (e.g., "renamed-rmm-tools")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 9: REFERENCES
+# ═══════════════════════════════════════════════════════════════════════════════
 
 References:
   - "https://attack.mitre.org/techniques/T0000/"

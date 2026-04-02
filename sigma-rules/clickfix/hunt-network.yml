@@ -1,0 +1,56 @@
+title: Browser-Spawned Script Interpreter Outbound Connection
+id: d5e6f7a8-9b0c-4d1e-2f3a-4b5c6d7e8f9a
+status: experimental
+description: >
+  Detects scripting interpreters initiating outbound connections to non-RFC1918 addresses.
+  Stage 3 detection — correlate ProcessGuid with hunt.yml for parent chain confirmation.
+references:
+  - https://iimp0ster.github.io/detection-chokepoints/chokepoints/clickfix-techniques/
+  - https://huntress.com/blog/dont-sweat-clickfix-techniques
+  - https://attack.mitre.org/techniques/T1204/004/
+author: "@iimp0ster"
+date: 2026/04/01
+tags:
+  - attack.initial_access
+  - attack.t1204.004
+  - attack.command_and_control
+  - attack.t1071.001
+  - detection.maturity.hunt
+  - detection.chokepoint.stage3
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection_interpreter:
+    Initiated: 'true'
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\nslookup.exe'
+      - '\rundll32.exe'
+  filter_private:
+    DestinationIp|cidr:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+      - '127.0.0.0/8'
+      - '::1/128'
+  filter_loopback:
+    DestinationIp: '0.0.0.0'
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_interpreter and not 1 of filter_*
+  # SIEM CORRELATION: Join ProcessGuid with hunt.yml (EID 1)
+  # where ParentImage = browser/explorer/wt.exe
+  # and time delta < 300 seconds
+falsepositives:
+  - Legitimate administrative scripts making web requests (SCCM, Ansible)
+  - Software update mechanisms using PowerShell
+  - Developer tooling (npm, pip, build scripts)
+level: medium

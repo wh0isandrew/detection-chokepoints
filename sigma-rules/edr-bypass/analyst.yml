@@ -1,20 +1,9 @@
 title: EDR Bypass — Named Security Process Terminated by sc.exe or taskkill (High Confidence)
-id: c3f5a7b9-2d4e-6f8a-0c1e-4g6h8i0j2k4l
+id: c3f5a7b9-2d4e-4f8a-0c1e-4a6b8c0d2e4f
 status: experimental
 description: >
-  High-fidelity detection for direct EDR process or service termination targeting
-  a specific named security agent. Detects sc.exe stopping or deleting a named
-  security service, taskkill.exe force-killing a named security executable, or
-  netsh.exe/PowerShell adding Windows Filtering Platform (WFP) callout filters
-  that block EDR network communications (the EDRSilencer technique). Unlike the
-  hunt rule, this rule requires the command to target a small set of very specific
-  security agent identifiers — reducing false positives while maintaining coverage
-  across all BYOVD tool families (EDRKillShifter, Terminator, AuKill, POORTRY)
-  and PPL abuse tools (PPLKiller, PPLdump). The invariant is the final step:
-  regardless of which driver or technique is used to strip EDR protection, the
-  attacker must impair the security process, and that impairment always generates
-  a command-line observable event. This rule fires on that observable. Low false
-  positive rate; treat as Tier 1 incident escalation on first firing.
+  Detects sc.exe/taskkill.exe/netsh.exe targeting named security agent processes or
+  services for termination, deletion, or WFP filter installation (EDRSilencer).
 references:
   - https://attack.mitre.org/techniques/T1562/001/
   - https://attack.mitre.org/techniques/T1562/004/
@@ -43,7 +32,7 @@ detection:
     CommandLine|contains:
       - 'stop'
       - 'delete'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - 'SophosFileScanner'
       - 'SAVService'
       - 'WinDefend'
@@ -67,7 +56,7 @@ detection:
     Image|endswith: '\taskkill.exe'
     CommandLine|contains|all:
       - '/F'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - 'MsMpEng.exe'
       - 'SophosFileScanner.exe'
       - 'SentinelAgent.exe'
@@ -91,7 +80,11 @@ detection:
       - 'wfp'
       - 'filter'
       - 'add'
-  condition: selection_sc_named_service or selection_taskkill_named or selection_wfp_filter
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: (selection_sc_named_service or selection_taskkill_named or selection_wfp_filter) and not filter_legit_software
 falsepositives:
   - Authorized product removal during a major EDR platform migration (should be via orchestration, not ad-hoc CLI)
   - Sophos/CrowdStrike/SentinelOne vendor-led support session with explicit authorization

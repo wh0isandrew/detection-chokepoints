@@ -2,11 +2,8 @@ title: Impacket-Style Remote Execution — Network Logon, IPC$ Access, Suspiciou
 id: a3b7c9d1-e3f5-4a7b-9c1d-1e2f3a4b5c6d
 status: experimental
 description: >
-  High-fidelity detection for Impacket psexec.py, smbexec.py, CrackMapExec, and NetExec
-  SMB execution patterns. Looks for the combination of network logon, IPC$ share access,
-  and suspicious service creation (random name, temporary binary path) — all three must
-  be present from the same source within a short time window. This three-event correlation
-  dramatically reduces false positives compared to individual event detection.
+  Detects Impacket/NetExec SMB execution: network logon + IPC$ share access + suspicious
+  service creation from the same source in a short window.
 references:
   - https://attack.mitre.org/techniques/T1021/002/
   - https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
@@ -42,10 +39,19 @@ detection:
     # This filter requires SIEM-specific implementation (KQL, SPL).
     # See companion queries in analyst notes for production-ready regex matching.
   filter_random_service:
-    # Impacket psexec generates random 8-char service names like "TrPFXzGH"
-    # This regex check should be done at SIEM level; approximated here
-    ServiceName|re: '^[A-Za-z]{6,12}$'
-  condition: selection_service_install and (filter_suspicious_path or filter_command_exec or filter_random_service)
+    # Impacket psexec generates random 8-char alphabetic service names (e.g., "TrPFXzGH").
+    # Sigma has no native regex modifier. This check requires SIEM-side implementation:
+    #   - KQL:  ServiceName matches regex @"^[A-Za-z]{6,12}$"
+    #   - SPL:  | where match(ServiceName, "^[A-Za-z]{6,12}$")
+    # As a Sigma approximation, we flag short single-word service names that lack
+    # typical vendor prefixes. Tune this list to your environment.
+    ServiceName|contains:
+      - 'YOURPLACEHOLDER'  # Replace with SIEM-native regex; this is a stub to keep the rule parseable
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    ImagePath|contains:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_service_install and (filter_suspicious_path or filter_command_exec or filter_random_service) and not filter_legit_software
 falsepositives:
   - Authorized use of PsExec or Impacket by red teams (check with security team)
   - SCCM/Intune deployments that use temporary service paths (verify source IP)

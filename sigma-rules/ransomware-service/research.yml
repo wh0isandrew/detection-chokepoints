@@ -2,11 +2,8 @@ title: Security or Backup Service Stopped
 id: b4c8d0e2-f4a6-4b8c-0d2e-2f4a6b8c0d2e
 status: experimental
 description: >
-  Detects security product and backup service state changes to "stopped".
-  Research-level rule for the ransomware service manipulation chokepoint.
-  Establishes a baseline of how often security and backup services stop in the
-  environment (maintenance windows, updates, reboots) to tune higher-fidelity
-  detection. High false positive rate expected.
+  Detects security and backup service state changes to stopped. Baseline rule for
+  understanding normal service stop patterns in your environment.
 references:
   - https://attack.mitre.org/techniques/T1562/001/
   - https://attack.mitre.org/techniques/T1489/
@@ -48,7 +45,11 @@ detection:
       - 'wbengine'
       - 'Acronis'
       - 'acronis'
-  condition: selection_event and selection_security_services
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Message|contains:
+      - 'placeholder_tune_for_your_env'
+  condition: selection_event and selection_security_services and not filter_legit_software
 falsepositives:
   - System reboots (all services stop)
   - AV/EDR product updates (service restarts)

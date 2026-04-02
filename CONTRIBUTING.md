@@ -102,6 +102,32 @@ python3 -c "import uuid; print(uuid.uuid4())"
 
 Use the YAML template at `templates/chokepoint-template.yml` as a starting point.
 
+**New required fields for chokepoint stages (as of 2026-04):**
+
+Each stage in `Chokepoints:` now requires these fields in addition to the existing ones:
+
+| Field | Purpose |
+|-------|---------|
+| `Input` | What state exists before this stage fires |
+| `Observable` | Specific telemetry artifact (event IDs, field values) |
+| `WhyCantBypass` | Why the attacker cannot skip this step |
+
+Optional but recommended:
+| Field | Purpose |
+|-------|---------|
+| `TruePositive` | Real log example with `Title`, `Log`, `KeySignal` |
+
+**Top-level framework fields (required for new entries):**
+
+| Field | Purpose |
+|-------|---------|
+| `AttackerControls` | List of things the attacker can change (variables) |
+| `AttackerCannotControl` | List of invariant prerequisites (the chokepoints) |
+
+These fields must be filled before writing stages. If you can't list at least one item
+the attacker cannot control, this may not be a chokepoint.
+See `FRAMEWORK.md` for the full 6-step methodology.
+
 ---
 
 ## Sigma Rule Requirements

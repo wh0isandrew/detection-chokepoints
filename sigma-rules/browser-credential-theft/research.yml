@@ -2,17 +2,8 @@ title: Infostealer — Non-Browser Process Access to Browser Credential Database
 id: 632a951f-4e57-4c9f-b1dc-32641904d61f
 status: experimental
 description: >
-  Broad visibility rule capturing all file access events where a non-browser process
-  opens a browser credential database file (Chrome Login Data, Cookies, Local State;
-  Firefox logins.json or key4.db; Edge/Brave/Opera equivalents). This is the invariant
-  behavior across every major infostealer family — LummaC2, RedLine, Raccoon v2, Vidar,
-  Stealc, AMOS, Medusa, and EDDIESTEALER — regardless of obfuscation, packer, or
-  Chrome App-Bound Encryption bypass technique. The browser process writes these files;
-  only the browser, known password managers, and backup agents should legitimately read
-  them. Any other process accessing these paths is anomalous by design.
-  High false positive rate expected; purpose is environmental baselining to identify
-  legitimate third-party access (password managers, backup tools, AV on-access scan)
-  before tuning toward the hunt and analyst tiers.
+  Detects any non-browser process opening browser credential database files (Login Data,
+  Cookies, Local State, logins.json). Broad baseline for environmental baselining.
 references:
   - https://attack.mitre.org/techniques/T1555/003/
   - https://attack.mitre.org/techniques/T1539/

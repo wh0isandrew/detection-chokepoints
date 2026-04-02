@@ -1,13 +1,9 @@
 title: Interpreter Dropped to Temp Path Then Executed by Suspicious Parent with Network Callback
-id: d5b9c3f4-ae6g-4b1d-c4f8-3g7e1b2d5c0f
+id: d5b9c3f4-ae6a-4b1d-c4f8-3a7e1b2d5c0f
 status: experimental
 description: >
-  High-fidelity detection for BYOSI attacks. Correlates three stages: (1) a scripting
-  interpreter spawned from a user-writable temp directory, (2) launched by a suspicious
-  parent process (PowerShell, cmd, wscript, mshta, explorer), (3) with command-line
-  arguments referencing script files in temp paths or using inline execution flags.
-  This three-stage correlation is highly specific to malicious BYOSI deployments and
-  should generate minimal false positives in non-development environments.
+  Detects scripting interpreters from temp directories launched by suspicious parents
+  with command-line references to script files or inline execution flags.
 references:
   - https://github.com/oldkingcone/BYOSI
   - https://github.com/MalwareSupportGroup/PolyDrop
@@ -88,7 +84,11 @@ detection:
       - 'composer '
       - 'bundle install'
       - 'gem install'
-  condition: selection_interpreters and selection_temp_path and selection_suspicious_parent and selection_script_or_inline and not filter_known_legit
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_interpreters and selection_temp_path and selection_suspicious_parent and selection_script_or_inline and not filter_known_legit and not filter_legit_software
 falsepositives:
   - Rare edge case of legitimate software using PowerShell to invoke a portable interpreter from temp
   - Some enterprise deployment tools that stage interpreters in temp directories

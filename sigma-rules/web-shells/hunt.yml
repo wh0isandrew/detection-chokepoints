@@ -1,20 +1,9 @@
-title: Web Shell — Web Server Spawning Shell Interpreter or Script File Dropped in Web Root
-id: e5b7d9f1-4c6e-8a0b-2d3f-6i8j0k2l4n6o
+title: Web Shell — Web Server Spawning Shell Interpreter
+id: e5b7d9f1-4c6e-4a0b-2d3f-6c8d0e2f4162
 status: experimental
 description: >
-  Detects two behavioral patterns associated with active web shell execution.
-  Pattern A captures web server processes (IIS, Apache, nginx, PHP, Tomcat, Java)
-  spawning OS shell interpreters (cmd.exe, powershell.exe, pwsh.exe) or common
-  reconnaissance and download utilities — the execution step after a web shell
-  receives an attacker HTTP command. Pattern B captures script file creation events
-  (Sysmon EID 11) in web-accessible directories for server-side script extensions
-  (.php, .asp, .aspx, .jsp) by processes outside an approved deployment toolchain —
-  the initial shell file drop step. Together these cover both active shell execution
-  (China Chopper, Godzilla, Behinder, AntSword) and new shell deployment. Fileless
-  IIS native module webshells (Microsoft, 2022) still generate w3wp.exe child process
-  events when commands execute, making Pattern A effective even against DLL-based shells.
-  Medium false positive rate — requires baselining (see research rule) to identify
-  what your web servers legitimately spawn before tuning.
+  Detects web server processes spawning OS shell interpreters or common reconnaissance
+  utilities. File creation detection requires separate Sysmon EID 11 monitoring.
 references:
   - https://attack.mitre.org/techniques/T1505/003/
   - https://attack.mitre.org/techniques/T1190/
@@ -75,7 +64,11 @@ detection:
       - '\netstat.exe'
       - '\curl.exe'
       - '\wget.exe'
-  condition: (selection_spawn_web_parent and selection_spawn_child_shells)
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: (selection_spawn_web_parent and selection_spawn_child_shells) and not filter_legit_software
 falsepositives:
   - Legitimate CMS-triggered shell scripts via webhooks (Drupal, WordPress deployment)
   - Development environments where web server invokes build scripts

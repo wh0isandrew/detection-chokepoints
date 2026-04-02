@@ -2,12 +2,8 @@ title: Non-Default Scripting Interpreter Execution from Unusual Path
 id: b3f7a1d2-8c4e-4f9b-a2d6-1e5c9f0b3a8d
 status: experimental
 description: >
-  Detects execution of scripting interpreter binaries (Python, PHP, Node.js, Ruby, Perl,
-  Lua, AutoHotKey, and others) from non-standard filesystem paths. BYOSI (Bring Your Own
-  Scripting Interpreter) attacks deliver legitimately signed interpreter binaries to
-  user-writable directories and execute malicious scripts through them, bypassing EDR
-  solutions that focus on binary analysis. This research-level rule establishes a
-  baseline of all non-standard interpreter executions in the environment.
+  Detects scripting interpreter binaries executing from non-standard paths. Baseline
+  rule for mapping interpreter presence across the environment.
 references:
   - https://github.com/oldkingcone/BYOSI
   - https://github.com/MalwareSupportGroup/PolyDrop
@@ -72,7 +68,11 @@ detection:
       - '\Miniconda'
       - '\WinPython'
       - '\scoop\apps\'
-  condition: selection_interpreters and selection_suspicious_paths and not filter_known_dev_tools
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_interpreters and selection_suspicious_paths and not filter_known_dev_tools and not filter_legit_software
 falsepositives:
   - Legitimate software installers that bundle scripting interpreters temporarily
   - Developer testing from non-standard directories

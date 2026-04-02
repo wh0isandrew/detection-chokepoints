@@ -3,8 +3,44 @@ layout: default
 ---
 
 <style>
+/* ── Controls vs Constants table ─────────────────────────────────── */
+.controls-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 640px) { .controls-table { grid-template-columns: 1fr; } }
+
+.controls-col {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+}
+.controls-col-variable { background: var(--bg); }
+.controls-col-chokepoint {
+  background: rgba(240,136,62,.06);
+  border-color: rgba(240,136,62,.25);
+}
+
+.controls-col-label {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .5rem;
+}
+.controls-col-variable .controls-col-label { color: var(--text-dim); }
+.controls-col-chokepoint .controls-col-label { color: var(--accent); }
+
+.controls-col ul { list-style: none; display: flex; flex-direction: column; gap: .3rem; }
+.controls-col li { font-size: .8rem; color: var(--text-muted); display: flex; gap: .5rem; align-items: flex-start; }
+.controls-col-variable li::before { content: '~'; color: var(--text-dim); flex-shrink: 0; }
+.controls-col-chokepoint li::before { content: '!'; color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
 /* ── Attack Chokepoints accordion ────────────────────────────────── */
-.chokepoints-list { display: flex; flex-direction: column; gap: .5rem; }
+.chokepoints-list { display: flex; flex-direction: column; gap: 0; }
 
 .chokepoint-item {
   background: var(--bg-card);
@@ -61,6 +97,55 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
 
 .chokepoint-body { padding: 0 1rem 1rem; border-top: 1px solid var(--border); }
 
+/* Input / Chokepoint / Observable rows */
+.cp-row {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  margin: .6rem 0;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+.cp-row-label {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  min-width: 100px;
+  flex-shrink: 0;
+  padding-top: .15rem;
+}
+.cp-row-label-input { color: var(--text-dim); }
+.cp-row-label-chokepoint { color: var(--accent); }
+.cp-row-label-observable { color: var(--link); }
+.cp-row-value { color: var(--text-muted); flex: 1; }
+.cp-row-value.cp-chokepoint-value { color: var(--text); font-weight: 500; }
+
+/* Why unavoidable callout */
+.cp-why-unavoidable {
+  background: rgba(218,54,51,.06);
+  border: 1px solid rgba(218,54,51,.2);
+  border-radius: 4px;
+  padding: .55rem .85rem;
+  margin: .6rem 0;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.cp-why-label {
+  font-family: var(--font-mono);
+  font-size: .6rem;
+  color: var(--critical);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-style: normal;
+  font-weight: 700;
+  margin-bottom: .2rem;
+}
+
+/* Legacy invariant box (fallback for pages without new fields) */
 .cp-invariant {
   background: rgba(240,136,62,.07);
   border: 1px solid rgba(240,136,62,.2);
@@ -91,11 +176,11 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
 
 .prereq-list { list-style: none; display: flex; flex-direction: column; gap: .3rem; margin-bottom: .75rem; }
 .prereq-list li { font-size: .8rem; color: var(--text-muted); display: flex; gap: .5rem; align-items: flex-start; }
-.prereq-list li::before { content: '✓'; color: var(--medium); flex-shrink: 0; margin-top: .05rem; }
+.prereq-list li::before { content: '\2713'; color: var(--medium); flex-shrink: 0; margin-top: .05rem; }
 
 .datasource-list { list-style: none; display: flex; flex-direction: column; gap: .2rem; }
 .datasource-list li { font-size: .78rem; color: var(--text-muted); padding-left: .85rem; position: relative; }
-.datasource-list li::before { content: '→'; position: absolute; left: 0; color: var(--link); font-size: .68rem; }
+.datasource-list li::before { content: '\2192'; position: absolute; left: 0; color: var(--link); font-size: .68rem; }
 
 .bypass-warning {
   display: flex;
@@ -111,6 +196,73 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
   line-height: 1.4;
 }
 .bypass-warning .warn-icon { color: var(--high); flex-shrink: 0; }
+
+/* True Positive example */
+.cp-true-positive {
+  border: 1px solid rgba(63,185,80,.25);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: .75rem;
+}
+.cp-tp-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .4rem .75rem;
+  background: rgba(63,185,80,.08);
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--medium);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.cp-tp-header::-webkit-details-marker { display: none; }
+.cp-tp-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--medium); flex-shrink: 0;
+}
+.cp-tp-chevron { color: var(--medium); font-size: .6rem; margin-left: auto; transition: transform .2s; }
+details.cp-true-positive[open] .cp-tp-chevron { transform: rotate(90deg); }
+.cp-tp-body {
+  padding: .6rem .75rem;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--bg);
+}
+.cp-tp-signal {
+  display: block;
+  margin-top: .4rem;
+  padding-top: .4rem;
+  border-top: 1px solid var(--border);
+  font-size: .68rem;
+  color: var(--medium);
+}
+
+/* Flow connector between stages */
+.stage-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .35rem 0;
+}
+.connector-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: rgba(240,136,62,.08);
+  border: 1px solid rgba(240,136,62,.25);
+  border-radius: 20px;
+  padding: .25rem .75rem;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--accent);
+}
+.connector-arrow { font-size: .75rem; }
 
 .cp-rule-link {
   display: inline-flex;
@@ -194,7 +346,224 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
 }
 .variant-source-link:hover { background: rgba(88,166,255,.08); text-decoration: none; }
 
-/* ── Detection Strategy tabs ─────────────────────────────────────── */
+/* ── Variant Lure / Payload / Chokepoint Mapping ────────────────── */
+.variant-section-label {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 1rem 0 .4rem;
+}
+.variant-section-label-lure { color: var(--high); }
+.variant-section-label-payload { color: var(--critical); }
+
+.variant-lure-desc {
+  font-size: .82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: .65rem .85rem;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: .5rem;
+}
+[data-theme="light"] .variant-lure-desc { background: rgba(0,0,0,.02); }
+
+.variant-lure-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-bottom: .75rem;
+}
+.lure-tag {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  padding: .15rem .45rem;
+  border-radius: 3px;
+  background: rgba(227,179,65,.1);
+  border: 1px solid rgba(227,179,65,.2);
+  color: var(--high);
+}
+
+.variant-payload {
+  background: rgba(0,0,0,.25);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .65rem .85rem;
+  margin-bottom: .45rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+[data-theme="light"] .variant-payload { background: rgba(0,0,0,.04); }
+
+.variant-payload-note {
+  font-size: .78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: .75rem;
+  line-height: 1.55;
+}
+
+/* Variant command block (post-compromise techniques) */
+.variant-section-label-command { color: var(--critical); }
+
+.variant-command-context {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-bottom: .5rem;
+  line-height: 1.55;
+}
+
+.variant-artifacts {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  margin-bottom: .75rem;
+}
+.variant-artifacts li {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-muted);
+  padding-left: .85rem;
+  position: relative;
+  line-height: 1.5;
+}
+.variant-artifacts li::before {
+  content: '\2192';
+  position: absolute;
+  left: 0;
+  color: var(--critical);
+  font-size: .68rem;
+}
+
+.variant-chokepoint-map {
+  padding: .45rem .75rem;
+  background: rgba(88,166,255,.06);
+  border: 1px solid rgba(88,166,255,.2);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--link);
+  margin-bottom: .75rem;
+  line-height: 1.5;
+}
+
+/* ── Detection Strategy — stage-grouped layout ──────────────────── */
+.det-stage-group { margin-bottom: 1.5rem; }
+
+.det-stage-header {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-bottom: .65rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--border);
+}
+.det-stage-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.det-stage-name {
+  font-weight: 600;
+  font-size: .875rem;
+  color: var(--text);
+  flex: 1;
+}
+
+.det-rule-list { display: flex; flex-direction: column; gap: .5rem; }
+
+.det-rule-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+details.det-rule-item[open] { border-color: var(--accent); }
+
+.det-rule-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .85rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--bg-card);
+  flex-wrap: wrap;
+}
+.det-rule-header::-webkit-details-marker { display: none; }
+
+.det-rule-title {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.det-rule-badges { display: flex; gap: .3rem; flex-shrink: 0; flex-wrap: wrap; }
+
+.det-rule-badge {
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  padding: .08rem .35rem;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.det-badge-research  { background: rgba(88,166,255,.1);  color: var(--link);     border: 1px solid rgba(88,166,255,.2); }
+.det-badge-hunt      { background: rgba(227,179,65,.1);  color: var(--high);     border: 1px solid rgba(227,179,65,.2); }
+.det-badge-analyst   { background: rgba(63,185,80,.1);   color: var(--medium);   border: 1px solid rgba(63,185,80,.2); }
+.det-badge-preexec   { background: rgba(240,136,62,.1);  color: var(--accent);   border: 1px solid rgba(240,136,62,.2); }
+.det-badge-fp-high   { background: rgba(218,54,51,.1);   color: var(--critical); border: 1px solid rgba(218,54,51,.2); }
+.det-badge-fp-med    { background: rgba(227,179,65,.1);  color: var(--high);     border: 1px solid rgba(227,179,65,.2); }
+.det-badge-fp-low    { background: rgba(63,185,80,.1);   color: var(--medium);   border: 1px solid rgba(63,185,80,.2); }
+.det-badge-new       { background: rgba(88,166,255,.15); color: var(--link);     border: 1px solid rgba(88,166,255,.3); }
+.det-badge-updated   { background: rgba(240,136,62,.1);  color: var(--accent);   border: 1px solid rgba(240,136,62,.2); }
+
+.det-rule-chevron { color: var(--text-muted); font-size: .68rem; transition: transform .2s; flex-shrink: 0; }
+details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
+
+.det-rule-body {
+  padding: .85rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.det-correlation-note {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+  background: rgba(227,179,65,.07);
+  border: 1px solid rgba(227,179,65,.2);
+  border-radius: 4px;
+  padding: .5rem .75rem;
+  margin-top: .75rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.det-correlation-note .warn-icon { color: var(--high); flex-shrink: 0; }
+
+/* Legacy tab layout (kept for non-ClickFix pages that haven't migrated) */
 .detection-tabs {
   display: flex;
   gap: 0;
@@ -442,10 +811,33 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </div>
 {% else %}
 
-<article class="max-w-[960px] mx-auto px-6 py-10 pb-20">
+<div class="chokepoint-layout max-w-[1100px] mx-auto px-6 py-10 pb-20">
+  <nav class="chokepoint-sidebar" id="chokepoint-nav">
+    <a href="#overview" class="sidebar-link active">Overview</a>
+    {% if cp.Chokepoints %}
+    <a href="#attack-chokepoints" class="sidebar-link">Chokepoints</a>
+    {% endif %}
+    {% if cp.Variations %}
+    <a href="#variations" class="sidebar-link">Variations</a>
+    {% endif %}
+    <a href="#detection-strategy" class="sidebar-link">Detection</a>
+    {% if cp.RawLogs %}
+    <a href="#raw-logs" class="sidebar-link">Logs</a>
+    {% endif %}
+    {% if cp.EmulationScript and cp._emulation_content %}
+    <a href="#emulation" class="sidebar-link">Emulation</a>
+    {% endif %}
+    {% if cp.OsintSources %}
+    <a href="#osint-pivots" class="sidebar-link">OSINT</a>
+    {% endif %}
+    {% if cp.RelatedChokepoints %}
+    <a href="#related" class="sidebar-link">Related</a>
+    {% endif %}
+  </nav>
+  <article class="chokepoint-content">
 
   <!-- ── 1. Page Header ─────────────────────────────────────────── -->
-  <header class="detail-header mb-10">
+  <header class="detail-header mb-10" id="overview">
     <div class="flex items-center gap-3 mb-4">
       <a href="{{ '/' | relative_url }}" class="back-link text-sm">&larr; All Chokepoints</a>
       <span class="badge priority-{{ cp.DetectionPriority | downcase }}">{{ cp.DetectionPriority }}</span>
@@ -478,7 +870,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </header>
 
   <!-- ── 2. Attack Chokepoints ──────────────────────────────────── -->
-  <section class="mb-10">
+  <section class="mb-10" id="attack-chokepoints">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
       Attack Chokepoints
       {% if cp.Chokepoints %}
@@ -487,10 +879,50 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     </h2>
 
     {% if cp.Chokepoints %}
+
+    {% if cp.AttackerControls or cp.AttackerCannotControl %}
+    <p class="section-intro mb-4">Applying the chokepoint framework to {{ cp.Name }}.
+      <a href="{{ '/' | relative_url }}">Learn the framework &rarr;</a>
+    </p>
+    <div class="controls-table">
+      {% if cp.AttackerControls %}
+      <div class="controls-col controls-col-variable">
+        <div class="controls-col-label">Attacker controls (variables)</div>
+        <ul>
+          {% for item in cp.AttackerControls %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if cp.AttackerCannotControl %}
+      <div class="controls-col controls-col-chokepoint">
+        <div class="controls-col-label">Attacker cannot control (chokepoints)</div>
+        <ul>
+          {% for item in cp.AttackerCannotControl %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
     <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+    {% endif %}
+
     <div class="chokepoints-list">
       {% for stage in cp.Chokepoints %}
-      <details class="chokepoint-item">
+
+      {% if forloop.index > 1 %}
+      <div class="stage-connector">
+        <span class="connector-pill">
+          <span class="connector-arrow">&darr;</span>
+          {% if stage.Input %}{{ stage.Input | truncate: 60 }}{% else %}next stage{% endif %}
+        </span>
+      </div>
+      {% endif %}
+
+      <details class="chokepoint-item" {% if forloop.first %}open{% endif %}>
         <summary class="chokepoint-header">
           <span class="cp-number">{{ forloop.index }}</span>
           <span class="cp-title">{{ stage.Stage }}</span>
@@ -507,10 +939,40 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           </ul>
           {% endif %}
 
+          {% if stage.Input %}
+          <div class="cp-row">
+            <span class="cp-row-label cp-row-label-input">Input</span>
+            <span class="cp-row-value">{{ stage.Input }}</span>
+          </div>
+          {% endif %}
+
+          {% if stage.Input %}
+          <!-- New structured format -->
+          <div class="cp-row">
+            <span class="cp-row-label cp-row-label-chokepoint">Chokepoint</span>
+            <span class="cp-row-value cp-chokepoint-value">{{ stage.Invariant }}</span>
+          </div>
+
+          {% if stage.Observable %}
+          <div class="cp-row">
+            <span class="cp-row-label cp-row-label-observable">Observable</span>
+            <span class="cp-row-value">{{ stage.Observable }}</span>
+          </div>
+          {% endif %}
+
+          {% if stage.WhyCantBypass %}
+          <div class="cp-why-unavoidable">
+            <div class="cp-why-label">Why unavoidable</div>
+            {{ stage.WhyCantBypass }}
+          </div>
+          {% endif %}
+          {% else %}
+          <!-- Legacy format fallback -->
           <div class="cp-invariant">
             <div class="cp-invariant-label">Invariant Condition</div>
             {{ stage.Invariant }}
           </div>
+          {% endif %}
 
           {% if stage.LogSources %}
           <div class="cp-section-label">Data Sources</div>
@@ -526,6 +988,18 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             <span class="warn-icon">&#9888;</span>
             <span><strong>Bypass risk:</strong> {{ stage.BypassNote }}</span>
           </div>
+          {% endif %}
+
+          {% if stage.TruePositive %}
+          <details class="cp-true-positive">
+            <summary class="cp-tp-header">
+              <span class="cp-tp-dot"></span>
+              <span>{{ stage.TruePositive.Title }}</span>
+              <span class="cp-tp-chevron">&#9654;</span>
+            </summary>
+            <div class="cp-tp-body">{{ stage.TruePositive.Log | xml_escape }}{% if stage.TruePositive.KeySignal %}
+<span class="cp-tp-signal">Key signal: {{ stage.TruePositive.KeySignal }}</span>{% endif %}</div>
+          </details>
           {% endif %}
 
           {% if stage.SigmaRef and stage.SigmaRef != "" %}
@@ -546,7 +1020,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 3. Variations ─────────────────────────────────────────── -->
   {% if cp.Variations %}
-  <section class="mb-10">
+  <section class="mb-10" id="variations">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">
       Variations
       <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
@@ -570,13 +1044,49 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         </summary>
         <div class="variant-body">
           {{ v.Notes | default: v.NotesShort }}
+
+          {% if v.Lure %}
+          <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
+          <div class="variant-lure-desc">{{ v.Lure }}</div>
+          {% if v.LureTags %}
+          <div class="variant-lure-tags">
+            {% for tag in v.LureTags %}<span class="lure-tag">{{ tag }}</span>{% endfor %}
+          </div>
+          {% endif %}
+          {% endif %}
+
+          {% if v.Payloads %}
+          <div class="variant-section-label variant-section-label-payload">Clipboard payload (defanged)</div>
+          {% for p in v.Payloads %}
+          {% if v.Payloads.size > 1 %}<div class="cp-section-label">{{ p.Platform }}</div>{% endif %}
+          <pre class="variant-payload"><code>{{ p.Command | xml_escape }}</code></pre>
+          {% if p.Note %}<div class="variant-payload-note">{{ p.Note }}</div>{% endif %}
+          {% endfor %}
+          {% endif %}
+
+          {% if v.Command %}
+          <div class="variant-section-label variant-section-label-command">Command / artifacts</div>
+          {% if v.Command.Context %}
+          <div class="variant-command-context">{{ v.Command.Context }}</div>
+          {% endif %}
+          {% if v.Command.Invocation %}
+          <pre class="variant-payload"><code>{{ v.Command.Invocation | xml_escape }}</code></pre>
+          {% endif %}
+          {% if v.Command.Artifacts %}
+          <ul class="variant-artifacts">
+            {% for a in v.Command.Artifacts %}<li>{{ a }}</li>{% endfor %}
+          </ul>
+          {% endif %}
+          {% endif %}
+
+          {% if v.ChokepointMapping %}
+          <div class="variant-chokepoint-map">Same chokepoint: {{ v.ChokepointMapping }}</div>
+          {% endif %}
+
           {% if v.SourceURL %}
-          <br>
           <a class="variant-source-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener">
             Primary source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
           {% else %}
-          <!-- TODO: source link missing for {{ v.Name }} -->
-          <br>
           <a class="variant-source-link" href="#">Source link needed &#8594;</a>
           {% endif %}
         </div>
@@ -587,8 +1097,236 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   {% endif %}
 
   <!-- ── 4. Detection Strategy ─────────────────────────────────── -->
-  <section class="mb-10">
+  <section class="mb-10" id="detection-strategy">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Detection Strategy</h2>
+
+    {% if cp.Chokepoints and cp.Chokepoints.size > 0 %}
+    {%- comment -%} ── Stage-grouped layout (new) ── {%- endcomment -%}
+    <p class="section-intro mb-5">Rules organized by the chokepoint stage they detect. Each stage has one or more rules at different maturity levels.</p>
+
+    {% for stage in cp.Chokepoints %}
+    <div class="det-stage-group">
+      <div class="det-stage-header">
+        <span class="det-stage-num">{{ forloop.index }}</span>
+        <span class="det-stage-name">{{ stage.Stage }}</span>
+      </div>
+      <div class="det-rule-list">
+
+        {%- comment -%} Stage 1: Early Detections (ETW, IOK) {%- endcomment -%}
+        {% if forloop.index == 1 and cp.EarlyDetections and cp.EarlyDetections.size > 0 %}
+        {% for ed in cp.EarlyDetections %}
+        <details class="det-rule-item">
+          <summary class="det-rule-header">
+            <span class="det-rule-title">{{ ed.Layer | default: "Pre-Execution Detection" }}</span>
+            <div class="det-rule-badges">
+              <span class="det-rule-badge det-badge-preexec">Pre-Exec</span>
+              {% if ed.ExpectedFPRate %}
+              {% assign fp_lower = ed.ExpectedFPRate | downcase %}
+              <span class="det-rule-badge det-badge-fp-{{ fp_lower | replace: 'medium', 'med' }}">{{ ed.ExpectedFPRate }} FP</span>
+              {% endif %}
+            </div>
+            <span class="det-rule-chevron">&#9654;</span>
+          </summary>
+          <div class="det-rule-body">
+            <div class="det-meta-row">
+              <div class="det-meta-card">
+                <div class="det-meta-label">Goal</div>
+                <div class="det-meta-value">{{ ed.Description }}</div>
+              </div>
+              <div class="det-meta-card">
+                <div class="det-meta-label">Log Sources</div>
+                <ul class="logsource-list">
+                  {% for src in ed.LogSources %}<li>{{ src }}</li>{% endfor %}
+                </ul>
+              </div>
+            </div>
+            {% if ed.Logic %}
+            <div class="cp-section-label">Detection Logic</div>
+            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ ed.Logic | strip }}</code></pre>
+            {% endif %}
+            <div class="sigma-block">
+              <div class="sigma-header">
+                {% if ed.IokRule %}
+                <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
+                {% else %}
+                <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
+                {% endif %}
+                <div class="sigma-actions">
+                  {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
+                  {% if ed_rule_path %}
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ ed_rule_path }}" target="_blank" rel="noopener">GitHub &#8594;</a>
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ ed_rule_path }}" download>Download</a>
+                  {% endif %}
+                  <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+              </div>
+              {% if ed._rule_content %}
+              <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ ed._rule_content | xml_escape }}</code></pre>
+              {% else %}
+              <p class="no-sigma" style="padding:.75rem 1rem">Rule file not found.
+                <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute one</a>.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </details>
+        {% endfor %}
+        {% endif %}
+
+        {%- comment -%} Map stages to detection levels by DetectionTier {%- endcomment -%}
+        {% assign tier_lower = stage.DetectionTier | downcase %}
+
+        {%- comment -%} Show the stage's primary detection (matching tier) {%- endcomment -%}
+        {% for det in cp.Detections %}
+        {% assign det_lower = det.Level | downcase %}
+
+        {%- comment -%} Stage 1 only gets EarlyDetections (ETW/IOK) — no sigma rules here {%- endcomment -%}
+
+        {%- comment -%} Stage 2 (Hunt tier) gets hunt AND analyst detections {%- endcomment -%}
+        {% if forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "hunt" %}
+        {% assign show_rule = true %}
+        {% assign sigma_key = "_sigma_hunt" %}
+        {% assign badge_class = "det-badge-hunt" %}
+        {% elsif forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "analyst" %}
+        {% assign show_rule = true %}
+        {% assign sigma_key = "_sigma_analyst" %}
+        {% assign badge_class = "det-badge-analyst" %}
+
+        {%- comment -%} Stage 3 (Analyst tier) gets research (baseline) {%- endcomment -%}
+        {% elsif forloop.parentloop.index == 3 and tier_lower == "analyst" and det_lower == "research" %}
+        {% assign show_rule = true %}
+        {% assign sigma_key = "_sigma_research" %}
+        {% assign badge_class = "det-badge-research" %}
+
+        {% else %}
+        {% assign show_rule = false %}
+        {% endif %}
+
+        {% if show_rule %}
+        <details class="det-rule-item">
+          <summary class="det-rule-header">
+            <span class="det-rule-title">{{ det.Description | truncate: 80 }}</span>
+            <div class="det-rule-badges">
+              <span class="det-rule-badge {{ badge_class }}">{{ det.Level }}</span>
+              {% assign fp_lower = det.ExpectedFPRate | downcase %}
+              {% if fp_lower == "high" %}
+              <span class="det-rule-badge det-badge-fp-high">High FP</span>
+              {% elsif fp_lower == "medium" %}
+              <span class="det-rule-badge det-badge-fp-med">Med FP</span>
+              {% elsif fp_lower == "low" %}
+              <span class="det-rule-badge det-badge-fp-low">Low FP</span>
+              {% endif %}
+            </div>
+            <span class="det-rule-chevron">&#9654;</span>
+          </summary>
+          <div class="det-rule-body">
+            <div class="det-meta-row">
+              <div class="det-meta-card">
+                <div class="det-meta-label">Goal</div>
+                <div class="det-meta-value">{{ det.Description }}</div>
+              </div>
+              <div class="det-meta-card">
+                <div class="det-meta-label">Log Sources</div>
+                <ul class="logsource-list">
+                  {% for src in det.LogSources %}<li>{{ src }}</li>{% endfor %}
+                </ul>
+              </div>
+            </div>
+            <div class="det-meta-row">
+              <div class="det-meta-card">
+                <div class="det-meta-label">FP Rate</div>
+                <div class="det-meta-value">{{ det.ExpectedFPRate }}</div>
+              </div>
+              <div class="det-meta-card">
+                <div class="det-meta-label">Use Case</div>
+                <div class="det-meta-value">{{ det.UseCase }}</div>
+              </div>
+            </div>
+            {% if det.Logic %}
+            <div class="cp-section-label">Detection Logic</div>
+            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ det.Logic | strip }}</code></pre>
+            {% endif %}
+            {% if det.Description contains "correlate" or det.Description contains "Correlate" %}
+            <div class="det-correlation-note">
+              <span class="warn-icon">&#9888;</span>
+              <span><strong>Correlation required:</strong> This rule covers one stage only. See the description for SIEM-side join guidance.</span>
+            </div>
+            {% endif %}
+            <div class="sigma-block">
+              <div class="sigma-header">
+                <span class="sigma-label">Sigma Rule &mdash; {{ det.Level }} Level</span>
+                <div class="sigma-actions">
+                  {% if det.SigmaRule %}
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ det.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ det.SigmaRule }}" download>Download</a>
+                  {% endif %}
+                  <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+              </div>
+              {% assign sigma_content = cp[sigma_key] %}
+              {% if sigma_content %}
+              <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ sigma_content | xml_escape }}</code></pre>
+              {% else %}
+              <p class="no-sigma" style="padding:.75rem 1rem">Sigma rule not yet available.
+                <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute one</a>.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </details>
+        {% endif %}
+        {% endfor %}
+
+        {%- comment -%} Stage 3: Also show hunt-network.yml if it exists {%- endcomment -%}
+        {% if forloop.index == 3 and cp["_sigma_hunt-network"] %}
+        <details class="det-rule-item">
+          <summary class="det-rule-header">
+            <span class="det-rule-title">Browser-Spawned Interpreter Outbound Connection</span>
+            <div class="det-rule-badges">
+              <span class="det-rule-badge det-badge-hunt">Hunt</span>
+              <span class="det-rule-badge det-badge-fp-med">Med FP</span>
+              <span class="det-rule-badge det-badge-new">New</span>
+            </div>
+            <span class="det-rule-chevron">&#9654;</span>
+          </summary>
+          <div class="det-rule-body">
+            <div class="det-meta-row">
+              <div class="det-meta-card">
+                <div class="det-meta-label">Goal</div>
+                <div class="det-meta-value">Detect scripting interpreters initiating outbound connections to external (non-RFC1918) addresses. Correlate ProcessGuid with hunt.yml to confirm the browser/explorer parent chain from Stage 2.</div>
+              </div>
+              <div class="det-meta-card">
+                <div class="det-meta-label">Log Sources</div>
+                <ul class="logsource-list">
+                  <li>Sysmon Event ID 3 (Network Connection)</li>
+                </ul>
+              </div>
+            </div>
+            <div class="det-correlation-note">
+              <span class="warn-icon">&#9888;</span>
+              <span><strong>SIEM correlation required:</strong> Join this event's ProcessGuid with hunt.yml (Sysmon EID 1) where ParentImage is a browser/explorer/wt.exe and time delta &lt; 300 seconds.</span>
+            </div>
+            <div class="sigma-block">
+              <div class="sigma-header">
+                <span class="sigma-label">Sigma Rule &mdash; Hunt Level (Network)</span>
+                <div class="sigma-actions">
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt-network.yml" target="_blank" rel="noopener">GitHub &#8594;</a>
+                  <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/sigma-rules/clickfix/hunt-network.yml" download>Download</a>
+                  <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+              </div>
+              <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ cp["_sigma_hunt-network"] | xml_escape }}</code></pre>
+            </div>
+          </div>
+        </details>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    {%- comment -%} ── Legacy tab layout (pages without stages) ── {%- endcomment -%}
     <p class="section-intro mb-5">Build detections iteratively. Start broad to understand your
        baseline, then tighten to production-ready alerting.</p>
 
@@ -612,26 +1350,10 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <div class="det-meta-card">
           <div class="det-meta-label">Log Sources</div>
           <ul class="logsource-list">
-            {% for src in ed.LogSources %}
-            <li>{{ src }}</li>
-            {% endfor %}
+            {% for src in ed.LogSources %}<li>{{ src }}</li>{% endfor %}
           </ul>
         </div>
       </div>
-      <div class="det-meta-row">
-        <div class="det-meta-card">
-          <div class="det-meta-label">FP Rate</div>
-          <div class="det-meta-value">{{ ed.ExpectedFPRate }}</div>
-        </div>
-        <div class="det-meta-card">
-          <div class="det-meta-label">Use Case</div>
-          <div class="det-meta-value">{{ ed.UseCase }}{% if ed.Notes %}<br><small style="color:var(--text-muted)">Note: {{ ed.Notes }}</small>{% endif %}</div>
-        </div>
-      </div>
-      {% if ed.Logic %}
-      <div class="cp-section-label">Detection Logic</div>
-      <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ ed.Logic | strip }}</code></pre>
-      {% endif %}
       <div class="sigma-block">
         <div class="sigma-header">
           {% if ed.IokRule %}
@@ -642,12 +1364,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <div class="sigma-actions">
             {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
             {% if ed_rule_path %}
-            <a class="sigma-btn"
-               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ ed_rule_path }}"
-               target="_blank" rel="noopener">GitHub &#8594;</a>
-            <a class="sigma-btn"
-               href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ ed_rule_path }}"
-               download>Download</a>
+            <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ ed_rule_path }}" target="_blank" rel="noopener">GitHub &#8594;</a>
+            <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ ed_rule_path }}" download>Download</a>
             {% endif %}
             <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
           </div>
@@ -656,31 +1374,25 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ ed._rule_content | xml_escape }}</code></pre>
         {% else %}
         <p class="no-sigma" style="padding:.75rem 1rem">Rule file not found.
-          <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
-             target="_blank" rel="noopener">Contribute one</a>.
+          <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute one</a>.
         </p>
         {% endif %}
       </div>
       {% endfor %}
       {% else %}
-      <!-- TODO: Pre-execution detection content needed -->
-      <p class="section-intro" style="color:var(--text-muted);font-size:.875rem">Pre-execution detection content not yet available for this chokepoint.
-        <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
-           target="_blank" rel="noopener">Contribute one</a>.
+      <p class="section-intro" style="color:var(--text-muted);font-size:.875rem">Pre-execution detection content not yet available.
+        <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute one</a>.
       </p>
       {% endif %}
     </div>
 
     <!-- Research / Hunt / Analyst Tabs -->
     {% assign det_levels = "Research,Hunt,Analyst" | split: "," %}
-    {% assign det_fp_classes = "fp-high,fp-medium,fp-low" | split: "," %}
     {% for level in det_levels %}
       {% assign level_lower = level | downcase %}
       {% assign detection = cp.Detections | where: "Level", level | first %}
       {% assign sigma_key = "_sigma_" | append: level_lower %}
-
       <div class="det-panel" id="tab-{{ level_lower }}">
-
         {% if detection %}
         <div class="det-meta-row">
           <div class="det-meta-card">
@@ -690,20 +1402,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <div class="det-meta-card">
             <div class="det-meta-label">Log Sources</div>
             <ul class="logsource-list">
-              {% for src in detection.LogSources %}
-              <li>{{ src }}</li>
-              {% endfor %}
+              {% for src in detection.LogSources %}<li>{{ src }}</li>{% endfor %}
             </ul>
-          </div>
-        </div>
-        <div class="det-meta-row">
-          <div class="det-meta-card">
-            <div class="det-meta-label">FP Rate</div>
-            <div class="det-meta-value">{{ detection.ExpectedFPRate }}</div>
-          </div>
-          <div class="det-meta-card">
-            <div class="det-meta-label">Use Case</div>
-            <div class="det-meta-value">{{ detection.UseCase }}</div>
           </div>
         </div>
         {% if detection.Logic %}
@@ -711,18 +1411,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
         {% endif %}
         {% endif %}
-
         <div class="sigma-block">
           <div class="sigma-header">
             <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
             <div class="sigma-actions">
               {% if detection.SigmaRule %}
-              <a class="sigma-btn"
-                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}"
-                 target="_blank" rel="noopener">GitHub &#8594;</a>
-              <a class="sigma-btn"
-                 href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule }}"
-                 download>Download</a>
+              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
+              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule }}" download>Download</a>
               {% endif %}
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
@@ -732,20 +1427,19 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="language-yaml">{{ sigma_content | xml_escape }}</code></pre>
           {% else %}
           <p class="no-sigma" style="padding:.75rem 1rem">Sigma rule not yet available for this level.
-            <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md"
-               target="_blank" rel="noopener">Contribute one</a>.
+            <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute one</a>.
           </p>
           {% endif %}
         </div>
-
       </div>
     {% endfor %}
+    {% endif %}
 
   </section>
 
   <!-- ── 5. Raw Log Samples ─────────────────────────────────────── -->
   {% if cp.RawLogs %}
-  <section class="mb-10">
+  <section class="mb-10" id="raw-logs">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
       Raw Log Samples
       <span class="section-sub">{{ cp.RawLogs.size }} sample{% if cp.RawLogs.size != 1 %}s{% endif %}</span>
@@ -776,7 +1470,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 6. Emulation ──────────────────────────────────────────── -->
   {% if cp.EmulationScript and cp._emulation_content %}
-  <section class="mb-10">
+  <section class="mb-10" id="emulation">
     {% assign emu = cp.EmulationScript %}
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">Emulation</h2>
     <details class="emulation-wrapper">
@@ -817,7 +1511,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 7. OSINT Pivots ────────────────────────────────────────── -->
   {% if cp.OsintSources %}
-  <section class="mb-10">
+  <section class="mb-10" id="osint-pivots">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">OSINT Pivots</h2>
     <div class="osint-grid">
       {% for src in cp.OsintSources %}
@@ -839,7 +1533,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 8. Related Chokepoints ─────────────────────────────────── -->
   {% if cp.RelatedChokepoints %}
-  <section class="mb-10">
+  <section class="mb-10" id="related">
     <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Related Chokepoints</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
       {% for slug in cp.RelatedChokepoints %}
@@ -868,7 +1562,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </section>
   {% endif %}
 
-</article>
+  </article>
+</div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
@@ -894,6 +1589,32 @@ function copyCode(btn) {
     setTimeout(() => btn.textContent = orig, 1800);
   });
 }
+
+// Scroll spy for sidebar navigation
+(function() {
+  var navLinks = document.querySelectorAll('.sidebar-link');
+  if (!navLinks.length) return;
+  var sectionIds = [];
+  navLinks.forEach(function(link) {
+    sectionIds.push(link.getAttribute('href').slice(1));
+  });
+  var sections = sectionIds.map(function(id) { return document.getElementById(id); }).filter(Boolean);
+  if (!sections.length) return;
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        navLinks.forEach(function(link) {
+          link.classList.toggle('active',
+            link.getAttribute('href') === '#' + entry.target.id
+          );
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(function(section) { observer.observe(section); });
+})();
 </script>
 
 {% endif %}

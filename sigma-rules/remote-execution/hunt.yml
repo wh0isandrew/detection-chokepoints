@@ -2,10 +2,8 @@ title: Suspicious Service Created After Network Logon — Remote Execution Patte
 id: f2a6b8c0-d2e4-4f6a-8b0c-0d1e2f3a4b5c
 status: experimental
 description: >
-  Detects suspicious service installations with random-looking names or binaries
-  located in user-writable paths. This pattern is characteristic of Impacket's
-  psexec.py and smbexec.py, CrackMapExec, and NetExec SMB execution modules, which
-  create short-lived services with auto-generated names in temporary locations.
+  Detects service installations with random names or binaries in user-writable paths.
+  Characteristic of Impacket psexec.py and NetExec SMB execution modules.
 references:
   - https://attack.mitre.org/techniques/T1021/002/
   - https://attack.mitre.org/techniques/T1047/
@@ -39,7 +37,11 @@ detection:
       - 'cmd.exe'
       - 'powershell.exe'
       - 'pwsh.exe'
-  condition: selection_service_install and (filter_suspicious_path or filter_shell_execution)
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    ImagePath|contains:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_service_install and (filter_suspicious_path or filter_shell_execution) and not filter_legit_software
 falsepositives:
   - Legitimate software installers that temporarily use Windows\Temp (verify binary is signed)
   - Some legitimate monitoring agents that run from non-standard paths

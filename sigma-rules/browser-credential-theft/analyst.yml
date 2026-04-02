@@ -2,23 +2,8 @@ title: Infostealer — Combined Login Data and Local State Access by Non-Browser
 id: b8e1369a-dcdd-413a-84a0-b7a953b8ff09
 status: experimental
 description: >
-  High-fidelity detection for the complete Chromium infostealer credential harvest chain:
-  a non-browser process accesses BOTH Chrome Login Data (encrypted credential SQLite DB)
-  AND Local State (contains the App-Bound Encryption master key) within a single session.
-  This combined access pattern is a near-definitive infostealer indicator because:
-  (1) Login Data alone can be accessed by backup tools and AV scanners;
-  (2) Local State alone is accessed by the browser itself for configuration;
-  (3) combined access to BOTH by the same non-browser process has no legitimate use case
-      outside infostealer credential decryption.
-  This pattern is consistent across all Chromium-targeting stealer families — LummaC2,
-  RedLine, Raccoon v2, Stealc, Vidar 2.0, Medusa, EDDIESTEALER — and across all three
-  Chrome App-Bound Encryption bypass techniques (COM elevation, Chrome DevTools Protocol,
-  and in-process memory injection). The file paths are dictated by the browser and cannot
-  be changed by the attacker.
-  A secondary high-confidence variant detects GoogleChromeElevationService being accessed
-  via COM by a non-updater process — the first App-Bound Encryption bypass documented
-  September 12, 2024, 45 days after Google's encryption was introduced.
-  Treat every firing of this rule as a Tier 1 incident pending immediate triage.
+  Detects a non-browser process accessing both Chrome Login Data and Local State in
+  the same session. Combined access has no legitimate use case outside credential theft.
 references:
   - https://attack.mitre.org/techniques/T1555/003/
   - https://attack.mitre.org/techniques/T1539/
@@ -69,7 +54,11 @@ detection:
     EventID: 4688  # Process creation as COM host
     CommandLine|contains:
       - 'GoogleChromeElevationService'
-    CommandLine|not|contains:
+
+  # Filter for Selection C: exclude legitimate updater invocations
+  # (moved from invalid |not|contains modifier to a proper filter block)
+  filter_abe_updater:
+    CommandLine|contains:
       - 'GoogleUpdate'
       - 'update'
       - 'install'
@@ -82,7 +71,11 @@ detection:
       - '0x1010'   # PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
       - '0x1438'   # PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION
       - '0x143a'
-    SourceImage|not|endswith:
+
+  # Filter for Selection D: exclude known-good processes from injection detection
+  # (moved from invalid |not|endswith modifier to a proper filter block)
+  filter_chrome_injection_known_good:
+    SourceImage|endswith:
       - '\chrome.exe'
       - '\msedge.exe'
       - '\MsMpEng.exe'
@@ -111,8 +104,8 @@ detection:
   condition: >
     (selection_login_data and not (filter_legitimate_browsers or filter_system_processes))
     or (selection_local_state and not (filter_legitimate_browsers or filter_system_processes))
-    or selection_abe_com_bypass
-    or selection_chrome_injection
+    or (selection_abe_com_bypass and not filter_abe_updater)
+    or (selection_chrome_injection and not filter_chrome_injection_known_good)
 falsepositives:
   - Enterprise password manager products (1Password, Bitwarden for Teams) — these should
     appear in the research baseline allowlist before this rule is deployed

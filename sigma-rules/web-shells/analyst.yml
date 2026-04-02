@@ -1,21 +1,9 @@
 title: Web Shell — High-Confidence Execution via Web Server Spawning Shell with Suspicious Command
-id: f6c8e0a2-5d7f-9b1c-3e4g-7j9k1l3m5o7p
+id: f6c8e0a2-5d7f-4b1c-3e4a-7d9e1f302573
 status: experimental
 description: >
-  High-fidelity detection for active web shell command execution. Detects a web
-  server worker process (w3wp.exe, httpd.exe, apache2.exe, nginx.exe, java.exe,
-  php-cgi.exe) spawning a shell interpreter (cmd.exe, powershell.exe) where the
-  spawned process command line contains explicit attacker reconnaissance, exfiltration,
-  or download indicators. This two-condition structure (web server parent AND
-  suspicious child command line) provides strong specificity over the hunt rule's
-  broader shell-spawn coverage. A second high-confidence selection covers PowerShell
-  encoded command execution from a web server parent — a near-universal indicator
-  of China Chopper, Godzilla, Behinder, and AntSword webshell variants, all of
-  which use PowerShell encoded commands or IEX/WebClient patterns for payload delivery.
-  The chokepoint invariant (HTTP request → web server process → child OS interpreter)
-  holds regardless of shell language, encoding, or C2 encryption used; this rule
-  detects the observable execution artifact at the endpoint layer. Low false positive
-  rate; treat as immediate SOC escalation.
+  Detects web server processes spawning shell interpreters with reconnaissance,
+  exfiltration, or encoded command indicators in the command line.
 references:
   - https://attack.mitre.org/techniques/T1505/003/
   - https://attack.mitre.org/techniques/T1190/
@@ -60,7 +48,7 @@ detection:
   # Selection A: cmd.exe spawned by web server with recon/exfil/download command
   selection_cmd_recon:
     Image|endswith: '\cmd.exe'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - 'whoami'
       - 'net user'
       - 'net group'
@@ -96,7 +84,7 @@ detection:
     Image|endswith:
       - '\powershell.exe'
       - '\pwsh.exe'
-    CommandLine|contains|any:
+    CommandLine|contains:
       - '-enc'
       - '-EncodedCommand'
       - '-e '
@@ -121,7 +109,11 @@ detection:
       - 'net user'
       - 'net group'
 
-  condition: selection_web_server_parent and (selection_cmd_recon or selection_powershell_encoded)
+  filter_legit_software:
+    # Tune for your environment — add legitimate software that triggers this rule
+    Image|endswith:
+      - '\placeholder_tune_for_your_env.exe'
+  condition: selection_web_server_parent and (selection_cmd_recon or selection_powershell_encoded) and not filter_legit_software
 falsepositives:
   - Legitimate web applications that invoke system utilities as part of documented functionality (file conversion, health checks)
   - Authorized administrative web interfaces that invoke PowerShell for server management
