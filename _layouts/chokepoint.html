@@ -316,7 +316,10 @@ details.cp-true-positive[open] .cp-tp-chevron { transform: rotate(90deg); }
   flex-shrink: 0;
 }
 .status-active    { background: rgba(63,185,80,.1);   color: var(--medium);   border: 1px solid rgba(63,185,80,.2); }
+.status-emerging  { background: rgba(240,136,62,.1);  color: var(--accent);   border: 1px solid rgba(240,136,62,.2); }
+.status-declining { background: rgba(227,179,65,.1);  color: var(--high);     border: 1px solid rgba(227,179,65,.2); }
 .status-disrupted { background: rgba(218,54,51,.08);  color: var(--critical); border: 1px solid rgba(218,54,51,.2); }
+.status-legacy    { background: rgba(139,148,158,.1); color: var(--text-dim); border: 1px solid rgba(139,148,158,.2); }
 
 .variant-chevron { color: var(--text-muted); font-size: .68rem; transition: transform .2s; flex-shrink: 0; }
 details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
@@ -355,6 +358,37 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
   letter-spacing: .08em;
   margin: 1rem 0 .4rem;
 }
+/* Lure preview iframe */
+.variant-lure-preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: .5rem 0 .75rem;
+  background: #fff;
+  position: relative;
+}
+.variant-lure-preview iframe {
+  width: 100%;
+  height: 420px;
+  border: none;
+  display: block;
+}
+.variant-lure-preview-label {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #fff;
+  background: rgba(218,54,51,.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  z-index: 1;
+}
+
 .variant-section-label-lure { color: var(--high); }
 .variant-section-label-payload { color: var(--critical); }
 
@@ -1030,8 +1064,14 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     <div class="variations-list">
       {% for v in cp.Variations %}
       {% assign status_lower = v.Status | downcase %}
-      {% if status_lower contains 'disrupted' %}
+      {% if status_lower contains 'legacy' %}
+        {% assign vstatus_class = 'status-legacy' %}
+      {% elsif status_lower contains 'declining' %}
+        {% assign vstatus_class = 'status-declining' %}
+      {% elsif status_lower contains 'disrupted' %}
         {% assign vstatus_class = 'status-disrupted' %}
+      {% elsif status_lower contains 'emerging' %}
+        {% assign vstatus_class = 'status-emerging' %}
       {% else %}
         {% assign vstatus_class = 'status-active' %}
       {% endif %}
@@ -1047,6 +1087,12 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
           {% if v.Lure %}
           <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
+          {% if v.LurePreview %}
+          <div class="variant-lure-preview">
+            <span class="variant-lure-preview-label">Simulated lure</span>
+            <iframe src="{{ v.LurePreview | relative_url }}" sandbox loading="lazy" title="Lure preview for {{ v.Name }}"></iframe>
+          </div>
+          {% endif %}
           <div class="variant-lure-desc">{{ v.Lure }}</div>
           {% if v.LureTags %}
           <div class="variant-lure-tags">
@@ -1084,8 +1130,15 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% endif %}
 
           {% if v.SourceURL %}
-          <a class="variant-source-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener">
-            Primary source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+            {% if v.SourceURL.first %}
+              {% for src in v.SourceURL %}
+              <a class="variant-source-link" href="{{ src }}" target="_blank" rel="noopener">
+                Source: {{ src | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+              {% endfor %}
+            {% else %}
+            <a class="variant-source-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener">
+              Source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+            {% endif %}
           {% else %}
           <a class="variant-source-link" href="#">Source link needed &#8594;</a>
           {% endif %}
