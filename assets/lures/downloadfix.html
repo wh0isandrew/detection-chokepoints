@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Interrupted</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; text-align: center; background-color: #f4f4f4; color: #333; }
+        .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h1 { color: #d9534f; }
+        p { font-size: 1.1em; line-height: 1.6; }
+        a { color: #007bff; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+        .instructions { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-radius: 5px; }
+        .repair-message { margin-top: 15px; color: #333; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download Interrupted!</h1>
+        <p>The file download was intentionally interrupted due to an unexpected error.</p>
+        <div class="instructions">
+            <p>
+                To fix this, please open your browser's download manager to see the status of the interrupted file.
+            </p>
+            <p>
+                In Chrome, you can usually do this by pressing <strong>Ctrl+J</strong> (Windows/Linux) or <strong>Cmd+Shift+J</strong> (Mac),
+                or by going to Menu &rarr; Downloads. <br>
+                And click the repairtool.cmd to restore the document.
+            </p>
+        </div>
+        <p id="repair-tool-status" class="repair-message">
+            The <strong>repairtool.cmd</strong> will be offered for download in a moment. Please check your browser's downloads.
+        </p>
+        <p style="margin-top: 25px;">
+            <a href="#">Run Main Test Again</a>
+        </p>
+    </div>
+
+    <!-- NEUTRALIZED: Auto-download JS removed for safe demonstration.
+         Original creates a Blob containing "@echo off\r\ncalc.exe\r\nexit",
+         triggers browser download as repairtool.cmd after 10 seconds.
+         Source: https://github.com/jfmaes/downloadfix -->
+</body>
+</html>

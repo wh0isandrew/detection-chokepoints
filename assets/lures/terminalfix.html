@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#111;color:#ccc;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1rem 1rem}
+
+/* ── Cloudflare challenge page chrome ─────────────────────── */
+.page-title{font-size:1.4rem;color:#9a9a9a;margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem}
+.cf-icon{width:22px;height:22px;background:#f48120;border-radius:50%;display:inline-block}
+.captcha-box{background:#fafafa;border:1px solid #d5d5d5;border-radius:4px;padding:.7rem .8rem;display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;min-width:240px}
+.spinner{width:20px;height:20px;border:2px solid rgba(0,0,0,.1);border-top-color:#555;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.captcha-logo{margin-left:auto;display:flex;flex-direction:column;align-items:center}
+.captcha-logo .shield{width:28px;height:28px;background:#f48120;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:block}
+.captcha-logo span{font-size:.42rem;color:#999;margin-top:2px}
+.page-notice{font-size:.82rem;color:#7a7a7a;max-width:460px;text-align:left;margin-bottom:2rem;line-height:1.5}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Human Verification overlay ───────────────────────────── */
+.overlay{background:#2a2a2a;border-radius:10px;overflow:hidden;width:310px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.overlay-header{background:linear-gradient(135deg,#e8930c,#d4780a);padding:.65rem 1rem;display:flex;justify-content:space-between;align-items:center}
+.overlay-header-text h2{font-size:.88rem;color:#fff;font-weight:700;margin:0}
+.overlay-header-text p{font-size:.6rem;color:rgba(255,255,255,.7);margin:.15rem 0 0}
+.overlay-header .cf-badge{font-size:.5rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:.3rem}
+.overlay-header .cf-badge .shield-sm{width:16px;height:16px;background:#fff;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:inline-block}
+
+.overlay-body{padding:.75rem .85rem}
+
+/* Timer */
+.timer-wrap{background:#333;border-radius:6px;padding:.6rem .75rem .5rem;margin-bottom:.75rem}
+.timer-row{display:flex;align-items:center;gap:.4rem;font-size:.62rem;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.timer-row .hourglass{font-size:.7rem}
+.timer-boxes{display:flex;gap:4px;margin-left:auto;align-items:center}
+.timer-box{background:#c0392b;color:#fff;font-size:.78rem;font-weight:700;padding:.2rem .4rem;border-radius:3px;min-width:28px;text-align:center}
+.timer-sep{color:#666;font-weight:700;font-size:.78rem}
+.timer-unit{font-size:.4rem;color:#888;display:block;text-align:center;margin-top:1px}
+.timer-bar{height:3px;background:#555;border-radius:2px;overflow:hidden}
+.timer-bar-fill{height:100%;width:68%;background:linear-gradient(90deg,#e8930c,#c0392b);border-radius:2px}
+
+/* Steps */
+.steps-label{font-size:.65rem;font-weight:600;color:#999;margin-bottom:.5rem}
+.step{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;background:#333;border-radius:6px;margin-bottom:.3rem;border-left:3px solid #e8930c}
+.step-num{width:22px;height:22px;background:#e8930c;border-radius:50%;color:#fff;font-size:.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-text{font-size:.72rem;color:#ddd;flex:1}
+.step-keys{display:flex;gap:3px;flex-shrink:0}
+.key{background:#444;color:#ccc;font-size:.58rem;font-weight:600;padding:.15rem .4rem;border-radius:3px;border:1px solid #555;font-family:ui-monospace,monospace}
+.key-accent{background:#3a7bd5;color:#fff;border-color:#3a7bd5}
+.key-enter{background:#333;color:#e8930c;border-color:#e8930c;font-weight:700}
+
+/* Verification ID */
+.verify-id{margin-top:.6rem;padding:.4rem .6rem;background:#333;border-radius:4px}
+.verify-id-label{font-size:.58rem;color:#888;margin-bottom:.15rem}
+.verify-id-val{font-size:.72rem;color:#aaa;font-family:ui-monospace,monospace;letter-spacing:.03em}
+
+/* Footer */
+.page-footer{margin-top:auto;padding-top:3rem;text-align:center;font-size:.65rem;color:#555}
+.page-footer .ray-id{font-family:ui-monospace,monospace;letter-spacing:.02em}
+.page-footer .branding{margin-top:.25rem}
+</style></head><body>
+
+<!-- Page chrome — mimics Cloudflare challenge page in post-interaction state -->
+<div class="page-title"><span class="cf-icon"></span> www.10estate.com.au</div>
+
+<div class="captcha-box">
+  <div class="spinner"></div>
+  <div class="captcha-logo"><span class="shield"></span><span>Cloudflare</span></div>
+</div>
+
+<p class="page-notice">www.10estate.com.au needs to review the security of your connection before proceeding.</p>
+
+<!-- TerminalFix lure — instructs user to open PowerShell and paste -->
+<div class="overlay">
+  <div class="overlay-header">
+    <div class="overlay-header-text">
+      <h2>Human Verification</h2>
+      <p>Complete the steps below</p>
+    </div>
+    <div class="cf-badge"><span class="shield-sm"></span> CLOUDFLARE</div>
+  </div>
+  <div class="overlay-body">
+    <div class="timer-wrap">
+      <div class="timer-row">
+        <span class="hourglass">⏳</span> Time remaining
+        <div class="timer-boxes">
+          <div><div class="timer-box" id="timer-min">01</div><span class="timer-unit">MIN</span></div>
+          <span class="timer-sep">:</span>
+          <div><div class="timer-box" id="timer-sec">31</div><span class="timer-unit">SEC</span></div>
+        </div>
+      </div>
+      <div class="timer-bar"><div class="timer-bar-fill"></div></div>
+    </div>
+
+    <div class="steps-label">Verification steps:</div>
+
+    <div class="step">
+      <span class="step-num">1</span>
+      <span class="step-text">Open PowerShell/Terminal as admin</span>
+      <div class="step-keys"><span class="key key-accent">⊞</span><span class="key">+</span><span class="key">X</span></div>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <span class="step-text">Select Windows PowerShell/Terminal (Admin)</span>
+      <div class="step-keys"><span class="key">↓</span></div>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <span class="step-text">Paste verification code</span>
+      <div class="step-keys"><span class="key">CTRL</span><span class="key">+</span><span class="key">V</span></div>
+    </div>
+    <div class="step">
+      <span class="step-num">4</span>
+      <span class="step-text">Press key</span>
+      <div class="step-keys"><span class="key key-enter">ENTER</span><span class="key key-enter">↵</span></div>
+    </div>
+
+    <div class="verify-id">
+      <div class="verify-id-label">Verification ID:</div>
+      <div class="verify-id-val" id="verify-id">d6a366a09fe24703</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  <div class="ray-id">Ray ID: <span id="ray-id">d6a366a09fe24703</span></div>
+  <div class="branding">Platform performance and security</div>
+</div>
+
+<script>
+// NEUTRALIZED — clipboard staging removed for safe demonstration
+// Original: copies PowerShell cradle to clipboard on CAPTCHA interaction
+// This version only shows the visual lure without touching the clipboard
+
+// Countdown timer for realism
+var timerMin = document.getElementById('timer-min');
+var timerSec = document.getElementById('timer-sec');
+var mins = 1, secs = 31;
+
+setInterval(function(){
+  if(secs === 0){ if(mins === 0) return; mins--; secs = 59; }
+  else { secs--; }
+  timerMin.textContent = String(mins).padStart(2,'0');
+  timerSec.textContent = String(secs).padStart(2,'0');
+}, 1000);
+</script>
+</body></html>

