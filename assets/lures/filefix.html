@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f0f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1rem}
+
+/* ── Cloudflare challenge page chrome ─────────────────────── */
+.page-title{font-size:1.6rem;color:#1a1a1a;font-weight:700;margin-bottom:.3rem}
+.page-status{font-size:.95rem;color:#555;font-style:italic;margin-bottom:.75rem}
+.spinner-wrap{margin-bottom:.75rem}
+.spinner{width:40px;height:40px;display:inline-block;position:relative}
+.spinner-dot{width:6px;height:6px;background:#2d7d46;border-radius:50%;position:absolute;animation:dotFade 1.2s infinite ease-in-out}
+.spinner-dot:nth-child(1){top:0;left:17px;animation-delay:0s}
+.spinner-dot:nth-child(2){top:5px;left:28px;animation-delay:.1s}
+.spinner-dot:nth-child(3){top:17px;left:34px;animation-delay:.2s}
+.spinner-dot:nth-child(4){top:28px;left:28px;animation-delay:.3s}
+.spinner-dot:nth-child(5){top:34px;left:17px;animation-delay:.4s}
+.spinner-dot:nth-child(6){top:28px;left:6px;animation-delay:.5s}
+.spinner-dot:nth-child(7){top:17px;left:0;animation-delay:.6s}
+.spinner-dot:nth-child(8){top:5px;left:6px;animation-delay:.7s}
+@keyframes dotFade{0%,40%,100%{opacity:.2}20%{opacity:1}}
+
+.page-notice{font-size:.9rem;color:#555;max-width:500px;margin-bottom:1.5rem}
+.page-notice strong{color:#333}
+
+/* ── Verification overlay ─────────────────────────────────── */
+.overlay{background:#fff;border-radius:8px;width:320px;box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden;position:relative}
+.overlay-header{background:#f48120;padding:.7rem 1rem;text-align:center}
+.overlay-header h2{font-size:.9rem;color:#fff;font-weight:700;margin:0}
+
+.overlay-body{padding:1.2rem 1.5rem}
+.overlay-body .intro{font-size:.85rem;color:#333;text-align:center;margin-bottom:1rem;line-height:1.5}
+
+.step-list{list-style:none;padding:0;margin:0}
+.step-list li{font-size:.82rem;color:#333;padding:.3rem 0;line-height:1.5}
+.step-list li::before{content:counter(step-counter) ". ";counter-increment:step-counter;color:#333;font-weight:400}
+.step-list{counter-reset:step-counter}
+.step-list strong{font-weight:700}
+
+.btn-verify{display:inline-block;background:#f48120;color:#fff;border:2px solid #e0750f;border-radius:4px;padding:.55rem 1.2rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:default;margin:.4rem 0 .6rem}
+
+.overlay-footer{background:#f5f5f5;padding:.5rem 1rem;border-top:1px solid #eee}
+</style></head><body>
+
+<!-- Page chrome — mimics Cloudflare challenge page -->
+<div class="page-title">physiciansallianceofconnecticut.com</div>
+<div class="page-status">Checking if the site connection is secure</div>
+
+<div class="spinner-wrap">
+  <div class="spinner">
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+    <span class="spinner-dot"></span>
+  </div>
+</div>
+
+<p class="page-notice">physiciansallianceofconnecticut.com needs to review the security of your connection before proceeding.</p>
+
+<!-- FileFix lure — instructs user to open address bar and paste -->
+<div class="overlay">
+  <div class="overlay-header">
+    <h2>Complete these Verification Steps</h2>
+  </div>
+  <div class="overlay-body">
+    <p class="intro">Please read the instructions carefully before starting the anti-bot verification.</p>
+
+    <ol class="step-list">
+      <li>Click <strong>Start Verification</strong> button.</li>
+    </ol>
+
+    <div class="btn-verify">START VERIFICATION</div>
+
+    <ol class="step-list" start="2">
+      <li>In the verification window, press <strong>Ctrl + L</strong>.</li>
+      <li>Press <strong>Ctrl + V</strong> after.</li>
+      <li>Press <strong>Enter</strong> on your keyboard.</li>
+      <li>Close verification window.</li>
+    </ol>
+  </div>
+  <div class="overlay-footer"></div>
+</div>
+
+<script>
+// NEUTRALIZED — clipboard staging removed for safe demonstration
+// Original: copies command to clipboard on "Start Verification" click,
+// then opens File Explorer via ms-explorer: URI handler.
+// Ctrl+L focuses the address bar, Ctrl+V pastes the hidden command.
+// This version only shows the visual lure without touching the clipboard.
+</script>
+</body></html>

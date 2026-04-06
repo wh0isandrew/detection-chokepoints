@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Fake browser chrome ──────────────────────────────────── */
+.browser-bar{background:#2b2b3a;padding:.35rem .75rem;display:flex;align-items:center;gap:.5rem;font-size:.7rem;color:#aaa}
+.browser-bar .dots{display:flex;gap:4px}
+.browser-bar .dot{width:8px;height:8px;border-radius:50%}
+.browser-bar .dot-r{background:#ff5f57}.browser-bar .dot-y{background:#febc2e}.browser-bar .dot-g{background:#28c840}
+.browser-bar .url-bar{flex:1;background:#1e1e2a;border-radius:4px;padding:.25rem .6rem;color:#888;font-family:ui-monospace,monospace;font-size:.6rem}
+.browser-bar .menu{color:#888;font-size:.8rem;letter-spacing:2px}
+
+/* ── Fake page with garbled text ──────────────────────────── */
+.page{flex:1;padding:1.5rem 2rem;position:relative;overflow:hidden}
+.page-header{background:#3b4a8a;color:#fff;padding:1rem 1.5rem;border-radius:6px 6px 0 0;margin-bottom:0}
+.page-header h1{font-size:1rem;font-weight:700;font-family:ui-monospace,monospace}
+.page-header p{font-size:.6rem;color:rgba(255,255,255,.5);margin-top:.3rem;font-family:ui-monospace,monospace}
+.page-body{background:#fff;padding:1.2rem 1.5rem;border-radius:0 0 6px 6px;margin-bottom:1.5rem}
+.garbled{font-family:ui-monospace,monospace;color:#333;font-size:.72rem;line-height:1.8;word-break:break-all}
+.garbled span{opacity:.7}
+.article-row{display:flex;gap:1rem;margin-top:1rem}
+.article-card{flex:1;background:#fff;border-radius:6px;padding:.75rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.article-card .thumb{background:#e0e0e0;height:40px;border-radius:4px;margin-bottom:.5rem;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#999}
+.article-card .garbled{font-size:.6rem;line-height:1.5}
+
+/* ── Update dialog overlay ────────────────────────────────── */
+.dimmer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:10}
+.dialog{background:#fff;border-radius:10px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden}
+.dialog-body{padding:1.2rem 1.5rem;display:flex;gap:.75rem;align-items:flex-start}
+.dialog-icon{width:36px;height:36px;background:#f48120;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
+.dialog-text h3{font-size:.85rem;font-weight:700;color:#1a1a1a;margin-bottom:.3rem}
+.dialog-text p{font-size:.72rem;color:#555;line-height:1.5;margin-bottom:.2rem}
+.dialog-text .version{font-size:.68rem;color:#888;margin-bottom:.4rem}
+.dialog-actions{display:flex;gap:.5rem;margin-top:.3rem}
+.btn{padding:.4rem .9rem;border-radius:5px;font-size:.72rem;font-weight:600;cursor:default;border:none}
+.btn-later{background:#e8e8e8;color:#555}
+.btn-install{background:#f48120;color:#fff}
+.dialog-warn{font-size:.62rem;color:#2d7d46;padding:.5rem 1.5rem .75rem;line-height:1.4;font-style:italic}
+</style></head><body>
+
+<!-- Fake browser chrome -->
+<div class="browser-bar">
+  <div class="dots"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span></div>
+  <div class="url-bar">&#9608;&#9608;&#9608; &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</div>
+  <span class="menu">&#9608;&#9608;&#9608;&#9608;</span>
+</div>
+
+<!-- Garbled/glitched page content behind the dialog -->
+<div class="page">
+  <div class="page-header">
+    <h1>&#9608;&#9608;&#926;&#1042; &#1068;&#1086;&#1068;&#1068;&#936;&#1042; &#9608;&#191; &#216;&#400;&#1068; &#1060;&#956;&#1042;&#1046;&#8214;</h1>
+    <p>&#1060;&#1042;&#216; &#216;&#1060;&#1042;&#8364; &#956;&#956;&#9608;&#9608;&#9608; &#1060;&#1046; &#926;&#1086; &#1068;&#1060;&#1060;&#1060;&#956; &#9608;&#9608; &#8214;&#1060;&#1042;&#926;&#8214;&#1086;&#1042;&#191;&#8214;&#8214;</p>
+  </div>
+  <div class="page-body">
+    <p class="garbled">
+      <strong>&#1060;&#9608; &#9670;&#195;&#1068;&#1068; &#1060;&#936;&#191;&#9608;&#1042;&#400;&#9608;&#1042;</strong><br>
+      <span>&#926;&#1086;&#9608; &#1068;&#936;&#191;&#936;&#1042;&#956; &#400;&#9608; &#9608; &#1060;&#1068;&#191; &#956;&#400;&#926;&#1042;&#1060;&#191;&#9608;&#1046;&#191;</span><br>
+      <span>&#9608;&#9608;&#9608;&#1060;&#1068;&#191;&#1068; &#1068;&#1086;&#195;&#1060;&#1060;&#1060;&#1068; &#1042;&#8364;&#1068;&#1086;&#956;&#926;&#1068;&#1086;&#191;&#8214;&#191;</span>
+    </p>
+  </div>
+  <div class="article-row">
+    <div class="article-card"><div class="thumb">Article thumbnail</div><div class="garbled">&#216;&#1086;&#9608;&#9608;&#400;&#195;&#9608;&#936;&#956;&#1042;&#191; &#400;&#9608; &#9670;&#9608;&#400;</div></div>
+    <div class="article-card"><div class="thumb">Article thumbnail</div><div class="garbled">&#1086;&#195;&#9608;&#1060; &#1060;&#1060;&#1042;&#1046;&#216;&#9608; &#1060;&#1060;&#1046;&#1060;&#195;&#1060;</div></div>
+    <div class="article-card"><div class="thumb">Article thumbnail</div><div class="garbled">&#9670;&#195;&#1046;&#400;&#1068;&#1042;&#1042; &#956;&#8214;&#1068; &#216;&#1068;&#1060; &#936;&#9670;&#9608;</div></div>
+  </div>
+</div>
+
+<!-- GlitchFix dialog — fake browser update prompt -->
+<div class="dimmer">
+  <div class="dialog">
+    <div class="dialog-body">
+      <div class="dialog-icon">&#9888;</div>
+      <div class="dialog-text">
+        <h3>Browser update recommended</h3>
+        <p>Your version of Firefox has known security issues. Install the latest update for safe work.</p>
+        <div class="version">Recommended version: Firefox 122.0</div>
+        <div class="dialog-actions">
+          <button class="btn btn-later">Later</button>
+          <button class="btn btn-install">Install update</button>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-warn">You can continue without updating, but some features may not work correctly.</div>
+  </div>
+</div>
+
+<script>
+// NEUTRALIZED — clipboard staging and download removed for safe demonstration
+// Original: clicking "Install update" copies PowerShell cradle to clipboard
+// or triggers a malicious .msi/.exe download. The garbled page content
+// (GlitchFix pattern) creates urgency by making the site appear broken.
+// This version only shows the visual lure.
+</script>
+</body></html>

