@@ -147,10 +147,9 @@
     var svg = makeSvg(W, H);
     svg.setAttribute('aria-label', 'Monthly malicious site volume');
 
-    var labels   = monthly.map(function (m) { return m.month.slice(5); }); // 'MM'
-    var totals   = monthly.map(function (m) { return m.total_sites; });
+    var labels   = monthly.map(function (m) { return m.month.slice(5); });
     var malicious = monthly.map(function (m) { return m.malicious; });
-    var yMax     = Math.max.apply(null, totals);
+    var yMax     = Math.max.apply(null, malicious);
     var yMaxR    = Math.ceil(yMax / 500) * 500 || 500;
 
     drawAxes(svg, pad, W, H, yMaxR, labels, 5);
@@ -159,42 +158,22 @@
     var chartW  = W - pad.left - pad.right;
     var chartH  = H - pad.top - pad.bottom;
     var slotW   = chartW / n;
-    var barW    = Math.max(4, slotW * 0.35);
+    var barW    = Math.max(6, slotW * 0.6);
 
     monthly.forEach(function (m, i) {
       var cx   = pad.left + slotW * (i + 0.5);
-      var tot  = m.total_sites;
       var mal  = m.malicious;
 
-      // Total bar (back)
-      var hTot = (tot / yMaxR) * chartH;
-      var yTot = pad.top + chartH - hTot;
-      svg.appendChild(svgEl('rect', {
-        x: cx - barW, y: yTot, width: barW - 1, height: hTot,
-        fill: C.blue, opacity: '0.55',
-      }));
-
-      // Malicious bar (front)
       var hMal = (mal / yMaxR) * chartH;
       var yMal = pad.top + chartH - hMal;
       svg.appendChild(svgEl('rect', {
-        x: cx + 1, y: yMal, width: barW - 1, height: hMal,
-        fill: C.red, opacity: '0.85',
+        x: cx - barW / 2, y: yMal, width: barW, height: hMal,
+        fill: C.red, opacity: '0.8', rx: '2',
       }));
 
-      // Hit zone
       var html = '<strong style="color:#c9d1d9">' + m.month + '</strong><br>'
-               + '<span style="color:' + C.blue + '">&#9646; Total crawled: ' + tot + '</span><br>'
-               + '<span style="color:' + C.red  + '">&#9646; Malicious: ' + mal + ' (' + Math.round(mal/tot*100) + '%)</span>';
+               + '<span style="color:' + C.red + '">&#9646; Malicious sites: ' + mal + '</span>';
       hitZone(svg, cx, pad.top + chartH / 2, slotW, chartH, html);
-    });
-
-    // Legend
-    var lx = W - pad.right - 200;
-    var ly = pad.top + 8;
-    [[C.blue, 'Total crawled'], [C.red, 'Malicious']].forEach(function (item, i) {
-      svg.appendChild(svgEl('rect', { x: lx, y: ly + i * 18, width: 10, height: 10, fill: item[0], rx: '2' }));
-      svg.appendChild(text(lx + 14, ly + i * 18 + 9, item[1], { 'text-anchor': 'start', fill: C.label }));
     });
 
     el.appendChild(svg);
