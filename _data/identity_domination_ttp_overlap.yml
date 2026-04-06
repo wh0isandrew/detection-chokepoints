@@ -1,0 +1,106 @@
+# Active Directory & Entra ID Identity Domination TTP Overlap Data
+# Covers on-prem AD, hybrid identity, and cloud Entra ID attack paths.
+# Sources: CrowdStrike StellarParticle, Microsoft Storm-0501/Storm-2372,
+# DFIR Report intrusion analyses, Mandiant/Google Cloud reporting.
+
+groups:
+  - id: apt29
+    name: "APT29 / Midnight Blizzard"
+    color: "#ef4444"
+  - id: storm0501
+    name: "Storm-0501"
+    color: "#f59e0b"
+  - id: storm2372
+    name: "Storm-2372"
+    color: "#8b5cf6"
+  - id: scattered
+    name: "Scattered Spider"
+    color: "#ec4899"
+  - id: ransomware
+    name: "Ransomware Operators"
+    color: "#06b6d4"
+
+phases:
+  - label: "Initial Access"
+    techniques:
+      - id: "T1566.002"
+        name: "Spearphishing Link"
+        groups: [apt29, storm0501, storm2372, scattered]
+      - id: "T1078"
+        name: "Valid Accounts"
+        groups: [apt29, storm0501, scattered, ransomware]
+      - id: "T1199"
+        name: "Trusted Relationship"
+        groups: [apt29, storm0501]
+
+  - label: "Credential Access"
+    techniques:
+      - id: "T1003.001"
+        name: "LSASS Memory"
+        groups: [apt29, storm0501, scattered, ransomware]
+      - id: "T1003.006"
+        name: "DCSync"
+        groups: [apt29, storm0501, scattered, ransomware]
+      - id: "T1558.003"
+        name: "Kerberoasting"
+        groups: [storm0501, scattered, ransomware]
+      - id: "T1528"
+        name: "Steal Application Access Token"
+        groups: [apt29, storm2372]
+      - id: "T1539"
+        name: "Steal Web Session Cookie"
+        groups: [apt29, scattered]
+
+  - label: "Privilege Escalation"
+    techniques:
+      - id: "T1134"
+        name: "Access Token Manipulation"
+        groups: [apt29, storm0501, scattered, ransomware]
+      - id: "T1484.001"
+        name: "Group Policy Modification"
+        groups: [storm0501, ransomware]
+      - id: "T1098.001"
+        name: "Additional Cloud Credentials"
+        groups: [apt29, storm2372, scattered]
+      - id: "T1550.001"
+        name: "Application Access Token"
+        groups: [apt29, storm2372]
+
+  - label: "Lateral Movement"
+    techniques:
+      - id: "T1021.002"
+        name: "SMB/Windows Admin Shares"
+        groups: [apt29, storm0501, scattered, ransomware]
+      - id: "T1021.001"
+        name: "Remote Desktop Protocol"
+        groups: [storm0501, scattered, ransomware]
+      - id: "T1021.006"
+        name: "Windows Remote Management"
+        groups: [apt29, storm0501, ransomware]
+
+  - label: "Persistence"
+    techniques:
+      - id: "T1098.005"
+        name: "Device Registration"
+        groups: [apt29, storm2372, scattered]
+      - id: "T1098.003"
+        name: "Additional Cloud Roles"
+        groups: [apt29, storm2372]
+      - id: "T1136.003"
+        name: "Cloud Account"
+        groups: [apt29, storm2372, scattered]
+      - id: "T1564.008"
+        name: "Email Hiding Rules"
+        groups: [apt29, storm2372, scattered]
+
+  - label: "Impact / Objectives"
+    techniques:
+      - id: "T1486"
+        name: "Data Encrypted for Impact"
+        groups: [storm0501, ransomware]
+      - id: "T1530"
+        name: "Data from Cloud Storage"
+        groups: [apt29, storm2372]
+      - id: "T1114.002"
+        name: "Remote Email Collection"
+        groups: [apt29, storm2372, scattered]

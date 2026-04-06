@@ -1,0 +1,108 @@
+# Hypervisor Compromise TTP Overlap Data
+# Groups match the 5 actors in the Hypervisor Compromise attack chain.
+# TTP coverage sourced from Mandiant vSphere/BRICKSTORM report (April 2026).
+
+groups:
+  - id: brick
+    name: "BRICKSTORM / UNC5221"
+    color: "#ef4444"
+  - id: unc3886
+    name: "UNC3886"
+    color: "#8b5cf6"
+  - id: unc3944
+    name: "UNC3944 / Scattered Spider"
+    color: "#ec4899"
+  - id: play
+    name: "Play Ransomware"
+    color: "#84cc16"
+  - id: alphv
+    name: "Alphv/BlackCat"
+    color: "#06b6d4"
+
+phases:
+  - label: "Initial Access"
+    techniques:
+      - id: "T1190"
+        name: "Exploit Public-Facing App"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1078"
+        name: "Valid Accounts"
+        groups: [brick, unc3944, play, alphv]
+      - id: "T1133"
+        name: "External Remote Services"
+        groups: [brick]
+
+  - label: "Execution"
+    techniques:
+      - id: "T1059.004"
+        name: "Unix Shell"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1203"
+        name: "Exploitation for Client Execution"
+        groups: [brick, unc3886]
+
+  - label: "Persistence"
+    techniques:
+      - id: "T1037"
+        name: "Boot or Logon Init Scripts"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1098.004"
+        name: "Account Manipulation: SSH Keys"
+        groups: [brick, unc3886]
+      - id: "T1136.001"
+        name: "Create Account: Local"
+        groups: [brick]
+
+  - label: "Privilege Escalation"
+    techniques:
+      - id: "T1548.003"
+        name: "Abuse Elevation Control: Sudo"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1078.004"
+        name: "Valid Accounts: Cloud"
+        groups: [brick, unc3944]
+
+  - label: "Defense Evasion"
+    techniques:
+      - id: "T1070.002"
+        name: "Indicator Removal: Clear Linux Logs"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1036.005"
+        name: "Masquerading: Match Legitimate Name"
+        groups: [brick]
+      - id: "T1497"
+        name: "Virtualization/Sandbox Evasion"
+        groups: [brick, unc3886]
+
+  - label: "Credential Access"
+    techniques:
+      - id: "T1555"
+        name: "Credentials from Password Stores"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1003.008"
+        name: "OS Credential Dumping: /etc/shadow"
+        groups: [brick]
+      - id: "T1552.004"
+        name: "Unsecured Credentials: Private Keys"
+        groups: [brick, alphv]
+
+  - label: "Lateral Movement"
+    techniques:
+      - id: "T1210"
+        name: "Exploitation of Remote Services"
+        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1021.004"
+        name: "Remote Services: SSH"
+        groups: [brick, unc3944]
+
+  - label: "Exfiltration & Impact"
+    techniques:
+      - id: "T1090.003"
+        name: "Proxy: SOCKS / DoH Tunneling"
+        groups: [brick]
+      - id: "T1213"
+        name: "Data from Information Repositories"
+        groups: [brick, unc3886]
+      - id: "T1486"
+        name: "Data Encrypted for Impact"
+        groups: [play, alphv]
