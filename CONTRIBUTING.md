@@ -27,6 +27,7 @@ A new technique or attack requirement not yet documented in the repo.
 
 **Requirements:**
 - Complete YAML entry (all required fields per `schema/chokepoint-schema.yml`)
+- `AttackerControls` and `AttackerCannotControl` lists filled in — these must be written before chokepoint stages
 - At least Research and Hunt level sigma rules
 - Analyst level sigma rule (or documented rationale for why one isn't feasible)
 - At least one source reference (MITRE, research blog, threat report)
@@ -35,10 +36,9 @@ A new technique or attack requirement not yet documented in the repo.
 A new tool, family, or method that exploits an existing chokepoint.
 
 **Requirements:**
-- Update the `Variations:` list in the relevant YAML file
-- Add an `EvolutionTimeline:` entry with the `TheConstant:` field filled in
-- Log in `CHANGELOG.md`
-- Update `trends/<year>-q<N>.md` if the variation is significant
+- Update the `Variations:` list in the relevant YAML file with all required variation fields (see [Variation Fields](#variation-fields) below)
+- Add an `EvolutionTimeline:` entry with `DetectionImpact` explaining whether existing detections still cover the new variant
+- Update `CHANGELOG.md`
 
 ### 3. Improved Sigma Rule
 Better detection logic, reduced false positives, or a new maturity level.
@@ -49,7 +49,25 @@ Better detection logic, reduced false positives, or a new maturity level.
 - Document what changed and why in a comment block at the top of the rule
 - Test against known-good and known-bad scenarios before submitting
 
-### 4. Intel Resource
+### 4. IOK Lure Detection Rule
+Sigma-based rules for phishing/lure page detection via web proxy or phish.report.
+
+**Requirements:**
+- Rule file at `iok-rules/<chokepoint>/<name>.yml`
+- Uses `html`, `js`, `dom`, `requests`, and/or `headers` matchers
+- See `iok-rules/clickfix/clickfix-lure.yml` as reference
+- Link from the relevant chokepoint YAML under `EarlyDetections:`
+
+### 5. Emulation Script
+PowerShell/bash scripts that simulate chokepoint behavior in a controlled lab.
+
+**Requirements:**
+- Script at `emulation/<chokepoint>/emulate.ps1` (or `.sh`)
+- Must include `SafetyNotes` — lab use only, isolated VM only
+- Map to an Atomic Red Team technique ID via `AtomicRef`
+- Outbound connections must point to benign destinations (e.g., `example.com`)
+
+### 6. Intel Resource
 A free, community-accessible resource that helps hunt a specific chokepoint.
 
 **Requirements:**
@@ -85,14 +103,14 @@ impact/
 |-------|------|---------|
 | `Name` | string | `"ClickFix Techniques"` |
 | `Id` | UUIDv4 | `"c7f2a1b4-3e8d-4a9c-8b5f-2d1e6f0a7c3b"` |
-| `MitreIds` | list | `["T1204.001", "T1204.003"]` |
+| `MitreIds` | list | `["T1204.001", "T1204.004"]` |
 | `Tactics` | list | `["Initial Access"]` |
-| `Techniques` | list | `["User Execution: Malicious Link"]` |
+| `Techniques` | list | `["User Execution: Malicious Copy and Paste"]` |
 | `DetectionPriority` | enum | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` |
 | `ThreatPrevalence` | enum | `VERY HIGH`, `HIGH`, `MEDIUM`, `LOW`, `EMERGING` |
 | `DetectionDifficulty` | enum | `LOW`, `MEDIUM`, `HIGH` |
-| `Description` | string | One paragraph |
-| `LastUpdated` | date | `"2025-01-15"` |
+| `Description` | string | 2-4 sentences |
+| `LastUpdated` | date | `"2026-03-10"` |
 | `Author` | string | `"@your-handle"` |
 
 **Generating a UUIDv4 for the `Id` field:**
@@ -102,31 +120,80 @@ python3 -c "import uuid; print(uuid.uuid4())"
 
 Use the YAML template at `templates/chokepoint-template.yml` as a starting point.
 
-**New required fields for chokepoint stages (as of 2026-04):**
+### Framework Fields (required for new entries)
 
-Each stage in `Chokepoints:` now requires these fields in addition to the existing ones:
+These must be filled **before** writing chokepoint stages. If you can't list at least
+one item the attacker cannot control, this may not be a chokepoint.
 
 | Field | Purpose |
 |-------|---------|
+| `Prerequisites` | Conditions that must be true for the attack to succeed |
+| `AttackerControls` | List of things the attacker can change (variables — lures, encoding, infra) |
+| `AttackerCannotControl` | List of invariant prerequisites (the chokepoints — the things your detections target) |
+
+See `FRAMEWORK.md` for the full methodology.
+
+### Chokepoint Stage Fields
+
+Each stage in `Chokepoints:` requires:
+
+| Field | Purpose |
+|-------|---------|
+| `Stage` | Observable behavior name (e.g., "Clipboard Seeding") — not a kill chain phase |
 | `Input` | What state exists before this stage fires |
+| `Invariant` | What MUST the attacker do at this stage, regardless of variant |
 | `Observable` | Specific telemetry artifact (event IDs, field values) |
-| `WhyCantBypass` | Why the attacker cannot skip this step |
+| `WhyCantBypass` | Why the attacker cannot skip this step — the most important sentence in the stage |
+| `LogSources` | Log sources that cover this stage |
+| `DetectionTier` | Research, Hunt, or Analyst |
+| `SigmaRef` | Relative path to the Sigma/IOK rule |
 
 Optional but recommended:
+
 | Field | Purpose |
 |-------|---------|
+| `BypassNote` | Known evasion paths — renders as a red callout |
 | `TruePositive` | Real log example with `Title`, `Log`, `KeySignal` |
 
-**Top-level framework fields (required for new entries):**
+### Variation Fields
+
+Each entry in `Variations:` supports different fields depending on the technique type.
+
+**Required for all variations:**
 
 | Field | Purpose |
 |-------|---------|
-| `AttackerControls` | List of things the attacker can change (variables) |
-| `AttackerCannotControl` | List of invariant prerequisites (the chokepoints) |
+| `Name` | Tool or method name |
+| `FirstSeen` | Quarter or date (e.g., `"2024-Q1"`) |
+| `Status` | `Active`, `Emerging`, `Declining`, `Legacy`, `Disrupted` |
+| `SourceURL` | Full URL to the original report. Use a YAML list for multiple sources |
+| `NotesShort` | One-line summary for card header |
+| `Notes` | 2-3 sentences on what makes this variant different |
+| `VariantId` | URL-safe slug (e.g., `"clickfix-original"`) |
+| `ChokepointMapping` | Maps variant back to chokepoint stages (e.g., `"clipboard write → powershell.exe (parent: explorer.exe) → outbound HTTP"`) |
 
-These fields must be filled before writing stages. If you can't list at least one item
-the attacker cannot control, this may not be a chokepoint.
-See `FRAMEWORK.md` for the full 6-step methodology.
+**For initial access / social engineering techniques** (ClickFix, Renamed RMM):
+
+| Field | Purpose |
+|-------|---------|
+| `Lure` | What the user sees — visual elements, social engineering narrative, interaction flow |
+| `LureTags` | List of identifying elements (e.g., `"Cloudflare impersonation"`, `"Win+R instruction"`) |
+| `LurePreview` | Path to HTML lure recreation (e.g., `/assets/lures/clickfix-original.html`) |
+| `Payloads` | List of per-platform payloads with `Platform`, `Command` (defanged), and `Note` |
+
+**For post-compromise techniques** (EDR Bypass, Ransomware, Remote Execution):
+
+| Field | Purpose |
+|-------|---------|
+| `Command.Invocation` | The actual CLI command or tool invocation (defanged) |
+| `Command.Context` | When/how this command is typically executed |
+| `Command.Artifacts` | List of observable artifacts (e.g., `"Sysmon EID 1: sc.exe with 'stop'"`) |
+
+**Important rules for variations:**
+1. Defang all IOCs: `hxxps[://]`, `[.]com`, etc.
+2. Payload examples must be sourced from the `SourceURL` article — not fabricated
+3. If `SourceURL` has multiple links, use a YAML list — they render as separate hyperlinks
+4. If a field is empty or absent, the template will not render that section
 
 ---
 
@@ -187,7 +254,7 @@ logsource:
 1. **Fork** the repository
 2. **Create a branch** named `<your-handle>/<chokepoint-name>` (e.g., `jsmith/browser-cred-theft`)
 3. **Copy** `templates/chokepoint-template.yml` to `chokepoints/<tactic>/<name>.yml`
-4. **Fill in** all required fields
+4. **Fill in** `AttackerControls` and `AttackerCannotControl` first — then write stages
 5. **Create** sigma rules in `sigma-rules/<name>/research.yml`, `hunt.yml`, `analyst.yml`
 6. **Update** `CHANGELOG.md` with your entry
 7. **Submit** a PR with the checklist below completed
@@ -200,12 +267,15 @@ logsource:
 - [ ] YAML entry at `chokepoints/<tactic>/<name>.yml` with all required fields
 - [ ] Unique UUIDv4 generated for `Id` field
 - [ ] All MITRE IDs verified against current ATT&CK framework
+- [ ] `AttackerControls` and `AttackerCannotControl` lists filled in
+- [ ] Chokepoint stages include `Input`, `Invariant`, `Observable`, `WhyCantBypass`
 - [ ] Research sigma rule at `sigma-rules/<name>/research.yml`
 - [ ] Hunt sigma rule at `sigma-rules/<name>/hunt.yml`
 - [ ] Analyst sigma rule at `sigma-rules/<name>/analyst.yml`
   - If not provided: [ ] Documented why analyst-level rule is not feasible
 - [ ] At least one source reference included
-- [ ] `TheConstant:` field filled in for all EvolutionTimeline entries
+- [ ] Variation payload examples sourced from cited articles (not fabricated)
+- [ ] All IOCs defanged (hxxps[://], [.]com)
 - [ ] CHANGELOG.md updated
 - [ ] Related chokepoints cross-referenced via `RelatedChokepoints:` field
 
@@ -233,6 +303,7 @@ logsource:
 | Vendor-specific content | Must be applicable across vendor products (tool-agnostic) |
 | Rules without `falsepositives` field | Understanding FP scenarios is part of the entry quality bar |
 | MITRE IDs not in the current ATT&CK framework | Verify at https://attack.mitre.org/ before submitting |
+| Fabricated payload examples | Payload commands in variations must be sourced from the cited `SourceURL` |
 
 ---
 
