@@ -132,10 +132,8 @@ layout: default
           {% for actor in page.actors %}
           <tr>
             <td class="ac-actor-name">
-              {{ actor.name }}
-              {% if actor.status %}
-              <span class="ac-actor-status ac-actor-status--{{ actor.status | downcase }}">{{ actor.status }}</span>
-              {% endif %}
+              <span>{{ actor.name }}</span>
+              {% if actor.status %}<span class="ac-actor-status ac-actor-status--{{ actor.status | downcase }}">{{ actor.status }}</span>{% endif %}
             </td>
             {% for stage in page.stages %}
             <td>{{ actor[stage.id] }}</td>
@@ -421,16 +419,24 @@ layout: default
 }
 
 /* ── Actor Status Badges ───────────────────────────────────────────────── */
+.ac-actor-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
 .ac-actor-status {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
-  margin-left: 0.4rem;
-  vertical-align: middle;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .ac-actor-status--active {
