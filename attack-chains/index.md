@@ -228,6 +228,84 @@ permalink: /attack-chains/
       </div>
     </a>
 
+    <a class="ac-index-card" href="{{ '/attack-chains/hypervisor-compromise/' | relative_url }}">
+      <span class="ac-card-badge ransomware">Hypervisor</span>
+      <div class="ac-card-title">Hypervisor Compromise Attack Chain</div>
+      <p class="ac-card-desc">
+        Initial Access → Mgmt Plane Takeover → Credential Theft → Persistence → Lateral Movement → Impact.
+        Covers BRICKSTORM/UNC5221, UNC3886, Scattered Spider, Play, and ALPHV — showing how actors
+        operate beneath the guest OS where EDR cannot see them.
+      </p>
+      <div class="ac-card-meta">
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          5 actors tracked
+        </span>
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          6 stages
+        </span>
+        <span class="ac-card-meta-item">VMware vSphere focus</span>
+        <span class="ac-card-cta">
+          View chain
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    <a class="ac-index-card" href="{{ '/attack-chains/identity-domination/' | relative_url }}">
+      <span class="ac-card-badge aitm">Identity</span>
+      <div class="ac-card-title">AD &amp; Identity Domination Attack Chain</div>
+      <p class="ac-card-desc">
+        Initial Access → Credential Access → Privilege Escalation → Lateral Movement → Persistence → Impact.
+        Covers APT29, Storm-0501, Storm-2372, Scattered Spider, and ransomware operators —
+        exploiting protocol-level invariants from Kerberos to Entra ID.
+      </p>
+      <div class="ac-card-meta">
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          5 actors tracked
+        </span>
+        <span class="ac-card-meta-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          6 stages
+        </span>
+        <span class="ac-card-meta-item">AD + Entra ID</span>
+        <span class="ac-card-cta">
+          View chain
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
   </div>
 
   <div class="mt-12 p-5 rounded-lg" style="background:var(--bg-card);border:1px solid var(--border);">
