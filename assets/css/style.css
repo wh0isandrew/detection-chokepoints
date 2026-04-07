@@ -1015,14 +1015,10 @@ pre .hljs { padding: 0 !important; }
 }
 .ac-matrix tbody td:last-child { border-right: none; }
 
-.ac-actor-col { width: 130px; min-width: 110px; }
+.ac-actor-col { width: 180px; min-width: 150px; }
 .ac-actor-name {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
   font-weight: 700;
   color: var(--text) !important;
-  white-space: nowrap;
 }
 
 /* Chokepoint footer row */

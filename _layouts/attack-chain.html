@@ -132,8 +132,8 @@ layout: default
           {% for actor in page.actors %}
           <tr>
             <td class="ac-actor-name">
-              <span>{{ actor.name }}</span>
-              {% if actor.status %}<span class="ac-actor-status ac-actor-status--{{ actor.status | downcase }}">{{ actor.status }}</span>{% endif %}
+              {{ actor.name }}
+              {% if actor.status %}<br><span class="ac-actor-status ac-actor-status--{{ actor.status | downcase }}">{{ actor.status }}</span>{% endif %}
             </td>
             {% for stage in page.stages %}
             <td>{{ actor[stage.id] }}</td>
@@ -419,24 +419,16 @@ layout: default
 }
 
 /* ── Actor Status Badges ───────────────────────────────────────────────── */
-.ac-actor-name {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-}
-
 .ac-actor-status {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 3px;
   line-height: 1;
-  flex-shrink: 0;
+  margin-top: 0.3rem;
 }
 
 .ac-actor-status--active {
@@ -456,6 +448,18 @@ layout: default
   background: rgba(248, 81, 73, 0.12);
   color: #f85149;
   border: 1px solid rgba(248, 81, 73, 0.25);
+}
+
+.ac-actor-status--espionage {
+  background: rgba(136, 132, 216, 0.15);
+  color: #a5a0e8;
+  border: 1px solid rgba(136, 132, 216, 0.3);
+}
+
+.ac-actor-status--legacy {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+  border: 1px solid rgba(139, 148, 158, 0.3);
 }
 
 /* ── CSS variable aliases for TTP filter components ──────────────────── */
