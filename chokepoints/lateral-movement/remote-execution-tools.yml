@@ -173,8 +173,8 @@ Chokepoints:
   SigmaRef: ''
 - Stage: Remote Process/Service Creation
   Input: Authenticated admin session established on target
-  Invariant: Tool invokes a Windows execution primitive on the remote host: service creation (SMB), WMI process spawn, scheduled
-    task creation, or WinRM command
+  Invariant: 'Tool invokes a Windows execution primitive on the remote host: service creation (SMB), WMI process spawn, scheduled
+    task creation, or WinRM command'
   Observable: 'Sysmon EID 1 showing services.exe or wmiprvse.exe spawning cmd.exe/powershell.exe. Windows Security
     EID 7045 (Service Installed) for psexec-style tools. EID 4688 with cross-logon session correlation.'
   WhyCantBypass: A command must run on the target via one of these four primitives. No other execution surface exists over
