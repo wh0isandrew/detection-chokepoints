@@ -16,7 +16,7 @@ DetectionPriority: CRITICAL
 ThreatPrevalence: HIGH
 DetectionDifficulty: MEDIUM
 Description: 'Adversaries plant web-accessible scripts (web shells) on compromised servers to maintain persistent command
-  execution via HTTP/HTTPS. Web shells are deployed in virtually every major web-facing compromise — appearing in 35% of Q4
+  execution via HTTP/HTTPS. Web shells are deployed in virtually every major web-facing compromise, appearing in 35% of Q4
   2024 IR incidents (Cisco Talos) and serving as the primary persistence mechanism in ProxyLogon, ProxyShell, MOVEit, Barracuda
   ESG, and Ivanti zero-day campaigns. Despite diversity in language (PHP/ASP.NET/JSP/Python), encoding (base64, XOR, gzinflate,
   multi-layer), and evasion technique (polyglot files, fileless IIS modules, steganography), the chokepoint is invariant:
@@ -141,7 +141,7 @@ Variations:
   Notes: 'Webshells deployed against Ivanti Connect Secure appliances via CVE-2023-46805 (auth bypass) and CVE-2024-21887
     (command injection). GLASSTOKEN was the initial variant; BUSHWALK, LIGHTWIRE, and CHAINLINE were deployed post-mitigation
     bypass. Over 1,700 appliances compromised. Demonstrates the shift from web application webshells to network appliance
-    webshells — same parent-child execution pattern, different host OS environment.
+    webshells. Same parent-child execution pattern, different host OS environment.
 
     '
   VariantId: glasstoken-bushwalk-ivanti
@@ -158,7 +158,7 @@ Variations:
   SourceURL: https://cloud.google.com/blog/topics/threat-intelligence/barracuda-esg-exploited-globally/
   Notes: 'Webshell-style implants deployed by UNC4841 (China-nexus) against Barracuda Email Security Gateway appliances via
     CVE-2023-2868 (remote command injection via TAR file). Exploited as zero-day from October 2022; disclosed May 2023. CISA
-    mandated full appliance replacement — patches were insufficient. Demonstrates webshells surviving factory reset via firmware-level
+    mandated full appliance replacement; patches were insufficient. Demonstrates webshells surviving factory reset via firmware-level
     persistence on physical appliances.
 
     '
@@ -184,7 +184,7 @@ Variations:
   VariantId: fileless-iis-native-modules
   Command:
     Invocation: "# Installed as native IIS module (C++ DLL):\nappcmd.exe install module /name:\"MyModule\" /image:\"C:\\path\\to\\malicious.dll\"\n# Or via web.config: <modules><add name=\"MyModule\" .../></modules>\n# No script file on disk — runs in-process with w3wp.exe"
-    Context: 'Documented by Microsoft (Dec 2022). Native C++ IIS modules run in-process with w3wp.exe — no child process for basic operations. Can intercept credentials from HTTP traffic.'
+    Context: 'Documented by Microsoft (Dec 2022). Native C++ IIS modules run in-process with w3wp.exe; no child process for basic operations. Can intercept credentials from HTTP traffic.'
     Artifacts:
     - 'Sysmon EID 7: Unusual DLL loaded by w3wp.exe'
     - 'IIS logs: appcmd.exe install module commands'
@@ -221,7 +221,7 @@ Variations:
   VariantId: server-side-template-injection-ssti-webshells
   Command:
     Invocation: "# Jinja2: {{config.__class__.__init__.__globals__['os'].popen('whoami').read()}}\n# Twig: {{_self.env.registerUndefinedFilterCallback(\"exec\")}}{{_self.env.getFilter(\"whoami\")}}\n# FreeMarker: <#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"whoami\")}"
-    Context: 'Exploits template engines to execute code without uploading a file. No persistent file on disk — the shell is the injection payload itself.'
+    Context: 'Exploits template engines to execute code without uploading a file. No persistent file on disk. The shell is the injection payload itself.'
     Artifacts:
     - 'Web logs: Template syntax in request parameters ({{ }}, <# >, etc.)'
     - 'Sysmon EID 1: Web server spawning cmd.exe/sh after template rendering'
@@ -233,26 +233,14 @@ Prerequisites:
 - Web server must execute the shell's scripting language (PHP, ASP.NET, JSP, etc.)
 - HTTP/HTTPS access to the deployed shell from attacker infrastructure
 - Server must have OS command execution capability (not hardened to deny shell spawning)
-AttackerControls:
-- Web shell language (PHP, ASP.NET, JSP, Python)
-- Obfuscation technique (encoding, encryption, polyglot)
-- Delivery method (exploit, upload, supply chain)
-- Shell architecture (one-liner, modular, encrypted C2)
-- Filename and location on disk
-AttackerCannotControl:
-- Web server process must spawn a child OS interpreter or load attacker-controlled code
-- Malicious code must be reachable by the web server (file on disk, loaded DLL, or injected input)
-- HTTP request triggers the shell execution
-- Child process inherits web server's user context
-- Process creation or DLL load event is logged with web server as parent
 Chokepoints:
 - Stage: Shell Deployment
   Input: Attacker has write access to web-accessible directory, module registry, or injectable input field
-  Invariant: Must deploy executable code reachable by the web server — a script file in the web root,
+  Invariant: Must deploy executable code reachable by the web server. Options are a script file in the web root,
     a native DLL loaded as an IIS module, or an injection payload processed by a template engine
   Observable: 'Script-based: Sysmon EID 11 showing w3wp.exe/httpd/nginx writing .php/.aspx/.jsp to web root.
     Module-based: Sysmon EID 7 showing unusual DLL loaded by w3wp.exe or appcmd.exe install module.
-    Injection-based: No file artifact — detected at the execution stage.'
+    Injection-based: No file artifact. Detected at the execution stage.'
   WhyCantBypass: The web server must be able to reach and execute the attacker's code. For file-based shells,
     the file must exist on disk. For IIS modules, the DLL must be loaded. For SSTI, the template engine must
     process the input. Each path produces a different artifact but all require server-side code execution.
@@ -267,7 +255,7 @@ Chokepoints:
   Observable: 'Sysmon EID 1 showing w3wp.exe / httpd / nginx spawning cmd.exe, powershell.exe, /bin/sh, /bin/bash, or
     python. This parent-child relationship is the invariant regardless of shell language or obfuscation.'
   WhyCantBypass: The web shell must execute OS commands to be useful. The OS requires a process to run those commands.
-    That process creation — with a web server parent — is always observable.
+    That process creation, with a web server parent, is always observable.
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
@@ -389,7 +377,7 @@ Detections:
     server-side scripting
   SigmaRule: sigma-rules/web-shells/hunt.yml
 - Level: Analyst
-  Description: Web server spawns shell interpreter with suspicious command AND web-accessible file recently created — direct
+  Description: Web server spawns shell interpreter with suspicious command AND web-accessible file recently created. Direct
     webshell execution signal
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
@@ -442,7 +430,7 @@ OsintSources:
 - Platform: Shodan
   Query: http.title:"WSO" OR http.title:"b374k" OR http.title:"c99" OR http.title:"FilesMan" OR http.title:"Antak Webshell"
   URL: https://www.shodan.io/search?query=http.title%3A%22WSO%22+OR+http.title%3A%22b374k%22+OR+http.title%3A%22c99%22
-  Notes: Finds internet-exposed web shells with default page titles intact — common in mass exploitation campaigns where attacker
+  Notes: Finds internet-exposed web shells with default page titles intact. Common in mass exploitation campaigns where attacker
     cadence outpaces cleanup. FilesMan and Antak are additional shells frequently left exposed. Also try http.html:"eval(base64_decode"
     to catch obfuscated PHP shells that render without a recognizable title.
 - Platform: URLScan
@@ -454,13 +442,13 @@ OsintSources:
 - Platform: VirusTotal Intelligence
   Query: tag:webshell positives:0 type:text
   URL: https://www.virustotal.com/gui/search/tag%3Awebshell%20positives%3A0%20type%3Atext
-  Notes: Requires VT Intelligence subscription. Finds webshell samples currently evading all commercial AV detection — the
-    most dangerous variants in active use. Consistent with ShellForge paper (arXiv 2601.22182) finding 93.9% evasion against
+  Notes: Requires VT Intelligence subscription. Finds webshell samples currently evading all commercial AV detection. These
+    are the most dangerous variants in active use. Consistent with ShellForge paper (arXiv 2601.22182) finding 93.9% evasion against
     commercial engines. Sort by submission date to prioritize the newest evasive variants.
 - Platform: Censys
   Query: 'services.http.response.body: "eval(base64_decode" and services.http.response.status_code: 200'
   URL: https://search.censys.io/search?resource=hosts&q=services.http.response.body%3A+%22eval(base64_decode%22
-  Notes: Finds web servers returning HTTP 200 responses with the eval(base64_decode PHP obfuscation pattern — a near-universal
+  Notes: Finds web servers returning HTTP 200 responses with the eval(base64_decode PHP obfuscation pattern. This is a near-universal
     indicator of a live obfuscated PHP shell. High precision; few legitimate pages contain this pattern. Requires Censys account.
 KnownBypasses:
 - Bypass: Multi-layer encoding (base64 + gzinflate + XOR + eval) bypasses keyword and signature scanning
@@ -488,7 +476,7 @@ KnownBypasses:
     attacker reconnaissance.
 
     '
-- Bypass: SSTI-based execution requires no uploaded file — exploits existing template processing
+- Bypass: SSTI-based execution requires no uploaded file; it exploits existing template processing
   Mitigation: Sanitize all user input before passing to template engines; disable dangerous template evaluation features;
     enforce context-aware output encoding
   Detection: 'WAF rules for SSTI payload patterns (${{, <%=, #{7*7}); web server access logs showing injection payloads in
@@ -496,8 +484,8 @@ KnownBypasses:
 - Bypass: Encrypted C2 channels (Godzilla, Behinder) bypass network-based detection of webshell traffic
   Mitigation: TLS inspection at network boundary; behavioral analysis of HTTP traffic patterns (high POST frequency to a single
     endpoint, fixed-interval requests, unusual or rotating User-Agent strings)
-  Detection: 'Network-layer detection is unreliable against encrypted shells. Process creation monitoring remains effective
-    — even Godzilla and Behinder must spawn child processes to execute OS commands. The invariant signal is the endpoint:
+  Detection: 'Network-layer detection is unreliable against encrypted shells. Process creation monitoring remains effective.
+    Even Godzilla and Behinder must spawn child processes to execute OS commands. The invariant signal is the endpoint:
     w3wp.exe or java spawning cmd.exe or /bin/sh, regardless of how the HTTP command request was encrypted.
 
     '
@@ -562,7 +550,7 @@ RawLogs:
 - Type: Sysmon
   EventId: 1
   Source: Microsoft-Windows-Sysmon/Operational
-  Description: PowerShell with encoded command spawned by w3wp.exe — encoded web shell execution
+  Description: PowerShell with encoded command spawned by w3wp.exe. Encoded web shell execution
   MatchedRules:
   - Hunt
   - Analyst

@@ -54,9 +54,9 @@ Variations:
   FirstSeen: '2016'
   Status: Legacy
   SourceURL: https://github.com/byt3bl33d3r/CrackMapExec
-  NotesShort: Archived December 2023; superseded by NetExec — CME-specific signatures now stale
+  NotesShort: Archived December 2023; superseded by NetExec. CME-specific signatures now stale
   Notes: Multi-protocol framework covering SMB, WMI, WinRM, MSSQL; original repository archived by maintainer on December
-    6, 2023 (read-only); superseded by NetExec — defenders should not expect CME-specific signatures to receive community
+    6, 2023 (read-only); superseded by NetExec. Defenders should not expect CME-specific signatures to receive community
     updates
   VariantId: crackmapexec
   Command:
@@ -156,25 +156,13 @@ Variations:
 Prerequisites:
 - Network access to target on at least one required protocol port (SMB 445, WMI/RPC 135, WinRM 5985/5986)
 - Remote execution surface enabled on target (Server service for SMB, WinRM service, WMI, or Task Scheduler)
-AttackerControls:
-- Tool used (Impacket, NetExec, CrackMapExec, Evil-WinRM)
-- Protocol choice (SMB, WMI, WinRM, DCOM)
-- Execution method (psexec, smbexec, wmiexec, atexec)
-- Lateral movement scope and targeting
-- Credential source (dumped, sprayed, pass-the-hash)
-AttackerCannotControl:
-- Must have valid admin credentials for the target
-- Must authenticate over the network to the target
-- Must create a remote process or service on the target
-- Authentication event is logged on the target (4624 Type 3)
-- Process/service creation is logged on the target
 Chokepoints:
 - Stage: Network Authentication
   Input: Attacker has valid admin credentials (password, hash, or ticket)
   Invariant: Valid admin credentials (local or domain) must be obtained before any remote execution attempt
-  Observable: 'Windows Security EID 4624 (Logon Type 3 — Network) with admin account. EID 4672 (Special Privilege
+  Observable: 'Windows Security EID 4624 (Logon Type 3, Network) with admin account. EID 4672 (Special Privilege
     Logon). Source IP is typically not a known admin workstation.'
-  WhyCantBypass: All remote execution tools require authenticated access — no valid credentials means authentication failure
+  WhyCantBypass: All remote execution tools require authenticated access. No valid credentials means authentication failure
     at every attempted protocol regardless of which tool is used
   LogSources:
   - Windows Security Event ID 4624 (Network Logon)
@@ -185,13 +173,13 @@ Chokepoints:
   SigmaRef: ''
 - Stage: Remote Process/Service Creation
   Input: Authenticated admin session established on target
-  Invariant: Tool invokes a Windows execution primitive on the remote host — service creation (SMB), WMI process spawn, scheduled
+  Invariant: Tool invokes a Windows execution primitive on the remote host: service creation (SMB), WMI process spawn, scheduled
     task creation, or WinRM command
   Observable: 'Sysmon EID 1 showing services.exe or wmiprvse.exe spawning cmd.exe/powershell.exe. Windows Security
     EID 7045 (Service Installed) for psexec-style tools. EID 4688 with cross-logon session correlation.'
-  WhyCantBypass: A command must run on the target via one of these four primitives — no other execution surface exists over
-    these authenticated protocols; tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986)
-    — no reachable port means no remote execution regardless of credential validity
+  WhyCantBypass: A command must run on the target via one of these four primitives. No other execution surface exists over
+    these authenticated protocols. Tools must first establish an authenticated session over a protocol port (445, 135, 5985/5986).
+    No reachable port means no remote execution regardless of credential validity
   LogSources:
   - Windows Security Event ID 4697 / System 7045 (Service Installed)
   - Windows Security Event ID 5145 (IPC$/svcctl share access)
@@ -199,7 +187,7 @@ Chokepoints:
   DetectionTier: Analyst
   SigmaRef: sigma-rules/remote-execution/analyst.yml
   BypassNote: LOTL tools (winrs.exe, wmic /node:, Enter-PSSession, Invoke-Command) produce identical telemetry to Impacket
-    but with signed Microsoft binaries — detection must be purely behavioral with no reliance on tool signatures
+    but with signed Microsoft binaries. Detection must be purely behavioral with no reliance on tool signatures
 - Stage: Lateral Spread
   Input: Remote command interpreter is running on one or more targets
   Invariant: The same credential and execution primitive sequence repeats across multiple hosts in a short window or follows
@@ -207,7 +195,7 @@ Chokepoints:
   Observable: 'Windows Security EID 4624 showing the same account authenticating to multiple hosts within minutes.
     Sysmon EID 3 showing same source IP connecting to multiple RFC1918 destinations on SMB/WinRM ports.'
   WhyCantBypass: Lateral movement by definition requires replication of the credential-plus-primitive pattern on each subsequent
-    host — the telemetry is identical on every hop
+    host. The telemetry is identical on every hop
   LogSources:
   - Windows Security Event ID 4624 (multiple target hosts, short window)
   - Sysmon Event ID 3 (same source IP, multiple RFC1918 destinations)
@@ -332,7 +320,7 @@ OsintSources:
 - Platform: Shodan
   Query: port:5985 product:"Microsoft HTTPAPI"
   URL: https://www.shodan.io/search?query=port%3A5985+product%3A%22Microsoft+HTTPAPI%22
-  Notes: Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface — run
+  Notes: Finds internet-exposed WinRM endpoints; narrow with 'org:' or 'net:' filters to audit your own attack surface. Run
     a second query on port 5986 for the HTTPS variant.
 - Platform: Shodan
   Query: ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba37e62256d5 port:443
@@ -351,7 +339,7 @@ KnownBypasses:
   Mitigation: Enable SMB signing and LDAP signing; disable NTLM where operationally feasible.
 - Bypass: Using legitimate admin tools (psexec.exe from Sysinternals)
   Mitigation: Enforce software allowlisting and monitor hash for known-good vs. impersonated versions.
-- Bypass: Living Off the Land — built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
+- Bypass: Living Off the Land using built-in Windows admin tools (winrs.exe, wmic /node:, Enter-PSSession)
   Mitigation: Restrict WinRM and WMI access via Windows Firewall; require PAW for remote administration.
 - Bypass: Kerberos-based lateral movement (Overpass-the-Hash, Pass-the-Ticket, Silver/Golden Tickets)
   Mitigation: Enable AES encryption for Kerberos; protect the krbtgt account; monitor for anomalous TGS requests.
@@ -386,13 +374,13 @@ RawLogs:
 
     IpPort: 49221
 
-    # LogonType=3 (Network) from internal IP — pre-execution authentication
+    # LogonType=3 (Network) from internal IP. Pre-execution authentication.
 
     '
 - Type: Windows Event Log
   EventId: 5145
   Source: Microsoft-Windows-Security-Auditing
-  Description: IPC$ share access — PsExec/Impacket opens IPC$/svcctl before service creation
+  Description: IPC$ share access. PsExec/Impacket opens IPC$/svcctl before service creation
   MatchedRules:
   - Analyst
   Sample: 'EventID: 5145 (A network share object was checked for access)
@@ -418,7 +406,7 @@ RawLogs:
 - Type: Windows Event Log
   EventId: 7045
   Source: Service Control Manager
-  Description: Random-named service installed from TEMP path — classic PsExec/Impacket signature
+  Description: Random-named service installed from TEMP path. Classic PsExec/Impacket signature
   MatchedRules:
   - Research
   - Hunt
@@ -446,7 +434,7 @@ RawLogs:
 - Type: Sysmon
   EventId: 1
   Source: Microsoft-Windows-Sysmon/Operational
-  Description: cmd.exe spawned from services.exe — service binary executing attacker commands
+  Description: cmd.exe spawned from services.exe. Service binary executing attacker commands
   MatchedRules:
   - Hunt
   - Analyst
@@ -466,7 +454,7 @@ RawLogs:
 
     # services.exe → cmd.exe is the canonical PsExec parent chain
 
-    # Output redirected to ADMIN$ share — PsExec output capture pattern
+    # Output redirected to ADMIN$ share. PsExec output capture pattern.
 
     '
 EmulationScript:

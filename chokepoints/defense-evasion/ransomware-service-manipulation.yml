@@ -48,7 +48,7 @@ Variations:
   NotesShort: FBI-disrupted December 2023; resumed operations, attacked Change Healthcare February 2024; exit-scammed affiliates
     March 2024 after $22M ransom
   Notes: Targets Sophos, Defender, VSS, SQL; cross-platform (Windows and Linux/ESXi); FBI disruption December 2023; exited
-    via scam March 2024 after $22M Change Healthcare ransom — leadership withheld affiliate commissions and shut down infrastructure
+    via scam March 2024 after $22M Change Healthcare ransom. Leadership withheld affiliate commissions and shut down infrastructure
   VariantId: alphv-blackcat
   Command:
     Invocation: "# Windows Rust binary with embedded service list:\nnet stop \"Sophos Agent\" /y\nnet stop \"vss\" /y\nnet stop \"MSSQL$SQLEXPRESS\" /y\nwmic service where \"name like '%backup%'\" call stopservice"
@@ -97,7 +97,7 @@ Variations:
   SourceURL: https://www.trendmicro.com/en_us/research/24/d/operation-cronos-aftermath.html
   NotesShort: Operation Cronos seized 28 servers and 1,000+ decryption keys; significantly disrupted
   Notes: Comprehensive kill list (50+ services); Group Policy abuse for domain-wide deployment; Operation Cronos (February
-    2024) seized 28 servers, source code, and 1000+ decryption keys — significantly reduced operational capacity
+    2024) seized 28 servers, source code, and 1000+ decryption keys. Significantly reduced operational capacity
   VariantId: lockbit-3-0
   Command:
     Invocation: "# Domain-wide via Group Policy scheduled task:\nschtasks /create /tn \"Windows Update\" /tr \"C:\\windows\\temp\\lockbit.exe\" /sc once /st 00:00 /ru SYSTEM\n# Kill list (50+ services):\nsc stop SophosFileScanner\nsc stop CrowdStrike\nsc stop SentinelAgent\nsc stop veeam\nsc stop MSSQLSERVER\nsc stop wbengine\nsc stop VSS\n# ... 40+ more services\nvssadmin delete shadows /all /quiet\nbcdedit /set {default} recoveryenabled No"
@@ -113,26 +113,14 @@ Variations:
 Prerequisites:
 - Admin or SYSTEM privileges already established on target system
 - Target security, backup, and database services are running (cannot stop what is not running)
-AttackerControls:
-- Specific services targeted (VSS, SQL, backup agents)
-- Method of stopping services (sc.exe, net.exe, WMI, PowerShell)
-- Order and timing of service stops
-- Encryption algorithm and ransom note content
-- Lateral movement method used to reach the target
-AttackerCannotControl:
-- Must run with SYSTEM privileges
-- Must enumerate running services to find targets
-- Must stop services before encryption begins
-- Service state change events are logged by the OS
-- Bulk service stops in short time window are anomalous
 Chokepoints:
 - Stage: Service Enumeration
   Input: Attacker has SYSTEM privileges on the target system
   Invariant: Actor enumerates running services to build the kill list via sc query, Get-Service, wmic, or equivalent
   Observable: 'Sysmon EID 1 showing sc.exe query, wmic service get, or Get-Service commands. Multiple service
     enumeration commands in rapid succession from the same process or user context.'
-  WhyCantBypass: Ransomware cannot stop what it cannot find — service enumeration precedes every observed kill sequence across
-    all documented families; sc.exe stop and delete require Admin or SYSTEM privileges, so no privilege escalation means immediate
+  WhyCantBypass: Ransomware cannot stop what it cannot find. Service enumeration precedes every observed kill sequence across
+    all documented families. sc.exe stop and delete require Admin or SYSTEM privileges, so no privilege escalation means immediate
     failure before enumeration can complete
   LogSources:
   - Sysmon Event ID 1 (sc.exe query / wmic service get / Get-Service)
@@ -142,10 +130,10 @@ Chokepoints:
 - Stage: Bulk Service Stop
   Input: Service kill list has been built via enumeration
   Invariant: Security, backup, and database services are stopped in rapid succession via sc.exe, net stop, taskkill, or WMI
-    StopService — multiple services within a short window
+    StopService. Multiple services within a short window
   Observable: 'Windows System EID 7036 showing multiple security/backup services transitioning to "stopped" state
     within 60 seconds. Sysmon EID 1 showing repeated sc stop or net stop commands.'
-  WhyCantBypass: Files locked by running services cannot be encrypted — stop must precede encryption in every observed ransomware
+  WhyCantBypass: Files locked by running services cannot be encrypted. Stop must precede encryption in every observed ransomware
     family without exception
   LogSources:
   - Windows System Event ID 7036 (Service State Change — stopped)
@@ -154,14 +142,14 @@ Chokepoints:
   DetectionTier: Hunt
   SigmaRef: sigma-rules/ransomware-service/hunt.yml
   BypassNote: Purpose-built EDR killers (BYOVD drivers, EDRKillShifter) bypass service-stop detection by killing the EDR process
-    at kernel level — monitor Sysmon EID 6 for suspicious driver loads immediately before bulk service termination
+    at kernel level. Monitor Sysmon EID 6 for suspicious driver loads immediately before bulk service termination
 - Stage: Service Deletion
   Input: Target services have been stopped
   Invariant: Stopped services are deleted or permanently disabled to prevent automatic restart during the encryption phase
   Observable: 'Sysmon EID 1 showing sc.exe delete or sc.exe config start= disabled commands targeting security
     and backup services. Registry changes under HKLM\SYSTEM\CurrentControlSet\Services\ confirming service deletion.'
-  WhyCantBypass: Without deletion, Windows service recovery policies restart stopped services and interfere with encryption
-    — deletion is confirmed across all major documented families
+  WhyCantBypass: Without deletion, Windows service recovery policies restart stopped services and interfere with encryption.
+    Deletion is confirmed across all major documented families
   LogSources:
   - Sysmon Event ID 1 (sc.exe delete / sc.exe config start= disabled)
   - Sysmon Event ID 12/13 (Registry key deletion under Services hive)

