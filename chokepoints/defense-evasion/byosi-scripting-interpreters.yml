@@ -19,12 +19,17 @@ DetectionPriority: HIGH
 ThreatPrevalence: EMERGING
 DetectionDifficulty: HIGH
 Description: >
-  A vendor-signed interpreter binary (Python, PHP, Node.js, Ruby, Perl, AutoHotKey, etc.)
-  runs attacker-controlled scripts. EDRs whitelist the binary because it is legitimately
-  signed. The malicious logic lives in plain-text script files most EDR engines do not scan.
-  Three steps are always required: write or download a non-default interpreter to disk,
-  execute it as a new process, have it load attacker-controlled script content. Each step
-  produces telemetry that survives tool rotation across all 13+ supported interpreter languages.
+  Adversaries bring legitimate, vendor-signed scripting interpreters (Python, PHP, Node.js,
+  Ruby, Perl, AutoHotKey, etc.) onto a target system and execute malicious scripts through
+  them, bypassing EDR solutions that focus on binary analysis and API hooking. Because
+  every interpreter binary is validly signed by its vendor, EDRs whitelist or deprioritize
+  the process. The malicious logic lives in plain-text script files that most EDR engines
+  do not scan. The chokepoint is invariant: regardless of which interpreter is chosen,
+  the attacker must (1) write or download a non-default interpreter binary to disk,
+  (2) execute that interpreter as a new process, and (3) have the interpreter load and
+  run attacker-controlled script content that performs the actual malicious action (C2
+  callback, credential theft, lateral movement). Each of these three stages produces
+  telemetry that survives tool rotation across all 13+ supported interpreter languages.
 LastUpdated: '2026-03-29'
 Author: '@iimp0ster'
 
@@ -109,7 +114,7 @@ Variations:
     - 'Sysmon EID 1: Interpreter running from non-standard path'
     - 'Sysmon EID 3: Interpreter making outbound C2 connection'
   ChokepointMapping: 'Interpreter downloaded to TEMP → launched from non-standard path → script executes → C2 callback'
-- Name: 'IronNetInjector (Turla APT: IronPython BYOI)'
+- Name: IronNetInjector (Turla APT — IronPython BYOI)
   FirstSeen: 2021-Q1
   Status: Active
   SourceURL: https://unit42.paloaltonetworks.com/ironnetinjector/
@@ -360,45 +365,45 @@ Detections:
   SigmaRule: sigma-rules/byosi/analyst.yml
 
 Intel:
-- Name: 'MITRE ATT&CK: T1059.006: Command and Scripting Interpreter: Python'
+- Name: 'MITRE ATT&CK — T1059.006: Command and Scripting Interpreter: Python'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1059/006/
   Description: >
     Primary technique definition for Python interpreter abuse. Documents real-world
     procedure examples including Turla IronNetInjector and ESXi-targeted Python scripts.
-- Name: 'MITRE ATT&CK: T1059.007: Command and Scripting Interpreter: JavaScript'
+- Name: 'MITRE ATT&CK — T1059.007: Command and Scripting Interpreter: JavaScript'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1059/007/
   Description: >
     Covers Node.js and JavaScript runtime abuse. References JScript, Node.js, and
     browser-based JavaScript execution for malicious purposes.
-- Name: 'BYOSI: GitHub (oldkingcone)'
+- Name: BYOSI — GitHub (oldkingcone)
   Tier: primary
   URL: https://github.com/oldkingcone/BYOSI
   Description: >
     Original BYOSI proof-of-concept demonstrating PHP interpreter delivery and EDR
     evasion. Essential reference for understanding the four-line PowerShell delivery
     mechanism and EDR blind spot.
-- Name: 'PolyDrop: GitHub (MalwareSupportGroup)'
+- Name: PolyDrop — GitHub (MalwareSupportGroup)
   Tier: primary
   URL: https://github.com/MalwareSupportGroup/PolyDrop
   Description: >
     Multi-language BYOSI toolkit. Reference for understanding the breadth of interpreter
     options (13 languages) and cross-platform deployment automation.
-- Name: 'Black Hills InfoSec: Red Teamer''s Cookbook: BYOI'
+- Name: 'Black Hills InfoSec — Red Teamer''s Cookbook: BYOI'
   Tier: supporting
   URL: https://www.blackhillsinfosec.com/red-teamers-cookbook-byoi-bring-your-own-interpreter/
   Description: >
     Foundational BYOI tradecraft documentation. Explains .NET embedding of third-party
     interpreters for in-memory execution. Essential context for understanding the
     evolution from PowerShell to BYOI payloads.
-- Name: 'Microsoft: Threat Actors Misuse Node.js'
+- Name: Microsoft — Threat Actors Misuse Node.js
   Tier: supporting
   URL: https://www.microsoft.com/en-us/security/blog/2025/04/15/threat-actors-misuse-node-js-to-deliver-malware-and-other-malicious-payloads/
   Description: >
     Microsoft's analysis of Node.js abuse in ClickFix delivery chains and inline
     JavaScript execution for C2. Documents NodeLoader privilege escalation technique.
-- Name: 'Unit 42: IronNetInjector (Turla BYOI)'
+- Name: Unit 42 — IronNetInjector (Turla BYOI)
   Tier: supporting
   URL: https://unit42.paloaltonetworks.com/ironnetinjector/
   Description: >
