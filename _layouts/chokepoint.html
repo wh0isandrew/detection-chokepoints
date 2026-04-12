@@ -1235,18 +1235,18 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
         {%- comment -%} Stage 1 only gets EarlyDetections (ETW/IOK) — no sigma rules here {%- endcomment -%}
 
-        {%- comment -%} Stage 2 (Hunt tier) gets hunt AND analyst detections {%- endcomment -%}
-        {% if forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "hunt" %}
+        {%- comment -%} Hunt tier stage: show hunt and analyst detections {%- endcomment -%}
+        {% if tier_lower == "hunt" and det_lower == "hunt" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_hunt" %}
         {% assign badge_class = "det-badge-hunt" %}
-        {% elsif forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "analyst" %}
+        {% elsif tier_lower == "hunt" and det_lower == "analyst" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_analyst" %}
         {% assign badge_class = "det-badge-analyst" %}
 
-        {%- comment -%} Stage 3 (Analyst tier) gets research (baseline) {%- endcomment -%}
-        {% elsif forloop.parentloop.index == 3 and tier_lower == "analyst" and det_lower == "research" %}
+        {%- comment -%} Analyst tier stage: show research (baseline) detection {%- endcomment -%}
+        {% elsif tier_lower == "analyst" and det_lower == "research" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_research" %}
         {% assign badge_class = "det-badge-research" %}
@@ -1554,7 +1554,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
           </div>
-          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
+          {% assign emu_lang_raw = emu.Language | downcase | default: "plaintext" %}
+          {% assign emu_lang = "language-" | append: emu_lang_raw %}
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
         </div>
       </div>
