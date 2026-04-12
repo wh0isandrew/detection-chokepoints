@@ -12,11 +12,10 @@ Techniques:
 DetectionPriority: CRITICAL
 ThreatPrevalence: HIGH
 DetectionDifficulty: LOW
-Description: 'Before encrypting files, ransomware operators stop and delete security tools, backup services, and database
-  engines to maximize impact and prevent recovery. This service manipulation phase is the last detectable warning before encryption
-  begins. The chokepoint is immutable: admin/SYSTEM privileges, service enumeration, and service stop/delete capability are
-  always required regardless of which ransomware family is executing. This pattern has remained consistent across all major
-  ransomware families from 2021 to present, with kill lists expanding but the core behavior unchanged.
+Description: 'Before encrypting files, ransomware stops and deletes security tools, backup services, and database engines.
+  This is the last detectable warning before encryption begins. Admin/SYSTEM privileges, service enumeration, and service
+  stop/delete capability are always required. Kill lists expand. The core behavior does not. Consistent across all major
+  ransomware families from 2021 to present.
 
   '
 LastUpdated: '2026-03-07'
@@ -84,7 +83,7 @@ Variations:
     June 2024
   VariantId: qilin
   Command:
-    Invocation: "# Rust binary — service manipulation via Windows API, not sc.exe:\nqilin.exe --kill-services --paths \\\\DC\\SYSVOL\\domain\\scripts\\\n# ESXi variant:\nesxcli vm process list\nesxcli vm process kill --type=force --world-id=<id>"
+    Invocation: "# Rust binary (service manipulation via Windows API, not sc.exe):\nqilin.exe --kill-services --paths \\\\DC\\SYSVOL\\domain\\scripts\\\n# ESXi variant:\nesxcli vm process list\nesxcli vm process kill --type=force --world-id=<id>"
     Context: 'Rewritten in Rust (2022). Uses Windows API directly for service manipulation, reducing sc.exe command-line artifacts. ESXi variant kills VM processes before encrypting VMDK files.'
     Artifacts:
     - 'Windows System EID 7036: EDR/backup services stopped without sc.exe CLI'
@@ -234,11 +233,11 @@ Intel:
   Tier: primary
   URL: https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf
   Description: Comprehensive analysis of service kill lists across major ransomware families
-- Name: 'MITRE ATT&CK — T1562.001 Impair Defenses: Disable or Modify Tools'
+- Name: 'MITRE ATT&CK: T1562.001 Impair Defenses: Disable or Modify Tools'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1562/001/
   Description: Technique definition, procedure examples, and detection guidance for disabling or modifying security tools
-- Name: MITRE ATT&CK — T1489 Service Stop
+- Name: 'MITRE ATT&CK: T1489 Service Stop'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1489/
   Description: Technique definition, procedure examples, and detection guidance for stopping services to impair system recovery
