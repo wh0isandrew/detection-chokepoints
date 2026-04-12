@@ -1316,7 +1316,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span><strong>Correlation required:</strong> This rule covers one stage only. See the description for SIEM-side join guidance.</span>
             </div>
             {% endif %}
-            <div class="sigma-block">
+            {% assign sigma_tier = sigma_key | remove: "_sigma_" %}
+            <div class="sigma-block sigma-block--{{ sigma_tier | default: 'research' }}">
               <div class="sigma-header">
                 <span class="sigma-label">Sigma Rule &mdash; {{ det.Level }} Level</span>
                 <div class="sigma-actions">
@@ -1370,7 +1371,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span class="warn-icon">&#9888;</span>
               <span><strong>SIEM correlation required:</strong> Join this event's ProcessGuid with hunt.yml (Sysmon EID 1) where ParentImage is a browser/explorer/wt.exe and time delta &lt; 300 seconds.</span>
             </div>
-            <div class="sigma-block">
+            <div class="sigma-block sigma-block--hunt">
               <div class="sigma-header">
                 <span class="sigma-label">Sigma Rule &mdash; Hunt Level (Network)</span>
                 <div class="sigma-actions">
@@ -1475,7 +1476,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
         {% endif %}
         {% endif %}
-        <div class="sigma-block">
+        <div class="sigma-block sigma-block--{{ level_lower | default: 'research' }}">
           <div class="sigma-header">
             <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
             <div class="sigma-actions">
