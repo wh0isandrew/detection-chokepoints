@@ -896,6 +896,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
     <p class="detail-description text-[1.05rem] leading-relaxed max-w-[720px] mb-3">{{ cp.Description }}</p>
 
+    {% if cp.TheConstant %}
+    <aside class="cp-invariant" aria-label="The invariant">
+      <div class="cp-invariant-label">THE CONSTANT</div>
+      <p>{{ cp.TheConstant }}</p>
+    </aside>
+    {% endif %}
+
     <p class="detail-byline">
       By {{ cp.Author }} &middot; Updated {{ cp.LastUpdated }}
       &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path }}"
@@ -941,7 +948,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% endif %}
     </div>
     {% else %}
-    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy, regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
     {% endif %}
 
     <div class="chokepoints-list">
@@ -1059,7 +1066,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       Variations
       <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
     </h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change.</p>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint. The list grows; the chokepoint doesn't change.</p>
 
     <div class="variations-list">
       {% for v in cp.Variations %}
@@ -1086,7 +1093,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {{ v.Notes | default: v.NotesShort }}
 
           {% if v.Lure %}
-          <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
+          <div class="variant-section-label variant-section-label-lure">Lure: what the user sees</div>
           {% if v.LurePreview %}
           <div class="variant-lure-preview">
             <span class="variant-lure-preview-label">Simulated lure</span>
@@ -1200,9 +1207,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             <div class="sigma-block">
               <div class="sigma-header">
                 {% if ed.IokRule %}
-                <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
+                <span class="sigma-label">IOK Rule: {{ ed.Layer }}</span>
                 {% else %}
-                <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
+                <span class="sigma-label">Sigma Rule: {{ ed.Layer }}</span>
                 {% endif %}
                 <div class="sigma-actions">
                   {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1307,7 +1314,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             {% endif %}
             <div class="sigma-block">
               <div class="sigma-header">
-                <span class="sigma-label">Sigma Rule &mdash; {{ det.Level }} Level</span>
+                <span class="sigma-label">Sigma Rule: {{ det.Level }} Level</span>
                 <div class="sigma-actions">
                   {% if det.SigmaRule %}
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ det.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
@@ -1361,7 +1368,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             </div>
             <div class="sigma-block">
               <div class="sigma-header">
-                <span class="sigma-label">Sigma Rule &mdash; Hunt Level (Network)</span>
+                <span class="sigma-label">Sigma Rule: Hunt Level (Network)</span>
                 <div class="sigma-actions">
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt-network.yml" target="_blank" rel="noopener">GitHub &#8594;</a>
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/sigma-rules/clickfix/hunt-network.yml" download>Download</a>
@@ -1397,7 +1404,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% if forloop.index > 1 %}<hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">{% endif %}
       <div class="det-meta-row">
         <div class="det-meta-card">
-          <div class="det-meta-label">Goal — {{ ed.Layer }}</div>
+          <div class="det-meta-label">Goal: {{ ed.Layer }}</div>
           <div class="det-meta-value">{{ ed.Description }}</div>
         </div>
         <div class="det-meta-card">
@@ -1410,9 +1417,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <div class="sigma-block">
         <div class="sigma-header">
           {% if ed.IokRule %}
-          <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
+          <span class="sigma-label">IOK Rule: {{ ed.Layer }}</span>
           {% else %}
-          <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
+          <span class="sigma-label">Sigma Rule: {{ ed.Layer }}</span>
           {% endif %}
           <div class="sigma-actions">
             {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1466,7 +1473,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         {% endif %}
         <div class="sigma-block">
           <div class="sigma-header">
-            <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
+            <span class="sigma-label">Sigma Rule: {{ level }} Level</span>
             <div class="sigma-actions">
               {% if detection.SigmaRule %}
               <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
