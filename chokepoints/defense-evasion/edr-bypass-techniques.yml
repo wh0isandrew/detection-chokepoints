@@ -15,13 +15,12 @@ Techniques:
 DetectionPriority: CRITICAL
 ThreatPrevalence: HIGH
 DetectionDifficulty: HIGH
-Description: 'Adversaries impair or neutralize EDR/AV products before executing their primary payload to prevent detection
-  and response. Techniques span from user-mode API unhooking (removing hooks EDRs inject into ntdll.dll) through kernel-level
-  driver exploitation (BYOVD, Bring Your Own Vulnerable Driver) to direct process termination of security tools. Despite
-  the diversity of techniques, the chokepoint is invariant: admin/SYSTEM privileges are always required, and the bypass mechanism
-  always produces a kernel-observable artifact. This is a driver load event, a VirtualProtect call against protected system memory,
-  or direct termination of a security process. As of 2024, approximately 48% of high-severity ransomware attacks incorporate
-  purpose-built EDR disablement (Cisco Talos). BYOVD has become a de facto phase in major ransomware deployment chains.
+Description: 'Admin or SYSTEM rights are required before any EDR bypass works. That is the chokepoint. The technique
+  varies — API unhooking removes the hooks EDRs inject into ntdll.dll, BYOVD exploits a vulnerable kernel driver to operate
+  below the sensor, direct termination kills the security process outright — but every path requires the same elevated starting
+  position and leaves a kernel-observable artifact: a driver load event, a VirtualProtect call against protected memory, or
+  a security process termination. As of 2024, approximately 48% of high-severity ransomware attacks incorporate purpose-built
+  EDR disablement (Cisco Talos). BYOVD has become a de facto phase in major ransomware deployment chains.
 
   '
 LastUpdated: '2026-03-12'

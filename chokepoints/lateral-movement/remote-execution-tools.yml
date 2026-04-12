@@ -20,10 +20,10 @@ Techniques:
 DetectionPriority: HIGH
 ThreatPrevalence: HIGH
 DetectionDifficulty: MEDIUM
-Description: 'Offensive security tools (Impacket, NetExec, CrackMapExec, Evil-WinRM) used for remote code execution across
-  Windows environments. These frameworks wrap legitimate Windows protocols (SMB, WMI, WinRM, RPC) to execute code on remote
-  systems using valid admin credentials. Despite tool diversity, the chokepoint is invariant: valid admin credentials, network
-  access to target ports, and a remote execution primitive (service creation, WMI process, scheduled task) are always required.
+Description: 'Valid admin credentials plus a reachable port plus a remote execution primitive — that is the invariant. The
+  tool does not matter. Impacket, NetExec, CrackMapExec, and Evil-WinRM all wrap the same Windows protocols (SMB, WMI, WinRM,
+  RPC) to create a service, spawn a WMI process, or register a scheduled task on the target. Swap the framework and the
+  authentication event, lateral movement event, and process creation event stay constant.
 
   '
 LastUpdated: '2026-03-07'
