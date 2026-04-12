@@ -1554,7 +1554,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
           </div>
-          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
+          {% assign emu_lang_raw = emu.Language | downcase | default: "plaintext" %}
+          {% assign emu_lang = "language-" | append: emu_lang_raw %}
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
         </div>
       </div>
