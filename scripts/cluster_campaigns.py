@@ -27,6 +27,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
+from pipeline_utils import confidence_label
+
 CACHE_DIR            = Path(__file__).parent.parent / "cache"
 INPUT_PATH           = CACHE_DIR / "triaged_records.json"
 OUTPUT_PATH          = CACHE_DIR / "campaigns.json"
@@ -50,16 +52,6 @@ CONF_HIGH_THRESHOLD = 70
 # ---------------------------------------------------------------------------
 # Confidence helpers
 # ---------------------------------------------------------------------------
-
-def confidence_label(score: int) -> str:
-    if score >= 90:
-        return "confirmed"
-    if score >= 70:
-        return "high"
-    if score >= 40:
-        return "medium"
-    return "low"
-
 
 def campaign_id(signal_type: str, signal_value: str) -> str:
     return hashlib.sha256(f"{signal_type}:{signal_value}".encode()).hexdigest()[:16]

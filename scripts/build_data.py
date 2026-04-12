@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
+from pipeline_utils import confidence_label
+
 CACHE_DIR  = Path(__file__).parent.parent / "cache"
 DATA_DIR   = Path(__file__).parent.parent / "_data"
 
@@ -34,16 +36,6 @@ CONFIDENCE_THRESHOLD = 40  # minimum confidence to be published
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def confidence_label(score: int) -> str:
-    if score >= 90:
-        return "confirmed"
-    if score >= 70:
-        return "high"
-    if score >= 40:
-        return "medium"
-    return "low"
-
 
 # ---------------------------------------------------------------------------
 # Section builders

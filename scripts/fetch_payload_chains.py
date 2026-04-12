@@ -28,6 +28,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
+from pipeline_utils import confidence_label, rescore_record
+
 CACHE_DIR   = Path(__file__).parent.parent / "cache"
 IOC_PATH    = CACHE_DIR / "ioc_records.json"
 INFRA_PATH  = CACHE_DIR / "infra_records.json"
@@ -84,16 +86,6 @@ def classify_family(family: str) -> str:
     if key in _LOADER:
         return "loader"
     return "unknown"
-
-
-def confidence_label(score: int) -> str:
-    if score >= 90:
-        return "confirmed"
-    if score >= 70:
-        return "high"
-    if score >= 40:
-        return "medium"
-    return "low"
 
 
 def extract_domain(url: str | None) -> str | None:
@@ -247,49 +239,6 @@ def reconstruct_chain(result: dict) -> list[dict]:
         prev_domain = domain
 
     return chain
-
-
-# ---------------------------------------------------------------------------
-# Re-scoring after enrichment
-# ---------------------------------------------------------------------------
-
-def rescore_record(record: dict) -> dict:
-    """Re-compute confidence score using all available signals on the record."""
-    has_sha256  = bool(record.get("payload_sha256"))
-    has_family  = bool(record.get("payload_family"))
-    has_domain  = bool(record.get("domain"))
-    chain_obs   = bool(record.get("chain_observed"))
-    fav_present = record.get("favicon_hash") is not None
-
-    # Payload confirmation (0–40)
-    payload_pts = (30 if has_sha256 else 0) + (10 if has_family else 0)
-
-    # Delivery confirmation (0–40): chain gives full 40 if observed, otherwise
-    # use the domain-present heuristic from the original source
-    if chain_obs:
-        delivery_pts = 40
-    else:
-        # Preserve original delivery points: confirmed feeds give 40, hunts give 30
-        source = record.get("source", "")
-        if source in ("malwarebazaar", "threatfox", "urlhaus"):
-            delivery_pts = 40 if has_domain else 0
-        else:
-            delivery_pts = 30 if has_domain else 0
-
-    # Infrastructure signal (0–20)
-    infra_pts = 0
-    if fav_present:
-        infra_pts += 10
-    if record.get("urlscan_uuid"):
-        infra_pts += 5
-    if record.get("vt_detected"):
-        infra_pts += 5
-    infra_pts = min(infra_pts, 20)
-
-    score = min(payload_pts + delivery_pts + infra_pts, 100)
-    record["confidence"] = score
-    record["confidence_label"] = confidence_label(score)
-    return record
 
 
 # ---------------------------------------------------------------------------
