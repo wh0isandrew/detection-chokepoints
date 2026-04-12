@@ -675,6 +675,17 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
   margin-top: 1rem;
 }
 
+/* Tier accent left borders — UX-02 */
+.sigma-block--research { border-left: 4px solid var(--link); }
+.sigma-block--hunt     { border-left: 4px solid var(--high); }
+.sigma-block--analyst  { border-left: 4px solid var(--medium); }
+
+/* Copy button confirmed state — UX-01 */
+.sigma-btn.copied {
+  color: var(--medium);
+  border-color: rgba(63,185,80,.4);
+}
+
 /* .sigma-header replaces .sigma-rule-header */
 .sigma-header {
   display: flex;
@@ -896,13 +907,6 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
     <p class="detail-description text-[1.05rem] leading-relaxed max-w-[720px] mb-3">{{ cp.Description }}</p>
 
-    {% if cp.TheConstant %}
-    <aside class="cp-invariant" aria-label="The invariant">
-      <div class="cp-invariant-label">THE CONSTANT</div>
-      <p>{{ cp.TheConstant }}</p>
-    </aside>
-    {% endif %}
-
     <p class="detail-byline">
       By {{ cp.Author }} &middot; Updated {{ cp.LastUpdated }}
       &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path }}"
@@ -948,7 +952,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% endif %}
     </div>
     {% else %}
-    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy, regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
     {% endif %}
 
     <div class="chokepoints-list">
@@ -1066,7 +1070,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       Variations
       <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
     </h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint. The list grows; the chokepoint doesn't change.</p>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change.</p>
 
     <div class="variations-list">
       {% for v in cp.Variations %}
@@ -1093,7 +1097,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {{ v.Notes | default: v.NotesShort }}
 
           {% if v.Lure %}
-          <div class="variant-section-label variant-section-label-lure">Lure: what the user sees</div>
+          <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
           {% if v.LurePreview %}
           <div class="variant-lure-preview">
             <span class="variant-lure-preview-label">Simulated lure</span>
@@ -1207,9 +1211,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             <div class="sigma-block">
               <div class="sigma-header">
                 {% if ed.IokRule %}
-                <span class="sigma-label">IOK Rule: {{ ed.Layer }}</span>
+                <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
                 {% else %}
-                <span class="sigma-label">Sigma Rule: {{ ed.Layer }}</span>
+                <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
                 {% endif %}
                 <div class="sigma-actions">
                   {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1242,18 +1246,18 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
         {%- comment -%} Stage 1 only gets EarlyDetections (ETW/IOK) — no sigma rules here {%- endcomment -%}
 
-        {%- comment -%} Hunt tier stage: show hunt and analyst detections {%- endcomment -%}
-        {% if tier_lower == "hunt" and det_lower == "hunt" %}
+        {%- comment -%} Stage 2 (Hunt tier) gets hunt AND analyst detections {%- endcomment -%}
+        {% if forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "hunt" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_hunt" %}
         {% assign badge_class = "det-badge-hunt" %}
-        {% elsif tier_lower == "hunt" and det_lower == "analyst" %}
+        {% elsif forloop.parentloop.index == 2 and tier_lower == "hunt" and det_lower == "analyst" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_analyst" %}
         {% assign badge_class = "det-badge-analyst" %}
 
-        {%- comment -%} Analyst tier stage: show research (baseline) detection {%- endcomment -%}
-        {% elsif tier_lower == "analyst" and det_lower == "research" %}
+        {%- comment -%} Stage 3 (Analyst tier) gets research (baseline) {%- endcomment -%}
+        {% elsif forloop.parentloop.index == 3 and tier_lower == "analyst" and det_lower == "research" %}
         {% assign show_rule = true %}
         {% assign sigma_key = "_sigma_research" %}
         {% assign badge_class = "det-badge-research" %}
@@ -1312,9 +1316,10 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span><strong>Correlation required:</strong> This rule covers one stage only. See the description for SIEM-side join guidance.</span>
             </div>
             {% endif %}
-            <div class="sigma-block">
+            {% assign sigma_tier = sigma_key | remove: "_sigma_" %}
+            <div class="sigma-block sigma-block--{{ sigma_tier | default: 'research' }}">
               <div class="sigma-header">
-                <span class="sigma-label">Sigma Rule: {{ det.Level }} Level</span>
+                <span class="sigma-label">Sigma Rule &mdash; {{ det.Level }} Level</span>
                 <div class="sigma-actions">
                   {% if det.SigmaRule %}
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ det.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
@@ -1366,9 +1371,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span class="warn-icon">&#9888;</span>
               <span><strong>SIEM correlation required:</strong> Join this event's ProcessGuid with hunt.yml (Sysmon EID 1) where ParentImage is a browser/explorer/wt.exe and time delta &lt; 300 seconds.</span>
             </div>
-            <div class="sigma-block">
+            <div class="sigma-block sigma-block--hunt">
               <div class="sigma-header">
-                <span class="sigma-label">Sigma Rule: Hunt Level (Network)</span>
+                <span class="sigma-label">Sigma Rule &mdash; Hunt Level (Network)</span>
                 <div class="sigma-actions">
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt-network.yml" target="_blank" rel="noopener">GitHub &#8594;</a>
                   <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/sigma-rules/clickfix/hunt-network.yml" download>Download</a>
@@ -1404,7 +1409,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% if forloop.index > 1 %}<hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">{% endif %}
       <div class="det-meta-row">
         <div class="det-meta-card">
-          <div class="det-meta-label">Goal: {{ ed.Layer }}</div>
+          <div class="det-meta-label">Goal — {{ ed.Layer }}</div>
           <div class="det-meta-value">{{ ed.Description }}</div>
         </div>
         <div class="det-meta-card">
@@ -1417,9 +1422,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <div class="sigma-block">
         <div class="sigma-header">
           {% if ed.IokRule %}
-          <span class="sigma-label">IOK Rule: {{ ed.Layer }}</span>
+          <span class="sigma-label">IOK Rule &mdash; {{ ed.Layer }}</span>
           {% else %}
-          <span class="sigma-label">Sigma Rule: {{ ed.Layer }}</span>
+          <span class="sigma-label">Sigma Rule &mdash; {{ ed.Layer }}</span>
           {% endif %}
           <div class="sigma-actions">
             {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1471,9 +1476,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
         {% endif %}
         {% endif %}
-        <div class="sigma-block">
+        <div class="sigma-block sigma-block--{{ level_lower | default: 'research' }}">
           <div class="sigma-header">
-            <span class="sigma-label">Sigma Rule: {{ level }} Level</span>
+            <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
             <div class="sigma-actions">
               {% if detection.SigmaRule %}
               <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
@@ -1561,8 +1566,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
           </div>
-          {% assign emu_lang_raw = emu.Language | downcase | default: "plaintext" %}
-          {% assign emu_lang = "language-" | append: emu_lang_raw %}
+          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
         </div>
       </div>
@@ -1647,7 +1651,11 @@ function copyCode(btn) {
   navigator.clipboard.writeText(code.innerText || code.textContent).then(() => {
     const orig = btn.textContent;
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = orig, 1800);
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1800);
   });
 }
 

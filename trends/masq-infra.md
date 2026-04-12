@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Software Impersonation Infrastructure
-description: "Confirmed payload delivery infrastructure: the domains that served malicious binaries, the redirect chains that led users there, and the operator patterns that link campaigns."
+description: "Confirmed payload delivery infrastructure — the domains that served malicious binaries, the redirect chains that led users there, and the operator patterns that link campaigns."
 permalink: /trends/masq-infra/
 ---
 
@@ -254,7 +254,7 @@ Updated: {{ site.data.masq_infra.meta.last_updated | default: "not yet run" }}
 <strong>Methodology:</strong> IOC-first pipeline.
 Records sourced from confirmed malicious payload reports (MalwareBazaar, ThreatFox, URLhaus)
 and infrastructure hunts (Shodan, URLScan). Every record has a confirmed payload hash.
-Delivery chains shown only when URLScan captured the redirect sequence. Chain coverage is
+Delivery chains shown only when URLScan captured the redirect sequence — chain coverage is
 partial and expected to be incomplete.
 </div>
 
@@ -289,7 +289,7 @@ Pipeline has not been run yet. Use the Streamlit app to collect data and export 
 <h2>Delivery Chains</h2>
 <p>Redirect sequences captured by URLScan at the moment of scanning. A chain shows the full path
 from initial URL through any redirectors to the lure page and payload download. Coverage is
-best-effort, only available when the URL was submitted to URLScan while the infrastructure
+best-effort — only available when the URL was submitted to URLScan while the infrastructure
 was active.</p>
 
 {% assign chain_records = site.data.masq_infra.records | where: "chain_observed", true %}
@@ -365,6 +365,7 @@ and Samples. Absence of chain data does not affect payload confirmation.
 
 {% if ps.top_families.size > 0 %}
 <h3>Top Families</h3>
+<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -382,11 +383,13 @@ and Samples. Absence of chain data does not affect payload confirmation.
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endif %}
 
 {% if ps.lure_payload_matrix.size > 0 %}
 <h3>Lure Type → Payload Class</h3>
 <p>Which impersonated brands deliver which payload types.</p>
+<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -403,6 +406,7 @@ and Samples. Absence of chain data does not affect payload confirmation.
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endif %}
 {% else %}
 <div class="cg-chain-notice">
@@ -414,8 +418,8 @@ No payload data yet. Run the collection pipeline.
 <section id="campaigns">
 <h2>Campaigns</h2>
 <div class="cg-methodology">
-Only campaigns with a confirmed hard signal (shared favicon hash, shared IP address, shared
-payload hash, or matching certificate pattern) and confidence score ≥ 70 are shown. Clusters
+Only campaigns with a confirmed hard signal — shared favicon hash, shared IP address, shared
+payload hash, or matching certificate pattern — and confidence score ≥ 70 are shown. Clusters
 below this threshold are excluded. Hard signal requirement ensures every campaign has at least
 one infrastructure-level link between domains, not just temporal or hosting coincidence.
 </div>
@@ -472,6 +476,7 @@ infrastructure signals.
 {% if records.size > 0 %}
 
 <h3>Confirmed Delivery Domains</h3>
+<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -491,11 +496,13 @@ infrastructure signals.
     {% endfor %}
   </tbody>
 </table>
+</div>
 
 {% assign fav_clusters = site.data.masq_infra.infrastructure_summary.favicon_clusters %}
 {% if fav_clusters.size > 0 %}
 <h3>Favicon Clusters</h3>
 <p>Domains sharing a favicon hash are likely operated by the same actor.</p>
+<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -514,6 +521,7 @@ infrastructure signals.
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endif %}
 
 {% assign top_asns = site.data.masq_infra.infrastructure_summary.top_asns %}
@@ -544,6 +552,7 @@ No infrastructure data yet.
 {% assign _sample_recs = site.data.masq_infra.records %}
 {% if _sample_recs.size > 0 %}
 {% assign samples = _sample_recs | sort: "last_seen" | reverse %}
+<div class="table-wrapper">
 <table class="cg-table cg-samples-table">
   <thead>
     <tr>
@@ -572,6 +581,7 @@ No infrastructure data yet.
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="cg-chain-notice">
 No samples yet. Run the collection pipeline.
@@ -582,7 +592,7 @@ No samples yet. Run the collection pipeline.
 <section id="chokepoints">
 <h2>Detection Chokepoints</h2>
 <p>Perfect visual impersonation neutralizes every user-facing trust signal. These chokepoints
-survive it because they operate at the execution layer, after the user has already been
+survive it because they operate at the execution layer — after the user has already been
 deceived and run the file.</p>
 
 <div class="cg-rec">
@@ -592,7 +602,7 @@ deceived and run the file.</p>
   <div class="cg-rec-body">
     <strong>PE OriginalFilename mismatch (T1036.005)</strong>
     <p>Alert when a process OriginalFilename from PE version resource does not match its running
-    filename. Adversaries rename existing malicious binaries. They rarely recompile with
+    filename. Adversaries rename existing malicious binaries — they rarely recompile with
     matching resources.</p>
 <pre><code>detection:
   selection:

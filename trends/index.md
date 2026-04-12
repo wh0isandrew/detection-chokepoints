@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Trends
-description: "Data-driven trend analysis for detection engineers: payload prevalence, command-line patterns, evasion technique shifts, and malicious infrastructure over time."
+description: "Data-driven trend analysis for detection engineers — tracking payload prevalence, command-line patterns, evasion technique shifts, and malicious infrastructure over time."
 permalink: /trends/
 ---
 
@@ -181,7 +181,7 @@ permalink: /trends/
   <div class="tr-hero">
     <h1>Trends</h1>
     <p>
-      Chokepoints stay stable. The techniques layered around them shift constantly.
+      Chokepoints stay stable — but the techniques layered around them shift constantly.
       These analyses track what adversaries are actually doing: which payloads and cradle families dominate,
       which evasion techniques are rising or dying, and what infrastructure they keep coming back to.
       Data-driven signal for prioritizing detection work.
@@ -198,7 +198,7 @@ permalink: /trends/
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true">🔀</div>
       <div class="tr-pillar-title">Technique Shifts</div>
-      <div class="tr-pillar-desc">When adversaries pivot: new evasion methods emerging, old ones dying as defenders catch up</div>
+      <div class="tr-pillar-desc">When adversaries pivot — new evasion methods emerging, old ones dying as defenders catch up</div>
     </div>
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true">🏗️</div>
@@ -208,7 +208,7 @@ permalink: /trends/
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true">📅</div>
       <div class="tr-pillar-title">Time-Series Intel</div>
-      <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline. Not just point-in-time snapshots.</div>
+      <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline — not just point-in-time snapshots</div>
     </div>
   </div>
 
@@ -382,7 +382,7 @@ permalink: /trends/
       </div>
       <p class="tr-card-desc">
         Command-line argument frequency, string patterns, and target file paths across RedLine, LummaC2,
-        Vidar, and StealC, ranked by prevalence to prioritize detection coverage.
+        Vidar, and StealC — ranked by prevalence to prioritize detection coverage.
       </p>
       <div class="tr-card-footer">
         <span>In development</span>
@@ -410,7 +410,7 @@ permalink: /trends/
         <span class="tr-card-badge soon">Coming Soon</span>
       </div>
       <p class="tr-card-desc">
-        Which living-off-the-land binaries appear most in real campaigns vs. red team exercises.
+        Which living-off-the-land binaries appear most in real campaigns vs. red team exercises —
         certutil, mshta, regsvr32, wscript, cscript, rundll32 tracked across public incident data.
       </p>
       <div class="tr-card-footer">
