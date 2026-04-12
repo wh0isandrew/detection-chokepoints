@@ -2,7 +2,19 @@
 
 All notable changes to this detection chokepoints repository will be documented in this file.
 
-## [2025-02-28] — LOLBAS-Style Restructuring
+## [2026-03-30] - LSASS Credential Dumping Chokepoint
+
+### Added
+- `chokepoints/credential-access/lsass-credential-dumping.yml` - New chokepoint: LSASS credential dumping (T1003.001)
+- `sigma-rules/lsass-credential-dumping/research.yml` - Research-level Sigma rule (baseline all non-system LSASS access via process_access)
+- `sigma-rules/lsass-credential-dumping/hunt.yml` - Hunt-level Sigma rule (CallTrace + source path behavioral filtering)
+- `sigma-rules/lsass-credential-dumping/analyst.yml` - Analyst-level Sigma rule (triple-AND: access mask + dump mechanism + non-standard source)
+- `emulation/lsass-credential-dumping/emulate.ps1` - PowerShell emulation script with SeDebugPrivilege handling and PPL detection
+- 24 tool variations tracked (Mimikatz, comsvcs.dll, nanodump, HandleKatz, Cobalt Strike, Sliver, Havoc, Brute Ratel, Mythic, and more)
+- 4 raw log samples (EID 10 classic, EID 10 direct syscall, EID 10 handle duplication, EID 1 comsvcs LOLBin)
+- 6 OSINT pivot queries (VirusTotal, GitHub, LOLDrivers, ANY.RUN)
+
+## [2025-02-28] - LOLBAS-Style Restructuring
 
 ### Added
 - `CONTRIBUTING.md` — full contribution guide (schema requirements, PR checklist, what not to submit)

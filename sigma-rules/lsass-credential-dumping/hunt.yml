@@ -1,0 +1,94 @@
+title: LSASS Access with Suspicious CallTrace or Non-Standard Source Path
+id: 3d932b09-9d74-428d-bb0f-9368b28c6bb9
+status: experimental
+description: >
+  Hunt-level detection for LSASS credential dumping. Adds behavioral context to the
+  research baseline to separate attack tooling from legitimate security products.
+  CallTrace analysis reveals the mechanism used to read LSASS memory: dbgcore.dll
+  and dbghelp.dll indicate MiniDumpWriteDump (ProcDump, comsvcs.dll, custom dump
+  tools), while UNKNOWN indicates direct syscalls or ntdll unhooking. Legitimate
+  AV/EDR products produce clean API call stacks without these indicators. Source
+  path filtering captures tools staged in user-writable directories; attack tools
+  land in Temp, Downloads, AppData while legitimate security products run from
+  Program Files. This rule excludes known AV/EDR paths and WerFault to reduce the
+  research baseline to actionable hunt leads.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://github.com/fortra/nanodump
+  - https://github.com/codewhitesec/HandleKatz
+  - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+  - https://www.microsoft.com/en-us/security/blog/2022/10/05/detecting-and-preventing-lsass-credential-dumping-attacks/
+author: "@NovaSky0x1"
+date: 2026/03/30
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.t1003
+  - detection.maturity.hunt
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection_lsass_access:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess|contains:
+      - '0x1FFFFF'
+      - '0x1010'
+      - '0x1410'
+      - '0x0810'
+      - '0x1038'
+      - '0x1438'
+      - '0x0040'
+  selection_suspicious_calltrace:
+    CallTrace|contains:
+      - 'dbgcore.dll'
+      - 'dbghelp.dll'
+      - 'UNKNOWN'
+  selection_suspicious_source_path:
+    SourceImage|contains:
+      - '\Temp\'
+      - '\tmp\'
+      - '\Downloads\'
+      - '\AppData\'
+      - '\Users\Public\'
+      - '\ProgramData\'
+      - '\Desktop\'
+      - '\Recycle'
+  filter_os_core:
+    SourceImage|startswith:
+      - 'C:\Windows\System32\csrss.exe'
+      - 'C:\Windows\System32\lsass.exe'
+      - 'C:\Windows\System32\services.exe'
+      - 'C:\Windows\System32\svchost.exe'
+      - 'C:\Windows\System32\wininit.exe'
+      - 'C:\Windows\System32\lsaiso.exe'
+      - 'C:\Windows\System32\smss.exe'
+      - 'C:\Windows\System32\winlogon.exe'
+  filter_security_products:
+    SourceImage|contains:
+      - '\Program Files\Windows Defender\'
+      - '\Program Files\Microsoft Security Client\'
+      - '\Program Files\CrowdStrike\'
+      - '\Program Files\SentinelOne\'
+      - '\Program Files\Cylance\'
+      - '\Program Files\Carbon Black\'
+      - '\Program Files\Sophos\'
+      - '\Program Files\ESET\'
+      - '\Program Files\Kaspersky\'
+      - '\Program Files\Trend Micro\'
+      - '\Program Files (x86)\Trend Micro\'
+      - '\Program Files\Bitdefender\'
+      - '\Program Files\Malwarebytes\'
+      - '\Program Files\Palo Alto Networks\'
+  filter_werfault:
+    SourceImage|endswith: '\WerFault.exe'
+  condition: >
+    selection_lsass_access
+    and (selection_suspicious_calltrace or selection_suspicious_source_path)
+    and not (filter_os_core or filter_security_products or filter_werfault)
+falsepositives:
+  - IT administrators running portable diagnostic tools from non-standard paths that inspect LSASS
+  - Custom monitoring agents installed outside Program Files that query process information
+  - Authorized penetration testing tools during sanctioned engagements
+  - Third-party security products not in the exclusion list (requires environment-specific tuning)
+level: medium
