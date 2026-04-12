@@ -15,18 +15,19 @@ Techniques:
 DetectionPriority: CRITICAL
 ThreatPrevalence: HIGH
 DetectionDifficulty: HIGH
-Description: 'Admin or SYSTEM rights are required before any EDR bypass works. That is the chokepoint. The technique
-  varies: API unhooking removes the hooks EDRs inject into ntdll.dll, BYOVD exploits a vulnerable kernel driver to operate
-  below the sensor, direct termination kills the security process outright. Every path requires the same elevated starting
-  position and leaves a kernel-observable artifact: a driver load event, a VirtualProtect call against protected memory, or
-  a security process termination. As of 2024, approximately 48% of high-severity ransomware attacks incorporate purpose-built
-  EDR disablement (Cisco Talos). BYOVD has become a de facto phase in major ransomware deployment chains.
+Description: 'Adversaries impair or neutralize EDR/AV products before executing their primary payload to prevent detection
+  and response. Techniques span from user-mode API unhooking (removing hooks EDRs inject into ntdll.dll) through kernel-level
+  driver exploitation (BYOVD, Bring Your Own Vulnerable Driver) to direct process termination of security tools. Despite
+  the diversity of techniques, the chokepoint is invariant: admin/SYSTEM privileges are always required, and the bypass mechanism
+  always produces a kernel-observable artifact. This is a driver load event, a VirtualProtect call against protected system memory,
+  or direct termination of a security process. As of 2024, approximately 48% of high-severity ransomware attacks incorporate
+  purpose-built EDR disablement (Cisco Talos). BYOVD has become a de facto phase in major ransomware deployment chains.
 
   '
 LastUpdated: '2026-03-12'
 Author: '@iimp0ster'
 Variations:
-- Name: 'BYOVD: EDRKillShifter'
+- Name: BYOVD — EDRKillShifter
   FirstSeen: 2024-Q3
   Status: Active
   SourceURL: https://www.sophos.com/en-us/blog/edr-kill-shifter/
@@ -46,7 +47,7 @@ Variations:
     - 'Windows System EID 7045: New service installed for the dropped driver'
     - 'Process termination of EDR processes (MsMpEng.exe, CSFalconService.exe, etc.)'
   ChokepointMapping: 'admin privileges → driver written to TEMP → driver loaded as service (EID 6) → EDR process termination'
-- Name: 'BYOVD: Terminator (Spyboy)'
+- Name: BYOVD — Terminator (Spyboy)
   FirstSeen: 2023-Q1
   Status: Active
   SourceURL: https://www.sentinelone.com/blog/terminator-edr-killer-spyboy-detecting-and-preventing-a-windows-byovd-attack/
@@ -67,7 +68,7 @@ Variations:
     - 'Sysmon EID 1: Process creation with admin/SYSTEM context'
     - 'Multiple EDR process terminations in rapid succession'
   ChokepointMapping: 'admin + UAC acceptance → Zemana driver dropped to System32 → driver loaded as service (EID 6) → IOCTL-based EDR process kill'
-- Name: 'BYOVD: AuKill'
+- Name: BYOVD — AuKill
   FirstSeen: 2023-Q1
   Status: Active
   SourceURL: https://www.sophos.com/en-us/blog/aukill-edr-killer-malware-abuses-process-explorer-driver/
@@ -89,7 +90,7 @@ Variations:
     - 'Windows System EID 7045: Service install for PROCEXP driver'
     - 'Windows System EID 7036: EDR services transitioning to stopped state'
   ChokepointMapping: 'admin → TrustedInstaller impersonation → PROCEXP.SYS dropped and loaded (EID 6) → EDR processes and services terminated'
-- Name: 'BYOVD: POORTRY / STONESTOP'
+- Name: BYOVD — POORTRY / STONESTOP
   FirstSeen: 2022-Q4
   Status: Active
   SourceURL: https://www.sophos.com/en-us/blog/burnt-cigar-2/
@@ -127,7 +128,8 @@ Variations:
       locate callback arrays\n  \u2192 patches PsSetCreateProcessNotifyRoutine callbacks\n  \u2192 patches
       PsSetLoadImageNotifyRoutine callbacks\n  \u2192 patches CmRegisterCallback callbacks\n  \u2192 optionally unhooks
       SSDT entries"
-    Context: 'EDR processes continue running but receive no kernel notifications. No process termination events. EDR stays alive but blinded.'
+    Context: 'EDR processes continue running but receive no kernel notifications. No process termination events —
+      EDR stays alive but blinded.'
     Artifacts:
     - 'Sysmon EID 6: Vulnerable driver loaded (used for kernel R/W)'
     - 'Sysmon EID 1: EDRSandblast execution with --kernelmode or --all flags'
@@ -463,23 +465,23 @@ Detections:
   UseCase: SOC alerting; direct escalation trigger for active EDR impairment; treat as ransomware precursor
   SigmaRule: sigma-rules/edr-bypass/analyst.yml
 Intel:
-- Name: 'Wavestone: EDRSandblast'
+- Name: Wavestone — EDRSandblast
   Tier: primary
   URL: https://github.com/wavestone-cdt/EDRSandblast
   Description: Open-source tool demonstrating kernel callback removal via vulnerable driver; includes 1000+ driver knowledge
     base and detection of which EDR callbacks are registered; essential reference for defenders building callback-monitoring
     detection
-- Name: 'MITRE ATT&CK: T1562.001 Impair Defenses: Disable or Modify Tools'
+- Name: 'MITRE ATT&CK — T1562.001 Impair Defenses: Disable or Modify Tools'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1562/001/
   Description: Primary technique definition covering BYOVD, process termination, and service stop as EDR impairment methods;
     procedure examples link to known threat actor usage
-- Name: 'MITRE ATT&CK: T1562.006 Impair Defenses: Indicator Blocking'
+- Name: 'MITRE ATT&CK — T1562.006 Impair Defenses: Indicator Blocking'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1562/006/
   Description: Technique definition covering ETW patching, AMSI bypass, and other telemetry-blocking methods; distinct from
     process termination; attacker keeps EDR running but blinds it
-- Name: 'Microsoft: Vulnerable Driver Blocklist'
+- Name: Microsoft — Vulnerable Driver Blocklist
   Tier: primary
   URL: https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/microsoft-recommended-driver-block-rules
   Description: The authoritative list of drivers known to be abused in BYOVD attacks; updated multiple times per year; use

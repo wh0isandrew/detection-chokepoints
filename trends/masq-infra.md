@@ -365,7 +365,6 @@ and Samples. Absence of chain data does not affect payload confirmation.
 
 {% if ps.top_families.size > 0 %}
 <h3>Top Families</h3>
-<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -383,13 +382,11 @@ and Samples. Absence of chain data does not affect payload confirmation.
     {% endfor %}
   </tbody>
 </table>
-</div>
 {% endif %}
 
 {% if ps.lure_payload_matrix.size > 0 %}
 <h3>Lure Type → Payload Class</h3>
 <p>Which impersonated brands deliver which payload types.</p>
-<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -406,7 +403,6 @@ and Samples. Absence of chain data does not affect payload confirmation.
     {% endfor %}
   </tbody>
 </table>
-</div>
 {% endif %}
 {% else %}
 <div class="cg-chain-notice">
@@ -476,7 +472,6 @@ infrastructure signals.
 {% if records.size > 0 %}
 
 <h3>Confirmed Delivery Domains</h3>
-<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -496,13 +491,11 @@ infrastructure signals.
     {% endfor %}
   </tbody>
 </table>
-</div>
 
 {% assign fav_clusters = site.data.masq_infra.infrastructure_summary.favicon_clusters %}
 {% if fav_clusters.size > 0 %}
 <h3>Favicon Clusters</h3>
 <p>Domains sharing a favicon hash are likely operated by the same actor.</p>
-<div class="table-wrapper">
 <table class="cg-table">
   <thead>
     <tr>
@@ -521,7 +514,6 @@ infrastructure signals.
     {% endfor %}
   </tbody>
 </table>
-</div>
 {% endif %}
 
 {% assign top_asns = site.data.masq_infra.infrastructure_summary.top_asns %}
@@ -552,7 +544,6 @@ No infrastructure data yet.
 {% assign _sample_recs = site.data.masq_infra.records %}
 {% if _sample_recs.size > 0 %}
 {% assign samples = _sample_recs | sort: "last_seen" | reverse %}
-<div class="table-wrapper">
 <table class="cg-table cg-samples-table">
   <thead>
     <tr>
@@ -581,7 +572,6 @@ No infrastructure data yet.
     {% endfor %}
   </tbody>
 </table>
-</div>
 {% else %}
 <div class="cg-chain-notice">
 No samples yet. Run the collection pipeline.

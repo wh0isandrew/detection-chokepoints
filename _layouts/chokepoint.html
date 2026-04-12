@@ -675,17 +675,6 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
   margin-top: 1rem;
 }
 
-/* Tier accent left borders — UX-02 */
-.sigma-block--research { border-left: 4px solid var(--link); }
-.sigma-block--hunt     { border-left: 4px solid var(--high); }
-.sigma-block--analyst  { border-left: 4px solid var(--medium); }
-
-/* Copy button confirmed state — UX-01 */
-.sigma-btn.copied {
-  color: var(--medium);
-  border-color: rgba(63,185,80,.4);
-}
-
 /* .sigma-header replaces .sigma-rule-header */
 .sigma-header {
   display: flex;
@@ -1316,8 +1305,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span><strong>Correlation required:</strong> This rule covers one stage only. See the description for SIEM-side join guidance.</span>
             </div>
             {% endif %}
-            {% assign sigma_tier = sigma_key | remove: "_sigma_" %}
-            <div class="sigma-block sigma-block--{{ sigma_tier | default: 'research' }}">
+            <div class="sigma-block">
               <div class="sigma-header">
                 <span class="sigma-label">Sigma Rule &mdash; {{ det.Level }} Level</span>
                 <div class="sigma-actions">
@@ -1371,7 +1359,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <span class="warn-icon">&#9888;</span>
               <span><strong>SIEM correlation required:</strong> Join this event's ProcessGuid with hunt.yml (Sysmon EID 1) where ParentImage is a browser/explorer/wt.exe and time delta &lt; 300 seconds.</span>
             </div>
-            <div class="sigma-block sigma-block--hunt">
+            <div class="sigma-block">
               <div class="sigma-header">
                 <span class="sigma-label">Sigma Rule &mdash; Hunt Level (Network)</span>
                 <div class="sigma-actions">
@@ -1476,7 +1464,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
         {% endif %}
         {% endif %}
-        <div class="sigma-block sigma-block--{{ level_lower | default: 'research' }}">
+        <div class="sigma-block">
           <div class="sigma-header">
             <span class="sigma-label">Sigma Rule &mdash; {{ level }} Level</span>
             <div class="sigma-actions">
@@ -1566,8 +1554,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
           </div>
-          {% assign emu_lang_raw = emu.Language | downcase | default: "plaintext" %}
-          {% assign emu_lang = "language-" | append: emu_lang_raw %}
+          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
         </div>
       </div>
@@ -1652,11 +1639,7 @@ function copyCode(btn) {
   navigator.clipboard.writeText(code.innerText || code.textContent).then(() => {
     const orig = btn.textContent;
     btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = orig;
-      btn.classList.remove('copied');
-    }, 1800);
+    setTimeout(() => btn.textContent = orig, 1800);
   });
 }
 
