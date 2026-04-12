@@ -35,3 +35,4 @@ __pycache__/
 
 # Local test output
 /tmp/masq_infra_test.json
+.planning/

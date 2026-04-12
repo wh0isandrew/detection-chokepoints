@@ -1,7 +1,7 @@
 title: Detection Chokepoints
 tagline: "TTPs evolve. Chokepoints don't."
 description: >
-  A community database of attack prerequisites — the conditions attackers cannot avoid
+  A community database of attack prerequisites: the conditions attackers cannot avoid
   regardless of tool choice. Each chokepoint includes Sigma detection rules at Research,
   Hunt, and Analyst maturity levels.
 
