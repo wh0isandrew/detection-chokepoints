@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Software Impersonation Infrastructure
-description: "Confirmed payload delivery infrastructure — the domains that served malicious binaries, the redirect chains that led users there, and the operator patterns that link campaigns."
+description: "Confirmed payload delivery infrastructure: the domains that served malicious binaries, the redirect chains that led users there, and the operator patterns that link campaigns."
 permalink: /trends/masq-infra/
 ---
 
@@ -254,7 +254,7 @@ Updated: {{ site.data.masq_infra.meta.last_updated | default: "not yet run" }}
 <strong>Methodology:</strong> IOC-first pipeline.
 Records sourced from confirmed malicious payload reports (MalwareBazaar, ThreatFox, URLhaus)
 and infrastructure hunts (Shodan, URLScan). Every record has a confirmed payload hash.
-Delivery chains shown only when URLScan captured the redirect sequence — chain coverage is
+Delivery chains shown only when URLScan captured the redirect sequence. Chain coverage is
 partial and expected to be incomplete.
 </div>
 
@@ -289,7 +289,7 @@ Pipeline has not been run yet. Use the Streamlit app to collect data and export 
 <h2>Delivery Chains</h2>
 <p>Redirect sequences captured by URLScan at the moment of scanning. A chain shows the full path
 from initial URL through any redirectors to the lure page and payload download. Coverage is
-best-effort — only available when the URL was submitted to URLScan while the infrastructure
+best-effort, only available when the URL was submitted to URLScan while the infrastructure
 was active.</p>
 
 {% assign chain_records = site.data.masq_infra.records | where: "chain_observed", true %}
@@ -414,8 +414,8 @@ No payload data yet. Run the collection pipeline.
 <section id="campaigns">
 <h2>Campaigns</h2>
 <div class="cg-methodology">
-Only campaigns with a confirmed hard signal — shared favicon hash, shared IP address, shared
-payload hash, or matching certificate pattern — and confidence score ≥ 70 are shown. Clusters
+Only campaigns with a confirmed hard signal (shared favicon hash, shared IP address, shared
+payload hash, or matching certificate pattern) and confidence score ≥ 70 are shown. Clusters
 below this threshold are excluded. Hard signal requirement ensures every campaign has at least
 one infrastructure-level link between domains, not just temporal or hosting coincidence.
 </div>
@@ -582,7 +582,7 @@ No samples yet. Run the collection pipeline.
 <section id="chokepoints">
 <h2>Detection Chokepoints</h2>
 <p>Perfect visual impersonation neutralizes every user-facing trust signal. These chokepoints
-survive it because they operate at the execution layer — after the user has already been
+survive it because they operate at the execution layer, after the user has already been
 deceived and run the file.</p>
 
 <div class="cg-rec">
@@ -592,7 +592,7 @@ deceived and run the file.</p>
   <div class="cg-rec-body">
     <strong>PE OriginalFilename mismatch (T1036.005)</strong>
     <p>Alert when a process OriginalFilename from PE version resource does not match its running
-    filename. Adversaries rename existing malicious binaries — they rarely recompile with
+    filename. Adversaries rename existing malicious binaries. They rarely recompile with
     matching resources.</p>
 <pre><code>detection:
   selection:

