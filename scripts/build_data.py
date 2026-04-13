@@ -31,6 +31,7 @@ OUTPUT_PATH   = DATA_DIR  / "masq_infra.json"
 
 PIPELINE_VERSION    = "2.0.0"
 CONFIDENCE_THRESHOLD = 40  # minimum confidence to be published
+MIN_RECORD_FLOOR     = 5   # abort if fewer records pass threshold
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +192,12 @@ def main() -> None:
         action="store_true",
         help="Write output to /tmp/masq_infra_test.json instead of _data/masq_infra.json.",
     )
+    parser.add_argument(
+        "--min-records",
+        type=int,
+        default=MIN_RECORD_FLOOR,
+        help=f"Minimum record count to proceed (default: {MIN_RECORD_FLOOR}). Set to 0 to disable.",
+    )
     args = parser.parse_args()
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -227,6 +234,17 @@ def main() -> None:
         f"({CONFIDENCE_THRESHOLD}); {dropped} filtered out",
         file=sys.stderr,
     )
+
+    # PIPE-03: Minimum record floor guard (override with --min-records 0 to disable)
+    floor = args.min_records
+    if floor > 0 and len(filtered) < floor:
+        print(
+            f"[ERROR] Only {len(filtered)} records pass confidence threshold "
+            f"({CONFIDENCE_THRESHOLD}) — minimum floor is {floor}. "
+            f"Aborting without writing output.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     output = {
         "meta":                    build_meta(filtered),
