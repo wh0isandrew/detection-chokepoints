@@ -1,6 +1,11 @@
 # Ransomware TTP Overlap Data
 # Groups match the 5 actors in the ransomware attack chain actor convergence matrix.
-# TTP coverage sourced from public threat intelligence reports.
+# TTP coverage validated against 260 procedures extracted from 36 threat reports
+# via kitsune + ORKL integration (last validated: 2026-04-12).
+#
+# Legend:
+#   corpus-confirmed  = procedure extracted from at least one report for this actor
+#   corpus-absent     = no procedure evidence in current report corpus (removed from group list)
 
 groups:
   - id: blackbasta
@@ -24,16 +29,19 @@ phases:
     techniques:
       - id: "T1566"
         name: "Phishing"
-        groups: [blackbasta, lockbit3, blackcat, play]
+        groups: [blackbasta]
       - id: "T1133"
         name: "External Remote Services"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [akira, play, lockbit3]
       - id: "T1190"
         name: "Exploit Public-Facing App"
-        groups: [lockbit3, blackcat, play]
+        groups: [blackbasta, play]
       - id: "T1078"
         name: "Valid Accounts"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [play, lockbit3, blackcat]
+      - id: "T1219"
+        name: "Remote Access Software"
+        groups: [blackbasta, akira, play]
 
   - label: "Execution"
     techniques:
@@ -42,106 +50,151 @@ phases:
         groups: [blackbasta, lockbit3, akira, blackcat, play]
       - id: "T1047"
         name: "Windows Management Instrumentation"
+        groups: [play, lockbit3, blackcat]
+      - id: "T1569.002"
+        name: "Service Execution (PsExec)"
         groups: [blackbasta, lockbit3, blackcat, play]
+      - id: "T1053.005"
+        name: "Scheduled Task"
+        groups: [blackbasta, akira, play]
 
   - label: "Privilege Escalation"
     techniques:
       - id: "T1068"
         name: "Exploit for Privilege Escalation"
-        groups: [lockbit3, blackcat, play]
-      - id: "T1548.002"
-        name: "Bypass User Account Control"
-        groups: [blackbasta, lockbit3, akira, blackcat]
-      - id: "T1134"
-        name: "Access Token Manipulation"
-        groups: [blackbasta, lockbit3, blackcat]
+        groups: [blackbasta, akira, play]
+      - id: "T1055"
+        name: "Process Injection"
+        groups: [blackbasta]
 
   - label: "Defense Evasion"
     techniques:
       - id: "T1562.001"
         name: "Disable/Modify Security Tools"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [blackbasta, akira, blackcat, play]
+      - id: "T1562.009"
+        name: "Safe Mode Boot"
+        groups: [blackbasta, blackcat]
       - id: "T1036"
         name: "Masquerading"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [blackbasta]
+      - id: "T1027"
+        name: "Obfuscated Files or Information"
+        groups: [blackbasta, lockbit3, play]
       - id: "T1140"
         name: "Deobfuscate/Decode Files"
-        groups: [blackbasta, lockbit3, blackcat, play]
+        groups: [blackbasta]
       - id: "T1218"
         name: "Signed Binary Proxy Execution"
+        groups: [blackbasta]
+      - id: "T1112"
+        name: "Modify Registry"
         groups: [blackbasta, lockbit3, blackcat]
+      - id: "T1070.001"
+        name: "Clear Windows Event Logs"
+        groups: [play, lockbit3, blackcat]
 
   - label: "Persistence"
     techniques:
-      - id: "T1543.003"
-        name: "Create/Modify Windows Service"
-        groups: [blackbasta, lockbit3, blackcat]
-      - id: "T1053.005"
-        name: "Scheduled Task"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
       - id: "T1547.001"
         name: "Registry Run Keys"
-        groups: [blackbasta, lockbit3, akira]
+        groups: [blackbasta, lockbit3]
+      - id: "T1098"
+        name: "Account Manipulation"
+        groups: [play]
+      - id: "T1543"
+        name: "Create/Modify System Process"
+        groups: [play]
 
   - label: "Discovery"
     techniques:
+      - id: "T1082"
+        name: "System Information Discovery"
+        groups: [blackbasta, lockbit3, akira, blackcat]
       - id: "T1087"
         name: "Account Discovery"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [akira, play]
       - id: "T1083"
         name: "File & Directory Discovery"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1057"
-        name: "Process Discovery"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [akira, play, lockbit3, blackcat]
       - id: "T1018"
         name: "Remote System Discovery"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [blackbasta, akira, play]
       - id: "T1135"
         name: "Network Share Discovery"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1049"
-        name: "System Network Connections Discovery"
-        groups: [blackbasta, lockbit3, blackcat, play]
+        groups: [play, blackcat]
+      - id: "T1482"
+        name: "Domain Trust Discovery"
+        groups: [blackbasta, akira]
+      - id: "T1046"
+        name: "Network Service Discovery"
+        groups: [akira]
 
   - label: "Credential Access"
     techniques:
       - id: "T1003.001"
         name: "OS Credential Dumping: LSASS"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1558.003"
-        name: "Kerberoasting"
-        groups: [blackbasta, lockbit3, akira, play]
-      - id: "T1110"
-        name: "Brute Force"
-        groups: [blackbasta, lockbit3, akira, blackcat]
+        groups: [akira, play, lockbit3]
+      - id: "T1003"
+        name: "OS Credential Dumping"
+        groups: [blackbasta, akira, play, lockbit3]
+      - id: "T1555"
+        name: "Credentials from Password Stores"
+        groups: [blackcat]
+
+  - label: "Collection"
+    techniques:
+      - id: "T1560.001"
+        name: "Archive via Utility (WinRAR)"
+        groups: [akira, play]
 
   - label: "Lateral Movement"
     techniques:
       - id: "T1021.002"
         name: "SMB/Windows Admin Shares"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [play, blackcat]
       - id: "T1021.001"
         name: "Remote Desktop Protocol"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [akira, play, lockbit3]
       - id: "T1570"
         name: "Lateral Tool Transfer"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+        groups: [play]
+
+  - label: "Command and Control"
+    techniques:
+      - id: "T1105"
+        name: "Ingress Tool Transfer"
+        groups: [blackbasta, akira, play, blackcat]
+      - id: "T1219"
+        name: "Remote Access Software (C2)"
+        groups: [blackbasta, akira, play]
+      - id: "T1572"
+        name: "Protocol Tunneling"
+        groups: [akira, play]
+      - id: "T1090"
+        name: "Proxy"
+        groups: [blackbasta, akira]
+
+  - label: "Exfiltration"
+    techniques:
+      - id: "T1048"
+        name: "Exfiltration Over Alternative Protocol"
+        groups: [akira, play]
+      - id: "T1567.002"
+        name: "Exfiltration to Cloud Storage"
+        groups: [akira, blackcat]
 
   - label: "Impact"
     techniques:
       - id: "T1490"
         name: "Inhibit System Recovery"
         groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1489"
-        name: "Service Stop"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
       - id: "T1486"
         name: "Data Encrypted for Impact"
         groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1070.001"
-        name: "Clear Windows Event Logs"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
-      - id: "T1567.002"
-        name: "Exfiltration to Cloud Storage"
-        groups: [blackbasta, lockbit3, akira, blackcat, play]
+      - id: "T1489"
+        name: "Service Stop"
+        groups: [lockbit3, blackcat]
+      - id: "T1485"
+        name: "Data Destruction"
+        groups: [lockbit3]
