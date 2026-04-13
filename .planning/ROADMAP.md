@@ -13,6 +13,7 @@
 - [ ] **Phase 2: Writing and Content Consistency** — Full prose pass across every page: em dashes removed, sentences tightened, voice consistent, `WhyCantBypass`/`TheConstant` visually dominant.
 - [ ] **Phase 3: Site Visual Design and UX** — Copy-to-clipboard on Sigma code blocks, maturity tier left-border accents, mobile table reflow. Template changes only; no URL or slug changes.
 - [ ] **Phase 4: OSINT Pipeline Fix** — Write `merge_records.py`, fix confidence scoring, add minimum-record guard in `build_data.py`, validate with Streamlit harness.
+- [ ] **Phase 5: Interactive Framework Page** — Replace the GitHub-link-only framework nav item with a first-class Jekyll page that presents the 6-step chokepoint methodology, interactive relationship graph, and detection maturity model. New users understand the framework without leaving the site.
 
 ---
 
@@ -74,6 +75,22 @@ Plans:
 - [x] 04-01-PLAN.md — Create pipeline_utils.py (shared scoring) and merge_records.py (three-source merge)
 - [x] 04-02-PLAN.md — Update four scripts to import shared scoring, add floor guard to build_data.py
 
+### Phase 5: Interactive Framework Page
+**Goal:** The chokepoint framework methodology lives on the site as an interactive page — new users learn the 6-step process, see how chokepoints relate to techniques/variations/detections via a relationship graph, and understand the detection maturity model without leaving the site.
+**Depends on:** Phase 1
+**Requirements:** FRMK-01
+**Success criteria:**
+- [ ] Framework nav link points to a local Jekyll page (`/framework/`) instead of the GitHub FRAMEWORK.md
+- [ ] The 6-step methodology is presented as interactive, walkable content (not a raw markdown dump)
+- [ ] A relationship graph visualizes connections between chokepoints, MITRE techniques, variations, and detection tiers using data from `_data/chokepoints.yml`
+- [ ] The detection maturity model (research/hunt/analyst) is visually explained with the progression path
+- [ ] Page uses existing site design patterns (Tailwind, dark/light theme, consistent with other pages)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Create framework/index.html with all content sections, Liquid-generated graph data, and update nav link
+- [ ] 05-02-PLAN.md — Create assets/js/framework-graph.js with D3 force-directed relationship graph
+
 ---
 
 ## Progress
@@ -84,6 +101,7 @@ Plans:
 | 2. Writing and Content Consistency | 0/? | Not started | - |
 | 3. Site Visual Design and UX | 0/1 | Not started | - |
 | 4. OSINT Pipeline Fix | 0/2 | Not started | - |
+| 5. Interactive Framework Page | 0/2 | Not started | - |
 
 ---
 
