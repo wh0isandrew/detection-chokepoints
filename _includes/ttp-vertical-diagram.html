@@ -14,9 +14,11 @@
 {% if ttp_data %}
 
 <p class="ac-section-desc">
-  Each card represents a MITRE ATT&amp;CK technique. Dots indicate which
-  groups or families use it — cards with an orange border are universal
-  chokepoints used by every tracked actor.
+  Each card represents a MITRE ATT&amp;CK technique observed in two or more
+  tracked actors. Dots indicate which groups use it — cards with an orange
+  border are universal chokepoints used by every tracked actor. Single-actor
+  techniques are recorded in the source data but omitted here; they are
+  actor-specific procedures, not convergence signals.
   <span class="af-hint">Click an actor below to filter.</span>
 </p>
 
@@ -41,10 +43,21 @@
 
     {% for phase in ttp_data.phases %}
 
+    {% comment %}Count techniques in this phase that are shared by 2+ actors.{% endcomment %}
+    {% assign phase_visible_count = 0 %}
+    {% for tech in phase.techniques %}
+      {% if tech.groups.size >= 2 %}
+        {% assign phase_visible_count = phase_visible_count | plus: 1 %}
+      {% endif %}
+    {% endfor %}
+
+    {% if phase_visible_count > 0 %}
+
     <div class="ttp-stage-label" aria-label="Stage: {{ phase.label }}">{{ phase.label }}</div>
 
     <div class="ttp-stage-row">
       {% for tech in phase.techniques %}
+      {% if tech.groups.size >= 2 %}
       {% assign actor_list = tech.groups | join: "," %}
       {% assign is_universal = false %}
       {% if tech.groups.size == ttp_data.groups.size %}{% assign is_universal = true %}{% endif %}
@@ -65,12 +78,15 @@
         <div class="ttp-cell-name">{{ tech.name }}</div>
         <div class="ttp-cell-id">{{ tech.id }}</div>
       </div>
+      {% endif %}
       {% endfor %}
     </div>
 
     {% unless forloop.last %}
     <div class="stage-connector" aria-hidden="true"></div>
     {% endunless %}
+
+    {% endif %}
 
     {% endfor %}
 
