@@ -1,0 +1,82 @@
+title: 'LSASS Credential Dump: Non-Standard Process with Dump Mechanism and Suspicious Access Rights'
+id: 2abc46f9-9c70-47cf-932e-fe803e06f5c7
+status: experimental
+description: >
+  High-fidelity detection for LSASS credential dumping. Detects a non-standard process
+  (outside System32 and Program Files) opening a handle to lsass.exe with credential-dump
+  access rights where the CallTrace reveals MiniDumpWriteDump usage (dbgcore.dll,
+  dbghelp.dll) or direct syscall evasion (UNKNOWN). This triple-AND (suspicious access
+  mask, dump mechanism fingerprint, and non-standard source path) eliminates virtually
+  all legitimate LSASS access. AV/EDR products run from Program Files with clean
+  CallTraces; attack tools run from temp paths with dbgcore.dll or UNKNOWN stacks.
+  A secondary selection covers handle duplication (GrantedAccess 0x0040) from non-standard
+  paths, the HandleKatz and nanodump evasion technique that uses NtDuplicateObject to
+  clone an existing LSASS handle instead of requesting a direct read handle. This
+  GrantedAccess value targeting lsass.exe from outside System32/Program Files has no
+  legitimate use case. Supplementary detections for comsvcs.dll MiniDump LOLBin
+  (process_creation), SSP injection (image_load), and dump file artifacts (file_event)
+  should be implemented as companion rules at the SIEM level for coverage across event
+  types. If this rule fires, assume credential compromise and begin host isolation.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://github.com/fortra/nanodump
+  - https://github.com/codewhitesec/HandleKatz
+  - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+  - https://www.microsoft.com/en-us/security/blog/2022/10/05/detecting-and-preventing-lsass-credential-dumping-attacks/
+  - https://unit42.paloaltonetworks.com/mimikatz-overview/
+author: "@NovaSky0x1"
+date: 2026/03/30
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.t1003
+  - detection.maturity.analyst
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection_lsass_target:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess|contains:
+      - '0x1FFFFF'
+      - '0x1010'
+      - '0x1410'
+      - '0x0810'
+      - '0x1038'
+      - '0x1438'
+  selection_dump_mechanism:
+    CallTrace|contains:
+      - 'dbgcore.dll'
+      - 'dbghelp.dll'
+      - 'UNKNOWN'
+  selection_nonstandard_source:
+    SourceImage|not|startswith:
+      - 'C:\Windows\System32\'
+      - 'C:\Windows\SysWOW64\'
+      - 'C:\Program Files\'
+      - 'C:\Program Files (x86)\'
+  selection_handle_duplication:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess: '0x0040'
+    SourceImage|not|startswith:
+      - 'C:\Windows\System32\'
+      - 'C:\Windows\SysWOW64\'
+      - 'C:\Program Files\'
+      - 'C:\Program Files (x86)\'
+  filter_os_core:
+    SourceImage|startswith:
+      - 'C:\Windows\System32\csrss.exe'
+      - 'C:\Windows\System32\lsass.exe'
+      - 'C:\Windows\System32\services.exe'
+      - 'C:\Windows\System32\svchost.exe'
+      - 'C:\Windows\System32\wininit.exe'
+      - 'C:\Windows\System32\lsaiso.exe'
+      - 'C:\Windows\System32\smss.exe'
+      - 'C:\Windows\System32\winlogon.exe'
+  condition: >
+    (selection_lsass_target and selection_dump_mechanism and selection_nonstandard_source and not filter_os_core)
+    or selection_handle_duplication
+falsepositives:
+  - Portable diagnostic tools run by administrators from non-standard paths that access LSASS (should be blocked by policy in hardened environments)
+  - Authorized red team or penetration testing tools during sanctioned engagements
+level: high
