@@ -28,9 +28,9 @@
            href="{{ '/trends/' | relative_url }}">Trends</a>
       </li>
       <li>
-        <a class="text-sm px-3 py-1.5 rounded transition-colors"
-           href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/FRAMEWORK.md"
-           target="_blank" rel="noopener">Framework</a>
+        <a class="text-sm px-3 py-1.5 rounded transition-colors
+                  {% if page.url contains '/framework' %}active{% endif %}"
+           href="{{ '/framework/' | relative_url }}">Framework</a>
       </li>
       <li>
         <a class="text-sm px-3 py-1.5 rounded transition-colors"
