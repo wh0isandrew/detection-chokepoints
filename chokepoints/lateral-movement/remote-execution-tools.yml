@@ -240,10 +240,7 @@ Detections:
   - Windows Security Event ID 4624 (Successful Logon)
   - Windows Security Event ID 4688 (Process Creation)
   - Windows System Event ID 7045 (Service Installed)
-  Logic: 'Event ID: 4624 LogonType: 3 (Network) Account: Member of local Administrators or Domain Admins Within 60 seconds:
-    Service creation (7045) OR process creation with elevated token
-
-    '
+  Logic: 'Network logon (4624 LogonType 3) by a local Administrators or Domain Admins member, followed within 60 seconds by a service creation (7045) or process creation with an elevated token.'
   ExpectedFPRate: High
   UseCase: Baseline normal admin activity; understand legitimate remote administration patterns
   SigmaRule: sigma-rules/remote-execution/research.yml
@@ -254,10 +251,7 @@ Detections:
   - Windows Security Event ID 4624 (Logon)
   - Windows Security Event ID 4697 (Service Installed)
   - Windows System Event ID 7045 (Service Installed)
-  Logic: "Network Logon (4624, LogonType 3) AND one of:\n  Service Created with:\n    - Name: matches random pattern (8-10\
-    \ char alpha-numeric)\n    - Binary Path: \\Windows\\Temp\\ OR \\Users\\Public\\ OR \\ProgramData\\\n  OR Process Created\
-    \ with:\n    - Parent: wmiprvse.exe OR services.exe\n    - Image: cmd.exe OR powershell.exe\n    - Path: unusual system\
-    \ paths\n"
+  Logic: 'Network logon (4624 LogonType 3) AND one of: service created with a random 8-10 char alphanumeric name or binary path in \Windows\Temp\, \Users\Public\, or \ProgramData\; OR process created with parent wmiprvse.exe or services.exe spawning cmd.exe or powershell.exe from unusual paths.'
   ExpectedFPRate: Medium
   UseCase: Active hunt for lateral movement campaigns; identifies PsExec-style and WMI execution
   SigmaRule: sigma-rules/remote-execution/hunt.yml
@@ -269,10 +263,7 @@ Detections:
   - Windows Security Event ID 4624 (Logon)
   - Windows Security Event ID 4697/7045 (Service)
   - Windows Security Event ID 5145 (Detailed File Share)
-  Logic: "Network Logon (4624, LogonType 3) + IPC$ share access (5145, ShareName = IPC$) + Service creation with suspicious\
-    \ characteristics:\n    Name: 8-10 random alphanumeric characters\n    Binary: runs from \\Windows\\Temp\\ OR \\Users\\\
-    Public\\ OR command is cmd.exe/powershell.exe\nOR + Pattern: same source IP accessing 3+ hosts within 10 minutes (spray)\
-    \ Source IP: internal lateral movement (RFC1918 source to RFC1918 destination)\n"
+  Logic: 'Network logon (4624 LogonType 3) AND IPC$ share access (5145 ShareName=IPC$) AND service creation with a random 8-10 char name or binary in \Windows\Temp\ or \Users\Public\ or command cmd.exe/powershell.exe. Also fires on spray pattern: same source IP hitting 3+ hosts within 10 minutes, RFC1918 to RFC1918.'
   ExpectedFPRate: Low
   UseCase: SOC alerting for active lateral movement; direct IR escalation trigger
   SigmaRule: sigma-rules/remote-execution/analyst.yml

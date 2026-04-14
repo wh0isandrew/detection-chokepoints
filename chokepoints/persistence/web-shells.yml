@@ -353,9 +353,7 @@ Detections:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation with CommandLine auditing enabled)
   - Linux auditd execve syscall events
-  Logic: "Process Created (EID 1 or 4688):\n  ParentImage: w3wp.exe OR httpd OR apache2 OR nginx OR java OR tomcat OR php-fpm\n\
-    \  ChildImage: ANY\nPurpose: Build full baseline of all child processes spawned by web server processes; identify legitimate\
-    \ administration and deployment processes vs. anomalous execution\n"
+  Logic: 'Any child process spawned by a web server parent (w3wp.exe, httpd, apache2, nginx, java, tomcat, php-fpm). Run to baseline legitimate administration and deployment patterns.'
   ExpectedFPRate: High
   UseCase: Baseline legitimate web server child process behavior; identify environments with routine shell spawning (misconfigured)
     vs. those with no child process spawning (well-hardened)
@@ -367,11 +365,7 @@ Detections:
   - Sysmon Event ID 11 (File Created)
   - Windows Security Event ID 4688 (Process Creation)
   - Linux auditd execve + open syscalls
-  Logic: "Process Created (EID 1):\n  ParentImage: w3wp.exe OR httpd OR apache2 OR nginx OR java OR php-fpm OR tomcat\n  ChildImage:\n\
-    \    cmd.exe OR powershell.exe OR pwsh.exe OR wscript.exe OR cscript.exe OR\n    /bin/sh OR /bin/bash OR /bin/dash OR\
-    \ python* OR perl OR ruby OR\n    whoami.exe OR net.exe OR ipconfig.exe OR ifconfig OR id OR wget OR curl\nOR:\n  File\
-    \ Created (EID 11):\n    Path: contains \\inetpub\\wwwroot\\ OR /var/www/ OR /srv/www/ OR /usr/share/nginx/\n    Extension:\
-    \ .php OR .asp OR .aspx OR .jsp OR .jspx OR .cfm OR .shtml\n    CreatingProcess: NOT in approved deployment toolchain\n"
+  Logic: 'Web server parent (w3wp.exe, httpd, apache2, nginx, java, php-fpm, tomcat) spawning cmd.exe, powershell.exe, pwsh.exe, wscript.exe, cscript.exe, /bin/sh, /bin/bash, /bin/dash, python*, perl, ruby, whoami.exe, net.exe, ipconfig.exe, ifconfig, id, wget, or curl. OR file create (EID 11) of .php/.asp/.aspx/.jsp/.jspx/.cfm/.shtml under \inetpub\wwwroot\, /var/www/, /srv/www/, or /usr/share/nginx/ by a process outside the approved deployment toolchain.'
   ExpectedFPRate: Medium
   UseCase: Proactive hunt for active webshell execution and new shell file drops; distinguishes attacker activity from legitimate
     server-side scripting
@@ -385,13 +379,7 @@ Detections:
   - Sysmon Event ID 11 (File Created)
   - Windows Security Event ID 4688 (Process Creation)
   - IIS/Apache/nginx access logs
-  Logic: "File Created (EID 11) in web-accessible path:\n  Extension: .php OR .asp OR .aspx OR .jsp OR .jspx\n  CreatingProcess:\
-    \ NOT approved CMS or deployment tool\n  Time: within last 24 hours\nTHEN within 60 minutes:\n  Process Created (EID 1):\n\
-    \    ParentImage: w3wp.exe OR httpd OR apache2 OR java\n    ChildImage: cmd.exe OR powershell.exe OR /bin/sh OR /bin/bash\n\
-    \    CommandLine: contains (whoami OR net user OR net group OR ipconfig OR\n                           ifconfig OR id\
-    \ OR wget OR curl OR certutil)\nOR (standalone — high confidence without file correlation):\n  ParentImage: w3wp.exe AND\
-    \ ChildImage: powershell.exe AND\n  CommandLine: contains (-enc OR -EncodedCommand OR IEX OR Invoke-Expression OR\n  \
-    \                      DownloadString OR WebClient OR FromBase64String)\n"
+  Logic: 'Recent (<24h) file create of .php/.asp/.aspx/.jsp/.jspx in a web-accessible path by a process outside approved CMS/deployment tooling, followed within 60 minutes by web server parent (w3wp.exe, httpd, apache2, java) spawning cmd.exe, powershell.exe, /bin/sh, or /bin/bash with CommandLine containing whoami, net user, net group, ipconfig, ifconfig, id, wget, curl, or certutil. Standalone high-confidence: w3wp.exe spawns powershell.exe with -enc, -EncodedCommand, IEX, Invoke-Expression, DownloadString, WebClient, or FromBase64String.'
   ExpectedFPRate: Low
   UseCase: SOC alerting; immediate IR escalation; highest confidence by correlating shell file creation with subsequent command
     execution

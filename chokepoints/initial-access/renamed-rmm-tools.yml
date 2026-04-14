@@ -482,8 +482,7 @@ Detections:
   - Sysmon Event ID 1 (Process Creation)
   - Windows Security Event ID 4688 (Process Creation)
   - Application inventory / software management telemetry
-  Logic: "Process name matches known RMM tool executables:\n  anydesk.exe OR screenconnect*.exe OR teamviewer*.exe OR\n  ultraviewer.exe\
-    \ OR rustdesk.exe OR meshagent.exe OR\n  connectwisecontrol*.exe\n"
+  Logic: 'Process name matches known RMM binaries: anydesk.exe, screenconnect*.exe, teamviewer*.exe, ultraviewer.exe, rustdesk.exe, meshagent.exe, connectwisecontrol*.exe.'
   ExpectedFPRate: High
   UseCase: Asset inventory; baseline of legitimate RMM usage by IT staff
   SigmaRule: sigma-rules/renamed-rmm/research.yml
@@ -493,11 +492,7 @@ Detections:
   - Sysmon Event ID 1 (Process Creation)
   - Sysmon Event ID 11 (File Creation)
   - Browser download telemetry
-  Logic: 'File Created: *.exe Creating Process: chrome.exe OR firefox.exe OR msedge.exe OR iexplore.exe OR brave.exe File
-    Path: \Downloads\ OR \Temp\ OR \AppData\Local\Temp\ Then: Process execution within 5 minutes AND: Product metadata OR
-    original filename matches known RMM vendor
-
-    '
+  Logic: '*.exe file created by a browser (chrome, firefox, msedge, iexplore, brave) in \Downloads\, \Temp\, or \AppData\Local\Temp\, then executed within 5 minutes, where product metadata or OriginalFilename matches a known RMM vendor.'
   ExpectedFPRate: Medium
   UseCase: Hunt for user-initiated RMM downloads; distinguishes IT-deployed from user-downloaded
   SigmaRule: sigma-rules/renamed-rmm/hunt.yml
@@ -508,11 +503,7 @@ Detections:
   - Sysmon Event ID 3 (Network Connection)
   - Sysmon Event ID 11 (File Creation)
   - File metadata / version info analysis
-  Logic: "File Created: *.exe via browser (see Hunt logic above) AND one of:\n  - File Name contains: \"tax\" OR \"invoice\"\
-    \ OR \"SSN\" OR \"SSA\" OR \"support\" OR \"verify\" OR \"secure\"\n  - File Metadata: OriginalFilename = \"anydesk.exe\"\
-    \ (or other RMM) but current name differs\n  - File Signer: Known RMM vendor certificate on file with non-RMM name\nNetwork:\
-    \ Outbound connection to RMM infrastructure within 2 minutes of execution UserContext: Standard user account (not in IT\
-    \ admin group)\n"
+  Logic: 'Browser-dropped *.exe (per Hunt logic) AND one of: file name contains tax, invoice, SSN, SSA, support, verify, or secure; OR OriginalFilename = anydesk.exe (or other RMM) while current name differs; OR file signed by a known RMM vendor but renamed. Fires on outbound to RMM infrastructure within 2 minutes of execution from a standard user account (not IT admin).'
   ExpectedFPRate: Low
   UseCase: SOC alerting; campaign-themed file name detection catches targeted pretexts
   SigmaRule: sigma-rules/renamed-rmm/analyst.yml

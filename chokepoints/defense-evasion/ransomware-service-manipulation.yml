@@ -194,9 +194,7 @@ Detections:
   LogSources:
   - Windows System Event ID 7036 (Service State Change)
   - Windows System Event ID 7040 (Service Start Type Change)
-  Logic: 'Event ID: 7036 Service Name: Contains "sophos" OR "defender" OR "veeam" OR "backup" OR "antivirus" State: Stopped
-
-    '
+  Logic: 'EID 7036 Stopped events where Service Name contains sophos, defender, veeam, backup, or antivirus.'
   ExpectedFPRate: High
   UseCase: Baseline service stop frequency and patterns; identify maintenance windows vs. anomalies
   SigmaRule: sigma-rules/ransomware-service/research.yml
@@ -206,11 +204,7 @@ Detections:
   - Windows System Event ID 7036 (Service State Change)
   - Windows System Event ID 7040 (Service Start Type Change)
   - Sysmon Event ID 1 (Process Creation for sc.exe, net.exe)
-  Logic: 'Process: sc.exe OR net.exe OR powershell.exe OR taskkill.exe CommandLine: "stop" AND (service keyword in: sophos,
-    defender, veeam, backup, acronis, mssql, mysql) Within 60 seconds: Same or related service: "delete" OR "disabled" via
-    sc.exe OR: 3+ security/backup services stopped within 5-minute window from same process/session
-
-    '
+  Logic: 'sc.exe, net.exe, powershell.exe, or taskkill.exe with CommandLine containing stop AND a service keyword (sophos, defender, veeam, backup, acronis, mssql, mysql), followed within 60 seconds by a delete or disable of the same service via sc.exe. Also fires when 3+ security/backup services stop within 5 minutes from the same process or session.'
   ExpectedFPRate: Medium
   UseCase: Hunt for ransomware preparation activity; identifies pre-encryption service manipulation
   SigmaRule: sigma-rules/ransomware-service/hunt.yml
@@ -221,11 +215,7 @@ Detections:
   - Windows Security Event ID 4624 (Logon)
   - Windows System Event ID 7036 (Service State)
   - Windows System Event ID 7040/7045 (Service Config)
-  Logic: "Source: Network Logon (4624, LogonType 3) OR local admin session Process: sc.exe OR net.exe OR taskkill.exe Services\
-    \ stopped (5 or more within 10-minute window), targeting:\n  Security: SophosFileScanner OR SAVService OR WinDefend OR\
-    \ Sense OR MsMpEng\n  Backup: Veeam* OR VeeamDeploymentService OR VSS OR wbengine OR *acronis*\n  Database: MSSQL* OR\
-    \ SQLWriter OR MySQL* OR postgresql*\nService delete: Attempted within 2 minutes of service stop Context: After-hours\
-    \ activity (outside 08:00-18:00 local) OR unusual source IP\n"
+  Logic: 'Network logon (4624 LogonType 3) or local admin session running sc.exe/net.exe/taskkill.exe stops 5+ services in 10 minutes targeting security (SophosFileScanner, SAVService, WinDefend, Sense, MsMpEng), backup (Veeam*, VeeamDeploymentService, VSS, wbengine, *acronis*), or database (MSSQL*, SQLWriter, MySQL*, postgresql*), with a service delete attempted within 2 minutes. Weight after-hours activity or unusual source IP.'
   ExpectedFPRate: Low
   UseCase: SOC alerting; ransomware pre-encryption detection with minimal time to respond
   SigmaRule: sigma-rules/ransomware-service/analyst.yml

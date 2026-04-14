@@ -422,10 +422,7 @@ Detections:
   - Sysmon Event ID 6 (Driver Loaded)
   - Windows Security Event ID 4688 (Process Creation)
   - Windows System Event ID 7045 (Service Installed)
-  Logic: 'Event ID: 6 (Driver Loaded) Filter: Signature NOT from Microsoft OR SignatureStatus != Valid OR: Driver signed within
-    last 90 days OR: Driver hash matches Microsoft Vulnerable Driver Blocklist
-
-    '
+  Logic: 'Sysmon EID 6 driver loads where Signature is non-Microsoft, SignatureStatus is not Valid, the driver was signed within the last 90 days, or the hash matches the Microsoft Vulnerable Driver Blocklist.'
   ExpectedFPRate: High
   UseCase: Build baseline of all drivers loaded in the environment; identify gaps in driver allowlisting; compare against
     Microsoft Vulnerable Driver Blocklist
@@ -438,11 +435,7 @@ Detections:
   - Sysmon Event ID 10 (Process Access)
   - Windows Security Event ID 4688 (Process Creation)
   - Windows System Event ID 7036 (Service State Change)
-  Logic: "Driver Loaded (EID 6):\n  Signature: non-Microsoft OR recently signed (<90 days) OR hash on blocklist\nWithin 5\
-    \ minutes, one of:\n  A. Process Terminated: target is known EDR/AV process\n     (MsMpEng.exe, SophosFileScanner.exe,\
-    \ CSFalconService.exe, SentinelAgent.exe)\n  B. Process Created: sc.exe OR net.exe with \"stop\" targeting security service\n\
-    \  C. Process Access (EID 10): source opens security process with PROCESS_TERMINATE rights\nSource: elevated process (high\
-    \ integrity or SYSTEM token)\n"
+  Logic: 'Driver Loaded (EID 6) non-Microsoft OR signed <90 days OR hash on blocklist, AND within 5 minutes one of: EDR/AV process terminated (MsMpEng.exe, SophosFileScanner.exe, CSFalconService.exe, SentinelAgent.exe), OR sc.exe/net.exe stop targeting a security service, OR process access (EID 10) opening a security process with PROCESS_TERMINATE. Source must be an elevated process (high integrity or SYSTEM).'
   ExpectedFPRate: Medium
   UseCase: Proactive hunt for BYOVD-based EDR killing; correlates driver load with subsequent security tool impairment
   SigmaRule: sigma-rules/edr-bypass/hunt.yml
@@ -456,11 +449,7 @@ Detections:
   - Windows Security Event ID 4688 (Process Creation)
   - Windows Security Event ID 4624 (Logon)
   - Windows System Event ID 7036 (Service State Change)
-  Logic: "Driver Loaded (EID 6):\n  EITHER:\n    Hash: matches Microsoft Vulnerable Driver Blocklist\n  OR:\n    Certificate:\
-    \ issued within 14 days AND signer is unknown/unrecognized vendor\nWithin 120 seconds:\n  Security process terminated\
-    \ OR security service stopped (EID 7036, state: Stopped)\n  Targets: MsMpEng.exe OR SophosFileScanner.exe OR CSFalconService.exe\
-    \ OR\n           SentinelAgent.exe OR CylanceSvc.exe\nContext:\n  Source account: SYSTEM or member of local Administrators\n\
-    \  After-hours (outside 08:00-18:00 local) OR source IP is non-standard admin workstation\n"
+  Logic: 'Driver load (EID 6) where hash matches the Microsoft Vulnerable Driver Blocklist OR certificate was issued within 14 days by an unknown vendor, AND within 120 seconds a security process is terminated or service stopped (EID 7036) targeting MsMpEng.exe, SophosFileScanner.exe, CSFalconService.exe, SentinelAgent.exe, or CylanceSvc.exe. Source is SYSTEM or local Administrators, ideally after-hours or from a non-standard admin workstation.'
   ExpectedFPRate: Low
   UseCase: SOC alerting; direct escalation trigger for active EDR impairment; treat as ransomware precursor
   SigmaRule: sigma-rules/edr-bypass/analyst.yml
