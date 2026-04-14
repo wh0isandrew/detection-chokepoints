@@ -7,11 +7,23 @@ description: A practical methodology for identifying durable detection chokepoin
 <style>
 /* ── Hero ── */
 .hero {
-  max-width: var(--max-w); margin: 0 auto; padding: 4rem 1.5rem 2rem;
+  position: relative;
+  padding: 4rem 1.5rem 3rem;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(160deg, var(--bg) 0%, var(--bg-card) 50%, var(--bg) 100%);
+  overflow: hidden;
+  text-align: center;
 }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(240,136,62,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 720px; margin: 0 auto; position: relative; }
 .hero h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 0.75rem; }
-.hero .subtitle { font-size: 1.1rem; color: var(--text-muted); max-width: 720px; line-height: 1.7; }
+.hero .subtitle { font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin: 0 auto; }
 
 /* ── Section containers ── */
 .fw-content { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
@@ -23,16 +35,18 @@ description: A practical methodology for identifying durable detection chokepoin
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-auto-rows: 1fr;
   gap: 1.25rem;
 }
 .step-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 1.5rem; position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   cursor: pointer;
+  display: flex; flex-direction: column;
 }
 .step-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.step-card.expanded { grid-column: 1 / -1; }
+.step-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: var(--bg-card-hover); }
 .step-num {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 50%;
@@ -46,14 +60,34 @@ description: A practical methodology for identifying durable detection chokepoin
   background: rgba(218,54,51,0.15); color: var(--critical); border-radius: 4px;
   font-size: 0.8rem; font-weight: 600;
 }
-.step-example {
-  margin-top: 1rem; padding: 1rem; background: var(--bg-card-hover);
-  border-radius: var(--radius); font-family: var(--font-mono); font-size: 0.8rem;
-  color: var(--text-muted); display: none; line-height: 1.8;
+.expand-hint { font-size: 0.75rem; color: var(--text-dim); margin-top: auto; padding-top: 0.75rem; }
+.step-card.active .expand-hint { color: var(--accent); }
+
+/* Detail panel:shared by all cards, updated on click */
+#step-detail-panel {
+  margin-top: 1.25rem; padding: 1.5rem;
+  background: var(--bg-card); border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  display: none;
+  position: relative;
 }
-.step-card.expanded .step-example { display: block; }
-.expand-hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; }
-.step-card.expanded .expand-hint { display: none; }
+#step-detail-panel.visible { display: block; }
+#step-detail-panel .detail-close {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  background: transparent; border: none; color: var(--text-dim);
+  font-size: 1.25rem; cursor: pointer; line-height: 1;
+  padding: 0.25rem 0.5rem; border-radius: 4px;
+}
+#step-detail-panel .detail-close:hover { color: var(--text); background: var(--bg-card-hover); }
+#step-detail-panel .detail-label {
+  font-size: 0.75rem; color: var(--accent); text-transform: uppercase;
+  letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.5rem;
+}
+#step-detail-panel .detail-body {
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--text-muted); line-height: 1.8;
+}
+.step-example { display: none; }
 
 /* ── Maturity progression ── */
 .maturity-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
@@ -152,7 +186,13 @@ svg text { font-family: var(--font-sans); }
   border-radius: var(--radius); padding: 1.25rem;
   display: flex; gap: 0.75rem; align-items: flex-start;
 }
-.test-icon { font-size: 1.5rem; flex-shrink: 0; }
+.test-icon {
+  flex-shrink: 0; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: rgba(240,136,62,0.12);
+  color: var(--accent);
+}
+.test-icon svg { width: 20px; height: 20px; }
 .test-card p { font-size: 0.9rem; color: var(--text-muted); }
 .test-card strong { color: var(--text); }
 
@@ -187,15 +227,17 @@ svg text { font-family: var(--font-sans); }
 </style>
 
 <!-- ── Hero ── -->
-<div class="hero">
-  <h1>Chokepoint Identification Framework</h1>
-  <p class="subtitle">
-    For every technique an attacker uses, ask: what must be true, and which of those conditions does the attacker have no control over? Those uncontrollable prerequisites are chokepoints. Detect the chokepoint, detect all current and future variations.
-  </p>
-  <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-dim);">
-    Adapted from <a href="https://redcanary.com/blog/threat-detection/threat-research-questions/">Matt Graeber's threat research methodology</a> at Red Canary.
-  </p>
-</div>
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Chokepoint Identification Framework</h1>
+    <p class="subtitle">
+      For every technique an attacker uses, ask: what must be true, and which of those conditions does the attacker have no control over? Those uncontrollable prerequisites are chokepoints. Detect the chokepoint, detect all current and future variations.
+    </p>
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-dim);">
+      Adapted from <a href="https://redcanary.com/blog/threat-detection/threat-research-questions/">Matt Graeber's threat research methodology</a> at Red Canary.
+    </p>
+  </div>
+</section>
 
 <div class="fw-content">
 
@@ -209,96 +251,161 @@ svg text { font-family: var(--font-sans); }
     <div class="steps-grid">
 
       <!-- Step 1 -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')">
+      <div class="step-card" data-step="1">
         <div class="step-num">1</div>
         <h3>What is this technique at a technical level?</h3>
         <p>Define the objective. What does the attacker need to accomplish? Gain initial access? Move laterally? Evade defenses?</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--text);">Example: Lateral Movement via SMB</strong><br>
-          Attacker needs to execute code on a remote system using SMB file shares and Windows service control.
-        </div>
       </div>
 
       <!-- Step 2 -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')">
+      <div class="step-card" data-step="2">
         <div class="step-num">2</div>
         <h3>What must be true for it to succeed?</h3>
         <p>Identify the required components. Every prerequisite that must be satisfied, regardless of the tool used.</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--text);">SMB prerequisites:</strong><br>
-          &bull; Credentials with admin rights on target<br>
-          &bull; Network connectivity to port 445/135/139<br>
-          &bull; SMB service running on target<br>
-          &bull; Ability to create/start a remote service
-        </div>
       </div>
 
       <!-- Step 3 -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')">
+      <div class="step-card" data-step="3">
         <div class="step-num">3</div>
         <h3>What does the attacker control?</h3>
         <p>The variables. Tool choice (Impacket, CrackMapExec, PsExec), obfuscation methods, infrastructure, binary names.</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--text);">Attacker controls:</strong><br>
-          &bull; Tool: Impacket, CrackMapExec, NetExec, native PsExec<br>
-          &bull; Binary name and path<br>
-          &bull; Encoding and obfuscation<br>
-          &bull; C2 infrastructure
-        </div>
       </div>
 
       <!-- Step 4: THE CHOKEPOINT -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')"
+      <div class="step-card" data-step="4"
            style="border-color: var(--critical); box-shadow: 0 0 0 1px rgba(218,54,51,0.3);">
         <div class="step-num" style="background: rgba(218,54,51,0.15); color: var(--critical);">4</div>
         <h3>What can't the attacker control?</h3>
         <span class="chokepoint-tag">THIS IS THE CHOKEPOINT</span>
         <p style="margin-top: 0.5rem;">The prerequisites from step 2 that no tool rotation, obfuscation, or variant can eliminate. These are your detection anchors.</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--critical);">The chokepoint:</strong><br>
-          &bull; Service creation event via network logon<br>
-          &bull; Parent-child: services.exe spawning attacker binary<br>
-          &bull; Network authentication to SMB (Event 4624 Type 3)<br><br>
-          <em style="color: var(--text-dim);">No matter the tool, a service is created remotely. That's kernel-observable.</em>
-        </div>
       </div>
 
       <!-- Step 5 -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')">
+      <div class="step-card" data-step="5">
         <div class="step-num">5</div>
         <h3>Can we observe it?</h3>
         <p>Map to log sources and telemetry. Sysmon event IDs, ETW providers, network artifacts, EDR hooks.</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--text);">Observable via:</strong><br>
-          &bull; Sysmon EID 1: Process creation (services.exe parent)<br>
-          &bull; Windows EID 7045: Service installation<br>
-          &bull; Windows EID 4624: Network logon (Type 3)<br>
-          &bull; Sysmon EID 3: Network connection to 445
-        </div>
       </div>
 
       <!-- Step 6 -->
-      <div class="step-card" onclick="this.classList.toggle('expanded')">
+      <div class="step-card" data-step="6">
         <div class="step-num">6</div>
         <h3>What are all the variations?</h3>
         <p>Every tool and method that shares this chokepoint. One detection anchored to the invariant covers all of them.</p>
         <div class="expand-hint">Click to see example</div>
-        <div class="step-example">
-          <strong style="color: var(--text);">All share the same chokepoint:</strong><br>
-          &bull; Impacket psexec.py / smbexec.py<br>
-          &bull; CrackMapExec / NetExec<br>
-          &bull; Metasploit psexec modules<br>
-          &bull; Native PsExec.exe<br>
-          &bull; Any future tool using SMB + service creation
-        </div>
       </div>
 
     </div>
+
+    <!-- Shared detail panel: updates based on which card is clicked -->
+    <div id="step-detail-panel">
+      <button class="detail-close" aria-label="Close example">&times;</button>
+      <div class="detail-label" id="step-detail-label">Step 1 example</div>
+      <div class="detail-body" id="step-detail-body"></div>
+    </div>
+
+    <script>
+      (function () {
+        var EXAMPLES = {
+          "1": {
+            label: "Step 1 example:Lateral Movement via SMB",
+            html: '<strong style="color: var(--text);">Example: Lateral Movement via SMB</strong><br>' +
+                  'Attacker needs to execute code on a remote system using SMB file shares and Windows service control.'
+          },
+          "2": {
+            label: "Step 2 example:SMB prerequisites",
+            html: '<strong style="color: var(--text);">SMB prerequisites:</strong><br>' +
+                  '&bull; Credentials with admin rights on target<br>' +
+                  '&bull; Network connectivity to port 445/135/139<br>' +
+                  '&bull; SMB service running on target<br>' +
+                  '&bull; Ability to create/start a remote service'
+          },
+          "3": {
+            label: "Step 3 example:Attacker controls",
+            html: '<strong style="color: var(--text);">Attacker controls:</strong><br>' +
+                  '&bull; Tool: Impacket, CrackMapExec, NetExec, native PsExec<br>' +
+                  '&bull; Binary name and path<br>' +
+                  '&bull; Encoding and obfuscation<br>' +
+                  '&bull; C2 infrastructure'
+          },
+          "4": {
+            label: "Step 4:The chokepoint",
+            html: '<strong style="color: var(--critical);">The chokepoint:</strong><br>' +
+                  '&bull; Service creation event via network logon<br>' +
+                  '&bull; Parent-child: services.exe spawning attacker binary<br>' +
+                  '&bull; Network authentication to SMB (Event 4624 Type 3)<br><br>' +
+                  '<em style="color: var(--text-dim);">No matter the tool, a service is created remotely. That\'s kernel-observable.</em>'
+          },
+          "5": {
+            label: "Step 5 example:Observable via",
+            html: '<strong style="color: var(--text);">Observable via:</strong><br>' +
+                  '&bull; Sysmon EID 1: Process creation (services.exe parent)<br>' +
+                  '&bull; Windows EID 7045: Service installation<br>' +
+                  '&bull; Windows EID 4624: Network logon (Type 3)<br>' +
+                  '&bull; Sysmon EID 3: Network connection to 445'
+          },
+          "6": {
+            label: "Step 6 example:All share the same chokepoint",
+            html: '<strong style="color: var(--text);">All share the same chokepoint:</strong><br>' +
+                  '&bull; Impacket psexec.py / smbexec.py<br>' +
+                  '&bull; CrackMapExec / NetExec<br>' +
+                  '&bull; Metasploit psexec modules<br>' +
+                  '&bull; Native PsExec.exe<br>' +
+                  '&bull; Any future tool using SMB + service creation'
+          }
+        };
+
+        var panel = document.getElementById("step-detail-panel");
+        var labelEl = document.getElementById("step-detail-label");
+        var bodyEl = document.getElementById("step-detail-body");
+        var closeBtn = panel.querySelector(".detail-close");
+        var cards = document.querySelectorAll(".step-card[data-step]");
+        var activeStep = null;
+
+        function clearActive() {
+          cards.forEach(function (c) { c.classList.remove("active"); });
+        }
+
+        function showStep(step) {
+          var ex = EXAMPLES[step];
+          if (!ex) return;
+          clearActive();
+          var card = document.querySelector('.step-card[data-step="' + step + '"]');
+          if (card) card.classList.add("active");
+          labelEl.textContent = ex.label;
+          bodyEl.innerHTML = ex.html;
+          panel.classList.add("visible");
+          activeStep = step;
+        }
+
+        function hidePanel() {
+          clearActive();
+          panel.classList.remove("visible");
+          activeStep = null;
+        }
+
+        cards.forEach(function (card) {
+          card.addEventListener("click", function () {
+            var step = card.getAttribute("data-step");
+            if (step === activeStep) {
+              hidePanel();
+            } else {
+              showStep(step);
+            }
+          });
+        });
+
+        closeBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          hidePanel();
+        });
+      })();
+    </script>
   </div>
 
   <!-- ══════ SECTION 2: DETECTION MATURITY MODEL ══════ -->
@@ -370,7 +477,6 @@ svg text { font-family: var(--font-sans); }
       <span style="color: var(--high);">Hunt</span>
       <span>&#8594;</span>
       <span style="color: var(--critical);">Analyst</span>
-      <span style="margin-left: 1rem; color: var(--text-dim);">Start here. Don't skip ahead.</span>
     </div>
   </div>
 
@@ -423,6 +529,10 @@ svg text { font-family: var(--font-sans); }
         <button class="graph-btn" data-filter="execution">Execution</button>
         <button class="graph-btn" data-filter="persistence">Persistence</button>
         <button class="graph-btn" data-filter="impact">Impact</button>
+        <span style="border-left: 1px solid var(--border); margin: 0 0.25rem;"></span>
+        <button class="graph-btn" id="graph-zoom-in" title="Zoom in">+</button>
+        <button class="graph-btn" id="graph-zoom-out" title="Zoom out">&minus;</button>
+        <button class="graph-btn" id="graph-zoom-reset" title="Reset zoom">Reset</button>
       </div>
       <div id="graph-svg" style="height: 520px; position: relative;">
         <div class="graph-tooltip" id="graph-tooltip">
@@ -446,28 +556,36 @@ svg text { font-family: var(--font-sans); }
 
     <div class="test-grid">
       <div class="test-card">
-        <div class="test-icon">&#128274;</div>
+        <div class="test-icon" aria-hidden="true" title="Defense invariant">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
         <div>
           <strong>Can the attacker avoid it?</strong>
           <p>Can they achieve the objective without meeting these conditions? If no, valid chokepoint.</p>
         </div>
       </div>
       <div class="test-card">
-        <div class="test-icon">&#128260;</div>
+        <div class="test-icon" aria-hidden="true" title="Survives tool rotation">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+        </div>
         <div>
           <strong>Does it survive tool rotation?</strong>
           <p>Does this detection break if the attacker switches tools? If no, good chokepoint.</p>
         </div>
       </div>
       <div class="test-card">
-        <div class="test-icon">&#127758;</div>
+        <div class="test-icon" aria-hidden="true" title="Multi-family coverage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="10" y1="10" x2="6.5" y2="6.5"/><line x1="14" y1="10" x2="17.5" y2="6.5"/><line x1="10" y1="14" x2="6.5" y2="17.5"/><line x1="14" y1="14" x2="17.5" y2="17.5"/></svg>
+        </div>
         <div>
           <strong>Does it cover multiple families?</strong>
           <p>Does this detection apply to more than one tool or malware family? If yes, strong chokepoint.</p>
         </div>
       </div>
       <div class="test-card">
-        <div class="test-icon">&#9203;</div>
+        <div class="test-icon" aria-hidden="true" title="Durable over time">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M22 2 12 12"/><path d="M22 2v6h-6"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
         <div>
           <strong>Will it still work in 6-12 months?</strong>
           <p>Is this detection likely to remain effective without constant tuning? If yes, durable chokepoint.</p>
@@ -506,7 +624,7 @@ window.__GRAPH_DATA = (function() {
     group: {{ cp.Tactics[0] | slugify | jsonify }},
     vars: {{ cp.Variations | size }},
     maturity: {% if cp.Detections %}{{ cp.Detections | last | map: "Level" | first | downcase | jsonify }}{% else %}"research"{% endif %},
-    url: "/chokepoints/{{ cp._slug }}/"
+    url: "{{ '/chokepoints/' | append: cp._slug | append: '/' | relative_url }}"
   });
   // Tactic nodes (deduplicated)
   {% for tactic in cp.Tactics %}

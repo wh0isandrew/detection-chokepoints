@@ -53,6 +53,36 @@
     .attr('height', height)
     .attr('viewBox', [0, 0, width, height]);
 
+  // Zoom behavior
+  var zoomGroup = svg.append('g').attr('class', 'zoom-layer');
+  var zoom = d3.zoom()
+    .scaleExtent([0.3, 4])
+    .on('zoom', function (event) {
+      zoomGroup.attr('transform', event.transform);
+    });
+  svg.call(zoom);
+
+  // Zoom controls
+  var zoomInBtn   = document.getElementById('graph-zoom-in');
+  var zoomOutBtn  = document.getElementById('graph-zoom-out');
+  var zoomResetBtn = document.getElementById('graph-zoom-reset');
+
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', function () {
+      svg.transition().duration(300).call(zoom.scaleBy, 1.4);
+    });
+  }
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', function () {
+      svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+    });
+  }
+  if (zoomResetBtn) {
+    zoomResetBtn.addEventListener('click', function () {
+      svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    });
+  }
+
   // Arrow marker definition
   svg.append('defs').append('marker')
     .attr('id', 'arrow')
@@ -86,7 +116,7 @@
     .force('collision', d3.forceCollide().radius(function (d) { return radius(d) + 8; }));
 
   // Links layer (drawn first so nodes render on top)
-  var link = svg.append('g')
+  var link = zoomGroup.append('g')
     .selectAll('line')
     .data(graphData.links)
     .join('line')
@@ -95,7 +125,7 @@
     .attr('stroke-opacity', 0.5);
 
   // Nodes layer
-  var node = svg.append('g')
+  var node = zoomGroup.append('g')
     .selectAll('g')
     .data(graphData.nodes)
     .join('g')
