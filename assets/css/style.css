@@ -557,9 +557,11 @@ a:hover { text-decoration: underline; }
   font-size: .8rem;
   line-height: 1.6;
   overflow-x: auto;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   margin: 0;
 }
+.logic-block code { white-space: inherit; word-break: inherit; }
 .no-sigma { color: var(--text-dim); font-size: .9rem; }
 .no-sigma a { color: var(--link); }
 
@@ -1044,14 +1046,15 @@ pre .hljs { padding: 0 !important; }
 /* Prose content below the matrix */
 .ac-prose {
   border-top: 1px solid var(--border);
-  padding-top: 2.5rem;
+  padding-top: 1.5rem;
   margin-top: 1rem;
 }
+.ac-prose > h2:first-child { margin-top: 0; }
 .ac-prose h1, .ac-prose h2 {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text);
-  margin: 2rem 0 .75rem;
+  margin: 1.5rem 0 .75rem;
   padding-bottom: .4rem;
   border-bottom: 1px solid var(--border);
 }
@@ -1169,10 +1172,21 @@ pre .hljs { padding: 0 !important; }
 
 /* Index page hero */
 .ac-index-hero {
-  padding: 3rem 0 2rem;
+  position: relative;
+  padding: 4rem 1.5rem 3rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 2.5rem;
+  background: linear-gradient(160deg, var(--bg) 0%, var(--bg-card) 50%, var(--bg) 100%);
+  overflow: hidden;
+  text-align: center;
 }
+.ac-index-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(240,136,62,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ac-index-hero-inner { max-width: 720px; margin: 0 auto; position: relative; }
 .ac-index-hero h1 {
   font-size: 2.25rem;
   font-weight: 800;
@@ -1180,7 +1194,7 @@ pre .hljs { padding: 0 !important; }
   color: var(--text);
   margin-bottom: .6rem;
 }
-.ac-index-hero p { font-size: 1rem; color: var(--text-muted); max-width: 600px; line-height: 1.7; }
+.ac-index-hero p { font-size: 1rem; color: var(--text-muted); line-height: 1.7; margin: 0 auto; }
 
 /* ── Attack Chain: Why Map section ──────────────────────────────── */
 .ac-why-section {
@@ -1368,8 +1382,23 @@ pre .hljs { padding: 0 !important; }
   font-size: .78rem;
   text-decoration: none;
   transition: border-color .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
 }
 .ac-flow-box:hover { border-color: var(--accent); text-decoration: none; color: var(--text); }
+.ac-flow-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(240,136,62,0.12);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.ac-flow-icon svg { width: 14px; height: 14px; }
 .ac-flow-arrow {
   color: var(--accent);
   font-size: .75rem;

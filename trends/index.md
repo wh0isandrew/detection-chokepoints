@@ -1,21 +1,33 @@
 ---
 layout: default
 title: Trends
-description: "Data-driven trend analysis for detection engineers — tracking payload prevalence, command-line patterns, evasion technique shifts, and malicious infrastructure over time."
+description: "Data-driven trend analysis for detection engineers. Tracks payload prevalence, command-line patterns, evasion technique shifts, and malicious infrastructure over time."
 permalink: /trends/
 ---
 
 <style>
 /* ── Page layout ────────────────────────────────────────────────────────── */
 .tr-hero {
-  padding: 3rem 0 2rem;
+  position: relative;
+  padding: 4rem 1.5rem 3rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 2.5rem;
+  background: linear-gradient(160deg, var(--bg) 0%, var(--bg-card) 50%, var(--bg) 100%);
+  overflow: hidden;
+  text-align: center;
 }
+.tr-hero-inner { max-width: 720px; margin: 0 auto; }
+.tr-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(240,136,62,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.tr-hero > * { position: relative; }
 .tr-hero h1 {
   font-size: 2.25rem;
   font-weight: 800;
-  color: var(--color-fg-default, #c9d1d9);
+  color: var(--text);
   margin-bottom: .6rem;
 }
 .tr-hero p { font-size: 1rem; color: var(--text-muted); max-width: 640px; line-height: 1.7; }
@@ -34,9 +46,14 @@ permalink: /trends/
   padding: 1rem 1.1rem;
 }
 .tr-pillar-icon {
-  font-size: 1.25rem;
-  margin-bottom: .4rem;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  background: rgba(240,136,62,0.12);
+  color: var(--accent);
+  margin-bottom: .6rem;
 }
+.tr-pillar-icon svg { width: 18px; height: 18px; }
 .tr-pillar-title {
   font-size: .8rem;
   font-weight: 700;
@@ -176,39 +193,49 @@ permalink: /trends/
 .tr-card-badge.soon { background: rgba(240,136,62,.12); color: #f0883e; border: 1px solid rgba(240,136,62,.3); }
 </style>
 
-<div class="max-w-[1280px] mx-auto px-6 py-10">
-
-  <div class="tr-hero">
+<section class="tr-hero">
+  <div class="tr-hero-inner">
     <h1>Trends</h1>
     <p>
-      Chokepoints stay stable — but the techniques layered around them shift constantly.
+      Chokepoints stay stable. The techniques layered around them shift constantly.
       These analyses track what adversaries are actually doing: which payloads and cradle families dominate,
       which evasion techniques are rising or dying, and what infrastructure they keep coming back to.
       Data-driven signal for prioritizing detection work.
     </p>
   </div>
+</section>
+
+<div class="max-w-[1280px] mx-auto px-6 py-10">
 
   <!-- What lives here -->
   <div class="tr-pillars">
     <div class="tr-pillar">
-      <div class="tr-pillar-icon" aria-hidden="true">📊</div>
+      <div class="tr-pillar-icon" aria-hidden="true" title="Telemetry">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
       <div class="tr-pillar-title">Payload Prevalence</div>
       <div class="tr-pillar-desc">Which command lines, scripts, and file types are most common vs. rare across real-world campaigns</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon" aria-hidden="true">🔀</div>
+      <div class="tr-pillar-icon" aria-hidden="true" title="Technique pivot">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </div>
       <div class="tr-pillar-title">Technique Shifts</div>
-      <div class="tr-pillar-desc">When adversaries pivot — new evasion methods emerging, old ones dying as defenders catch up</div>
+      <div class="tr-pillar-desc">When adversaries pivot. New evasion methods emerging, old ones dying as defenders catch up.</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon" aria-hidden="true">🏗️</div>
+      <div class="tr-pillar-icon" aria-hidden="true" title="Adversary infrastructure">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      </div>
       <div class="tr-pillar-title">Malicious Infrastructure</div>
       <div class="tr-pillar-desc">Staging domains, CDN abuse, C2 hosting patterns, and reused infrastructure clusters</div>
     </div>
     <div class="tr-pillar">
-      <div class="tr-pillar-icon" aria-hidden="true">📅</div>
+      <div class="tr-pillar-icon" aria-hidden="true" title="Time-series trend">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+      </div>
       <div class="tr-pillar-title">Time-Series Intel</div>
-      <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline — not just point-in-time snapshots</div>
+      <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline, not just point-in-time snapshots</div>
     </div>
   </div>
 
@@ -255,19 +282,16 @@ permalink: /trends/
         <span class="tr-card-badge live">Live Data</span>
       </div>
       <p class="tr-card-desc">
-        Defused Cyber honeypot telemetry across 22
-        edge device decoy types mapped through the Detection Chokepoint Framework. Tracks
-        CVE-2026-20127 (Cisco SD-WAN) full kill chain, CitrixBleed 2 toolkit proliferation,
-        self-replicating worm campaigns, and multi-stage SQLi via auth headers.
+        Defused Cyber honeypot telemetry across 25 edge device decoy types mapped through the Detection Chokepoint Framework. Tracks CitrixBleed 2 toolkit proliferation (54% of traffic), the CVE-2022-22536 SAP burst, CVE-2026-20127 (Cisco SD-WAN) full kill chain, and self-replicating worm campaigns.
       </p>
       <div class="tr-card-stats">
-        <span class="tr-stat-chip"><strong>12,420</strong> exploit attempts</span>
-        <span class="tr-stat-chip"><strong>22</strong> decoy types</span>
-        <span class="tr-stat-chip"><strong>17+</strong> CVEs</span>
-        <span class="tr-stat-chip"><strong>Mar 4 – Apr 3, 2026</strong></span>
+        <span class="tr-stat-chip"><strong>15,001</strong> exploit attempts</span>
+        <span class="tr-stat-chip"><strong>25</strong> decoy types</span>
+        <span class="tr-stat-chip"><strong>40+</strong> CVEs</span>
+        <span class="tr-stat-chip"><strong>Mar 14 – Apr 13, 2026</strong></span>
       </div>
       <div class="tr-card-footer">
-        <span>Updated 2026-04-03</span>
+        <span>Updated 2026-04-13</span>
         <span class="tr-card-cta">
           View analysis
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
@@ -367,58 +391,6 @@ permalink: /trends/
 
   </div>
 
-  <!-- Coming soon stubs -->
-  <div class="tr-section-header">
-    <h2>In Development</h2>
-    <div class="tr-section-header-line"></div>
-  </div>
-
-  <div class="tr-grid">
-
-    <div class="tr-card stub">
-      <div class="tr-card-header">
-        <div class="tr-card-title">Infostealer Payload Prevalence</div>
-        <span class="tr-card-badge soon">Coming Soon</span>
-      </div>
-      <p class="tr-card-desc">
-        Command-line argument frequency, string patterns, and target file paths across RedLine, LummaC2,
-        Vidar, and StealC — ranked by prevalence to prioritize detection coverage.
-      </p>
-      <div class="tr-card-footer">
-        <span>In development</span>
-      </div>
-    </div>
-
-    <div class="tr-card stub">
-      <div class="tr-card-header">
-        <div class="tr-card-title">RMM Tool Infrastructure Tracking</div>
-        <span class="tr-card-badge soon">Coming Soon</span>
-      </div>
-      <p class="tr-card-desc">
-        ASN distribution, certificate reuse, and domain registration patterns across
-        AnyDesk, ScreenConnect, RustDesk, and MeshCentral deployments observed in
-        incident response data.
-      </p>
-      <div class="tr-card-footer">
-        <span>In development</span>
-      </div>
-    </div>
-
-    <div class="tr-card stub">
-      <div class="tr-card-header">
-        <div class="tr-card-title">LOLBin Usage Frequency</div>
-        <span class="tr-card-badge soon">Coming Soon</span>
-      </div>
-      <p class="tr-card-desc">
-        Which living-off-the-land binaries appear most in real campaigns vs. red team exercises —
-        certutil, mshta, regsvr32, wscript, cscript, rundll32 tracked across public incident data.
-      </p>
-      <div class="tr-card-footer">
-        <span>In development</span>
-      </div>
-    </div>
-
-  </div>
 
   <div class="mt-4 p-5 rounded-lg" style="background:var(--bg-card);border:1px solid var(--border);">
     <p style="font-size:.875rem;color:var(--text-muted);margin:0;">

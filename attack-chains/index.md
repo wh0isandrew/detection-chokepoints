@@ -1,46 +1,37 @@
 ---
 layout: default
 title: Attack Chains
-description: "Mapped attack chains for ransomware and infostealer operators — showing how every actor converges on the same prerequisite chokepoints regardless of tooling."
+description: "Mapped attack chains for ransomware and infostealer operators. Shows how every actor converges on the same prerequisite chokepoints regardless of tooling."
 permalink: /attack-chains/
 ---
 
-<div class="max-w-[1280px] mx-auto px-6 py-10">
-
-  <div class="ac-index-hero">
+<section class="ac-index-hero">
+  <div class="ac-index-hero-inner">
     <h1>Attack Chains</h1>
     <p>
-      Threat actors change their tools constantly — loaders, C2 frameworks, ransomware brands, stealer families.
-      But the <strong>prerequisite conditions</strong> they must satisfy at each stage never change.
-      These mapped attack chains show how every actor, regardless of affiliation or toolset,
-      converges on the same chokepoints. Detect the chokepoint; catch any actor.
+      Tools change constantly. Loaders, C2 frameworks, ransomware brands, stealer families, all of it rotates.
+      The <strong>prerequisite conditions</strong> at each stage don't.
+      These mapped chains show how every actor converges on the same chokepoints regardless of toolset. Detect the chokepoint, catch any actor.
     </p>
   </div>
+</section>
+
+<div class="max-w-[1280px] mx-auto px-6 py-10">
 
   <!-- Section 1: Why Map Attack Chains -->
   <div class="ac-why-section">
     <h2>Why Map Attack Chains?</h2>
     <p>
-      When you map multiple threat actors against the same kill chain, a pattern emerges:
-      independent groups — different tools, different infrastructure, different affiliations —
-      all <em>converge on the same techniques</em> at each stage.
+      Map enough threat actors against the same kill chain and a pattern falls out fast. Independent groups with different tools, different infrastructure, and different affiliations all <em>converge on the same techniques</em> at each stage.
     </p>
     <p>
-      This isn't coincidence. Each stage has prerequisite conditions dictated by the OS and
-      network architecture, not by attacker choice. An attacker who needs to move laterally
-      <em>must authenticate</em> and <em>must create a remote process</em>. An attacker who wants
-      to encrypt files <em>must stop backup services</em> and <em>must delete shadow copies</em>.
-      The tooling varies. The prerequisites don't.
+      That convergence isn't coincidence. It's architecture. Lateral movement requires authentication and remote process creation. File encryption requires stopping backup services and deleting shadow copies. The OS and the network dictate those prerequisites, not the attacker. The tools rotate. The requirements don't.
     </p>
     <p>
-      Mapping this convergence identifies the highest-ROI detection targets: techniques where
-      every actor overlaps are universal chokepoints — one detection rule covers every group
-      in the matrix.
+      That's where the ROI is. Techniques that show up under every actor in the matrix are universal chokepoints. One detection rule covers every group.
     </p>
     <p class="ac-why-attribution">
-      Methodology adapted from Kaspersky's
-      <a href="https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf" target="_blank" rel="noopener">"Common TTPs of Modern Ransomware Groups"</a>
-      (2022), which demonstrated that 8 independent ransomware operations shared &gt;50% of their kill chain techniques.
+      Methodology adapted from Kaspersky's <a href="https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2022/06/23093553/Common-TTPs-of-the-modern-ransomware_low-res.pdf" target="_blank" rel="noopener">Common TTPs of Modern Ransomware Groups (2022)</a>.
     </p>
   </div>
 
@@ -48,29 +39,48 @@ permalink: /attack-chains/
   <div class="ac-ecosystem">
     <h2>Cross-Chain Ecosystem</h2>
     <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
-      No chain exists in isolation. Infostealers harvest credentials that fund ransomware.
-      AiTM kits steal sessions that enable account takeover and BEC.
+      No chain runs in isolation. Infostealers harvest the credentials that fund ransomware. AiTM kits steal the sessions that enable account takeover and BEC.
     </p>
     <div class="ac-ecosystem-flow">
       <div class="ac-flow-row">
-        <a class="ac-flow-box" href="{{ '/attack-chains/infostealers/' | relative_url }}">Infostealer Chain</a>
+        <a class="ac-flow-box" href="{{ '/attack-chains/infostealers/' | relative_url }}">
+          <span class="ac-flow-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          Infostealer Chain
+        </a>
         <span class="ac-flow-arrow">&rarr;</span>
         <span class="ac-flow-label">credentials sold to IABs</span>
         <span class="ac-flow-arrow">&rarr;</span>
-        <a class="ac-flow-box" href="{{ '/attack-chains/ransomware/' | relative_url }}">Ransomware Chain</a>
+        <a class="ac-flow-box" href="{{ '/attack-chains/ransomware/' | relative_url }}">
+          <span class="ac-flow-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg>
+          </span>
+          Ransomware Chain
+        </a>
       </div>
       <div class="ac-flow-row">
-        <a class="ac-flow-box" href="{{ '/attack-chains/aitm/' | relative_url }}">AiTM / Phish Chain</a>
+        <a class="ac-flow-box" href="{{ '/attack-chains/aitm/' | relative_url }}">
+          <span class="ac-flow-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="3" y1="3" x2="21" y2="21" stroke-dasharray="2 2"/></svg>
+          </span>
+          AiTM / Phish Chain
+        </a>
         <span class="ac-flow-arrow">&rarr;</span>
         <span class="ac-flow-label">session tokens &rarr; account takeover</span>
         <span class="ac-flow-arrow">&rarr;</span>
-        <span class="ac-flow-box">BEC / Double Extortion</span>
+        <span class="ac-flow-box">
+          <span class="ac-flow-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
+          BEC / Double Extortion
+        </span>
       </div>
       <div class="ac-flow-example">
-        <strong>Real-world examples:</strong>
-        Snowflake breach (2024): infostealer creds &rarr; 165+ orgs compromised &middot;
-        RansomHub: ClickFix &rarr; stealer &rarr; IAB &rarr; ransomware &middot;
-        Scattered Spider: AiTM &rarr; Okta session &rarr; lateral movement &rarr; ransomware
+        <strong>Real-world examples.</strong>
+        Snowflake breach (2024): infostealer creds led to 165+ orgs compromised. &middot;
+        RansomHub: ClickFix &rarr; stealer &rarr; IAB &rarr; ransomware. &middot;
+        Scattered Spider: AiTM &rarr; Okta session &rarr; lateral movement &rarr; ransomware.
       </div>
     </div>
   </div>
@@ -115,9 +125,8 @@ permalink: /attack-chains/
       <span class="ac-card-badge ransomware">Ransomware</span>
       <div class="ac-card-title">Ransomware Attack Chain</div>
       <p class="ac-card-desc">
-        Initial Access → Credential Access → Lateral Movement → Defense Evasion → Impact.
-        Covers BlackBasta, LockBit 3.0, Akira, Alphv/BlackCat, and Play with a convergence
-        matrix showing how each group hits the same five chokepoints.
+        Initial Access &rarr; Credential Access &rarr; Lateral Movement &rarr; Defense Evasion &rarr; Impact.
+        BlackBasta, LockBit 3.0, Akira, Alphv/BlackCat, and Play mapped against the same five chokepoints to show where every group converges.
       </p>
       <div class="ac-card-meta">
         <span class="ac-card-meta-item">
@@ -154,9 +163,8 @@ permalink: /attack-chains/
       <span class="ac-card-badge infostealer">Infostealer</span>
       <div class="ac-card-title">Infostealer Attack Chain</div>
       <p class="ac-card-desc">
-        Distribution → Execution → Collection → Exfiltration → Monetization.
-        Covers RedLine, LummaC2, Vidar, StealC, and Raccoon — including how
-        infostealer-harvested credentials fuel the RaaS ecosystem downstream.
+        Distribution &rarr; Execution &rarr; Collection &rarr; Exfiltration &rarr; Monetization.
+        RedLine, LummaC2, Vidar, StealC, and Raccoon mapped through the full chain, including how harvested credentials feed the RaaS ecosystem downstream.
       </p>
       <div class="ac-card-meta">
         <span class="ac-card-meta-item">
@@ -193,9 +201,8 @@ permalink: /attack-chains/
       <span class="ac-card-badge aitm">AiTM</span>
       <div class="ac-card-title">AiTM / Phishing Kit Attack Chain</div>
       <p class="ac-card-desc">
-        Lure Delivery → Proxy Interception → Token Harvest → Account Takeover → Persistence &amp; Objectives.
-        Covers Tycoon 2FA, Evilginx, EvilProxy, Sneaky 2FA, and Device Code Flow — showing how
-        every kit bypasses MFA by stealing session tokens, not passwords.
+        Lure Delivery &rarr; Proxy Interception &rarr; Token Harvest &rarr; Account Takeover &rarr; Persistence &amp; Objectives.
+        Tycoon 2FA, Evilginx, EvilProxy, Sneaky 2FA, and Device Code Flow. Every kit bypasses MFA the same way: by stealing the session token, not the password.
       </p>
       <div class="ac-card-meta">
         <span class="ac-card-meta-item">
@@ -232,9 +239,8 @@ permalink: /attack-chains/
       <span class="ac-card-badge ransomware">Hypervisor</span>
       <div class="ac-card-title">Hypervisor Compromise Attack Chain</div>
       <p class="ac-card-desc">
-        Initial Access → Mgmt Plane Takeover → Credential Theft → Persistence → Lateral Movement → Impact.
-        Covers BRICKSTORM/UNC5221, UNC3886, Scattered Spider, Play, and ALPHV — showing how actors
-        operate beneath the guest OS where EDR cannot see them.
+        Initial Access &rarr; Mgmt Plane Takeover &rarr; Credential Theft &rarr; Persistence &rarr; Lateral Movement &rarr; Impact.
+        BRICKSTORM/UNC5221, UNC3886, Scattered Spider, Play, and ALPHV. All operating beneath the guest OS, where EDR cannot see them.
       </p>
       <div class="ac-card-meta">
         <span class="ac-card-meta-item">
@@ -271,9 +277,8 @@ permalink: /attack-chains/
       <span class="ac-card-badge aitm">Identity</span>
       <div class="ac-card-title">AD &amp; Identity Domination Attack Chain</div>
       <p class="ac-card-desc">
-        Initial Access → Credential Access → Privilege Escalation → Lateral Movement → Persistence → Impact.
-        Covers APT29, Storm-0501, Storm-2372, Scattered Spider, and ransomware operators —
-        exploiting protocol-level invariants from Kerberos to Entra ID.
+        Initial Access &rarr; Credential Access &rarr; Privilege Escalation &rarr; Lateral Movement &rarr; Persistence &rarr; Impact.
+        APT29, Storm-0501, Storm-2372, Scattered Spider, and ransomware operators. All exploiting the same protocol-level invariants from Kerberos through to Entra ID.
       </p>
       <div class="ac-card-meta">
         <span class="ac-card-meta-item">
@@ -306,14 +311,6 @@ permalink: /attack-chains/
       </div>
     </a>
 
-  </div>
-
-  <div class="mt-12 p-5 rounded-lg" style="background:var(--bg-card);border:1px solid var(--border);">
-    <p style="font-size:.875rem;color:var(--text-muted);margin:0;">
-      <strong style="color:var(--text);">More attack chains coming soon.</strong>
-      BEC / business email compromise and initial access broker (IAB) operations — the handoff
-      mechanisms shown in the ecosystem flow above — are in development. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> to propose or draft a new chain.
-    </p>
   </div>
 
 </div>
