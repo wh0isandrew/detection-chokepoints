@@ -1,8 +1,8 @@
 ---
 layout: attack-chain
 title: AiTM / Phishing Kit Attack Chain
-subtitle: "How adversary-in-the-middle phishing kits bypass MFA by stealing session tokens — not credentials — regardless of kit vendor or delivery lure."
-last_updated: 2025-03-01
+subtitle: "How adversary-in-the-middle phishing kits bypass MFA by stealing session tokens, not credentials, regardless of kit vendor or delivery lure."
+last_updated: 2026-04-14
 permalink: /attack-chains/aitm/
 show_ttp_overlap: true
 ttp_data_key: aitm_ttp_overlap
@@ -10,14 +10,6 @@ ttp_data_key: aitm_ttp_overlap
 stages:
   - id: lure_delivery
     label: Lure Delivery
-    mitre_tactic: "TA0001"
-    mitre_techniques:
-      - id: "T1566.002"
-        name: "Spearphishing Link"
-      - id: "T1566.001"
-        name: "Spearphishing Attachment"
-      - id: "T1583.001"
-        name: "Acquire Infrastructure"
     detection_status: detected
     attacker_action: "Phishing link / device code email"
     systems: "Email GW · Endpoint · Browser"
@@ -32,12 +24,6 @@ stages:
 
   - id: proxy_interception
     label: Proxy Interception
-    mitre_tactic: "TA0009"
-    mitre_techniques:
-      - id: "T1557.002"
-        name: "AiTM Phishing"
-      - id: "T1185"
-        name: "Browser Session Hijacking"
     detection_status: exploited
     attacker_action: "Reverse proxy relays real IdP traffic"
     systems: "Network · IdP · Browser"
@@ -49,14 +35,6 @@ stages:
 
   - id: token_harvest
     label: Token Harvest
-    mitre_tactic: "TA0006"
-    mitre_techniques:
-      - id: "T1539"
-        name: "Steal Web Session Cookie"
-      - id: "T1528"
-        name: "Steal Application Access Token"
-      - id: "T1111"
-        name: "MFA Interception"
     detection_status: exploited
     attacker_action: "Session cookie / OAuth token extracted at proxy"
     systems: "IdP · Browser"
@@ -71,12 +49,6 @@ stages:
 
   - id: account_takeover
     label: Account Takeover
-    mitre_tactic: "TA0001"
-    mitre_techniques:
-      - id: "T1078"
-        name: "Valid Accounts"
-      - id: "T1534"
-        name: "Internal Spearphishing"
     detection_status: exploited
     attacker_action: "Token replay from new IP/device without re-auth challenge"
     systems: "SaaS · M365 · Google Workspace"
@@ -88,14 +60,6 @@ stages:
 
   - id: persistence_objectives
     label: Persistence & Objectives
-    mitre_tactic: "TA0003"
-    mitre_techniques:
-      - id: "T1098.001"
-        name: "Additional Cloud Credentials"
-      - id: "T1564.008"
-        name: "Email Hiding Rules"
-      - id: "T1098.005"
-        name: "Device Registration"
     detection_status: detected
     attacker_action: "OAuth app consent · email rules · device registration"
     systems: "M365 · Entra ID · Google Workspace"
@@ -131,14 +95,14 @@ actors:
   - name: Sneaky 2FA
     status: Active
     lure_delivery: "Phishing kit with dark-themed Microsoft 365 lure pages; targets enterprise users"
-    proxy_interception: "Kit-based AiTM; less automated than EvilProxy — partial relay approach"
+    proxy_interception: "Kit-based AiTM with partial relay approach. Less automated than EvilProxy."
     token_harvest: "Session cookie capture from proxied Microsoft authentication flow"
     account_takeover: "Manual or semi-automated token replay; operator-controlled timing"
     persistence_objectives: "Inbox rules for BEC follow-on; selective data access for financial fraud"
   - name: Device Code Flow
     status: Active
     lure_delivery: "Email delivers device code with social engineering (IT helpdesk, Teams invite)"
-    proxy_interception: "No reverse proxy — victim authenticates to real IdP; device code polling captures token"
+    proxy_interception: "No reverse proxy. Victim authenticates to real IdP. Device code polling captures the token."
     token_harvest: "OAuth refresh token obtained via device authorization grant; long-lived access"
     account_takeover: "Refresh token used for persistent API-level access to M365 Graph endpoints"
     persistence_objectives: "Service principal or app registration with delegated permissions; sustained access"
@@ -152,15 +116,16 @@ chokepoints:
 
 ---
 
-## References
+## Research Methodology
 
-- [Microsoft Security: Token theft playbook](https://learn.microsoft.com/en-us/security/operations/token-theft-playbook)
-- [Microsoft Threat Intelligence: AiTM phishing and BEC](https://www.microsoft.com/en-us/security/blog/2022/07/12/from-cookie-theft-to-bec-attackers-use-aitm-phishing-sites-as-entry-point-to-further-financial-fraud/)
-- [Sekoia: Tycoon 2FA phishing kit](https://blog.sekoia.io/tycoon2fa-an-aitm-phishing-kit-used-since-at-least-2023/)
-- [Group-IB: Tycoon 2FA — A New Phishing Kit Targeting MFA](https://www.group-ib.com/blog/tycoon2fa/)
-- [Proofpoint: EvilProxy observed targeting executives](https://www.proofpoint.com/us/blog/threat-insight/cloud-account-takeover-campaign-leveraging-evilproxy-targets-top-level-executives)
-- [Intrinsec: Sneaky 2FA phishing kit analysis](https://blog.intrinsec.com/sneaky2fa-dissecting-the-new-adversary-in-the-middle-phishing-kit/)
-- [Microsoft Security: Protecting against device code phishing](https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/)
+Procedure-level data in this attack chain was extracted and corroborated using
+[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
+11 vendor and government reports were analyzed across 5 AiTM kit families, with
+cross-report corroboration used to validate convergence patterns. Reports were sourced from
+[ORKL](https://orkl.eu/) and direct vendor publications including Microsoft Threat Intelligence,
+Sekoia, Proofpoint, Volexity, ANY.RUN, Resecurity, and Silent Push. Only techniques observed
+in two or more kits appear in the TTP diagram above. Kit-specific procedures are recorded in
+the source data but filtered from the convergence view.
 
 ## Related Attack Chains
 

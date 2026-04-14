@@ -1,6 +1,8 @@
 # AiTM / Phishing Kit TTP Overlap Data
-# Groups match the 5 kits in the AiTM attack chain actor convergence matrix.
-# TTP coverage sourced from public threat intelligence reports.
+# Generated from Kitsune pipeline analysis of 11 threat reports via ORKL.
+# 5 AiTM kit families, cross-report corroboration for convergence validation.
+# Shared techniques (2+ kits): 12
+# Generated: 2026-04-14
 
 groups:
   - id: tycoon
@@ -14,71 +16,66 @@ groups:
     color: "#3fb950"
   - id: sneaky
     name: "Sneaky 2FA"
-    color: "#bc8cff"
-  - id: devcode
-    name: "Device Code Flow"
     color: "#58a6ff"
+  - id: device_code
+    name: "Device Code Phishing"
+    color: "#bc8cff"
 
 phases:
+  - label: "Infrastructure Setup"
+    techniques:
+      - id: "T1583.001"
+        name: "Domains"
+        groups: [evilginx, evilproxy, sneaky]
+
   - label: "Lure Delivery"
     techniques:
+      - id: "T1566"
+        name: "Phishing"
+        groups: [evilginx, evilproxy, device_code]
+      - id: "T1566.001"
+        name: "Spearphishing Attachment"
+        groups: [sneaky, device_code]
       - id: "T1566.002"
         name: "Spearphishing Link"
         groups: [tycoon, evilginx, evilproxy, sneaky]
-      - id: "T1566.001"
-        name: "Spearphishing Attachment"
-        groups: [sneaky, devcode]
-      - id: "T1583.001"
-        name: "Acquire Infrastructure"
-        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
-      - id: "T1608.005"
-        name: "Link Target (Typosquat)"
-        groups: [tycoon, evilproxy]
+      - id: "T1598.003"
+        name: "Spearphishing Link"
+        groups: [evilginx, evilproxy, sneaky]
 
   - label: "Proxy Interception"
     techniques:
-      - id: "T1557.002"
-        name: "AiTM Phishing"
+      - id: "T1557"
+        name: "Adversary-in-the-Middle"
         groups: [tycoon, evilginx, evilproxy, sneaky]
-      - id: "T1185"
-        name: "Browser Session Hijacking"
-        groups: [tycoon, evilginx, evilproxy]
-      - id: "T1078.004"
-        name: "Valid Cloud Accounts"
-        groups: [devcode]
 
   - label: "Token Harvest"
     techniques:
-      - id: "T1539"
-        name: "Steal Web Session Cookie"
-        groups: [tycoon, evilginx, evilproxy, sneaky]
       - id: "T1528"
         name: "Steal Application Access Token"
-        groups: [devcode]
-      - id: "T1111"
-        name: "MFA Interception"
-        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
+        groups: [evilginx, device_code]
+      - id: "T1539"
+        name: "Steal Web Session Cookie"
+        groups: [evilginx, evilproxy, sneaky]
 
   - label: "Account Takeover"
     techniques:
       - id: "T1078"
         name: "Valid Accounts"
-        groups: [tycoon, evilginx, evilproxy, sneaky, devcode]
-      - id: "T1534"
-        name: "Internal Spearphishing"
-        groups: [tycoon, evilginx, evilproxy]
+        groups: [tycoon, evilproxy, sneaky, device_code]
+      - id: "T1078.004"
+        name: "Cloud Accounts"
+        groups: [evilginx, evilproxy, device_code]
 
-  - label: "Persistence & Objectives"
+  - label: "Defense Evasion"
     techniques:
-      - id: "T1098.001"
-        name: "Additional Cloud Credentials"
-        groups: [tycoon, evilginx, evilproxy, devcode]
-      - id: "T1564.008"
-        name: "Email Hiding Rules"
-        groups: [tycoon, evilproxy, sneaky]
-      - id: "T1098.003"
-        name: "Additional Cloud Roles"
-        groups: [evilginx, devcode]
-      - id: "T1098.005"
-        name: "Device Registration"
-        groups: [tycoon, evilginx, devcode]
+      - id: "T1027"
+        name: "Obfuscated Files or Information"
+        groups: [tycoon, sneaky]
+
+  - label: "Exfiltration"
+    techniques:
+      - id: "T1041"
+        name: "Exfiltration Over C2 Channel"
+        groups: [tycoon, device_code]
+
