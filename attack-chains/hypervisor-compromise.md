@@ -1,8 +1,8 @@
 ---
 layout: attack-chain
 title: Hypervisor Compromise Attack Chain
-subtitle: "How threat actors target VMware vSphere to operate beneath the guest OS — where EDR cannot see them — achieving persistence, credential theft, and total infrastructure control."
-last_updated: 2026-04-03
+subtitle: "How threat actors target VMware vSphere to operate beneath the guest OS, where EDR cannot see them, achieving persistence, credential theft, and total infrastructure control."
+last_updated: 2026-04-14
 permalink: /attack-chains/hypervisor-compromise/
 show_ttp_overlap: true
 ttp_data_key: hypervisor_ttp_overlap
@@ -10,14 +10,6 @@ ttp_data_key: hypervisor_ttp_overlap
 stages:
   - id: initial_access
     label: Initial Access & Recon
-    mitre_tactic: "TA0001"
-    mitre_techniques:
-      - id: "T1190"
-        name: "Exploit Public-Facing Application"
-      - id: "T1078"
-        name: "Valid Accounts"
-      - id: "T1133"
-        name: "External Remote Services"
     detection_status: detected
     attacker_action: "Exploit edge appliance / stolen creds"
     systems: "VCSA · ESXi · vSphere API"
@@ -28,12 +20,6 @@ stages:
 
   - id: mgmt_takeover
     label: Mgmt Plane Takeover
-    mitre_tactic: "TA0002"
-    mitre_techniques:
-      - id: "T1059.004"
-        name: "Unix Shell"
-      - id: "T1203"
-        name: "Exploitation for Client Execution"
     detection_status: exploited
     attacker_action: "VAMI SSH enable → shell pivot"
     systems: "VCSA · Photon OS"
@@ -45,14 +31,6 @@ stages:
 
   - id: credential_theft
     label: Credential Theft
-    mitre_tactic: "TA0006"
-    mitre_techniques:
-      - id: "T1555"
-        name: "Credentials from Password Stores"
-      - id: "T1003.008"
-        name: "OS Credential Dumping: /etc/shadow"
-      - id: "T1552.004"
-        name: "Unsecured Credentials: Private Keys"
     detection_status: exploited
     attacker_action: "BRICKSTEAL: Tomcat memory + PostgreSQL creds"
     systems: "VCSA · vCenter SSO · Active Directory"
@@ -60,18 +38,10 @@ stages:
       - "auditd key privileged: sudo usage to scrape Tomcat memory or PostgreSQL config files"
       - "HTTP requests to /web/saml2/sso/* from VCSA itself (BRICKSTEAL harvesting)"
       - "vCenter events: VmClonedEvent targeting domain controllers (offline NTDS.dit theft)"
-      - "VmDiskHotPlugEvent — attacker mounting cloned DC disk"
+      - "VmDiskHotPlugEvent (attacker mounting cloned DC disk)"
 
   - id: persistence
     label: Persistence
-    mitre_tactic: "TA0003"
-    mitre_techniques:
-      - id: "T1037"
-        name: "Boot or Logon Init Scripts"
-      - id: "T1098.004"
-        name: "Account Manipulation: SSH Keys"
-      - id: "T1136.001"
-        name: "Create Account: Local"
     detection_status: detected
     attacker_action: "Init script injection + transient SSO accounts"
     systems: "VCSA · ESXi · SSO"
@@ -84,31 +54,17 @@ stages:
 
   - id: lateral_movement
     label: Lateral Movement
-    mitre_tactic: "TA0008"
-    mitre_techniques:
-      - id: "T1210"
-        name: "Exploitation of Remote Services"
-      - id: "T1021.004"
-        name: "Remote Services: SSH"
     detection_status: exploited
     attacker_action: "vpxuser shell pivot + Ghost NIC bridging"
     systems: "ESXi · Management VLAN · Guest VMs"
     detection_signals:
-      - "vCenter event: VmNetworkAdapterAddedEvent (8.0u3+) — high-fidelity Ghost NIC signal"
+      - "vCenter event: VmNetworkAdapterAddedEvent (8.0u3+), high-fidelity Ghost NIC signal"
       - "Legacy: VmReconfiguredEvent with NIC addition to management port group"
       - "ESXi hostd.log: vpxuser shell login from VCSA IP"
       - "Windows Event 4624 (Type 3) from appliance IP using stolen service account creds"
 
   - id: exfil_impact
     label: Exfiltration & Impact
-    mitre_tactic: "TA0040"
-    mitre_techniques:
-      - id: "T1090.003"
-        name: "Proxy: SOCKS / DoH Tunneling"
-      - id: "T1213"
-        name: "Data from Information Repositories"
-      - id: "T1486"
-        name: "Data Encrypted for Impact"
     detection_status: detected
     attacker_action: "C2 tunneling / VMDK theft / datastore encryption"
     systems: "VCSA · Datastores · Network egress"
@@ -177,30 +133,31 @@ chokepoints:
   </div>
   <p class="ac-dwell-desc">
     Most enterprise EDR has zero visibility into VCSA (Photon OS) or ESXi.
-    Attackers who compromise the hypervisor layer operate beneath every guest VM —
-    credential theft, lateral movement, and persistence all occur in a blind spot
+    Attackers who compromise the hypervisor layer operate beneath every guest VM.
+    Credential theft, lateral movement, and persistence all occur in a blind spot
     where traditional endpoint detection cannot reach.
   </p>
 </div>
 
-## References
+## Research Methodology
 
-- [Mandiant: vSphere and BRICKSTORM Malware — A Defender's Guide (April 2026)](https://cloud.google.com/blog/topics/threat-intelligence/vsphere-brickstorm-defender-guide)
-- [GTIG: BRICKSTORM Espionage Campaign (2026)](https://cloud.google.com/blog/topics/threat-intelligence/brickstorm-espionage-campaign)
-- [Mandiant: Defending vSphere from UNC3944](https://cloud.google.com/blog/topics/threat-intelligence/defending-vsphere-from-unc3944)
-- [Mandiant: vCenter Hardening Script (GitHub)](https://github.com/mandiant/vcsa-hardening-tool)
-- [VMware: BRICKSTORM Resources and Defense](https://github.com/vmware/vcf-security-and-compliance-guidelines/tree/main/ransomware-resources/BRICKSTORM)
-- [MITRE ATT&CK: T1037 — Boot or Logon Initialization Scripts](https://attack.mitre.org/techniques/T1037/)
-- [MITRE ATT&CK: T1059.004 — Unix Shell](https://attack.mitre.org/techniques/T1059/004/)
+Procedure-level data in this attack chain was extracted and corroborated using
+[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
+12 vendor and government reports were analyzed across 5 actors targeting VMware vSphere and ESXi,
+with cross-report corroboration used to validate convergence patterns. Reports were sourced from
+[ORKL](https://orkl.eu/) and direct vendor publications including Mandiant / Google Threat Intelligence,
+CISA, Trend Micro, Varonis, and Sygnia. Only techniques observed in two or more actors appear in the
+TTP diagram above. Actor-specific procedures are recorded in the source data but filtered from the
+convergence view.
 
 ## Broader ESXi Ransomware Landscape
 
-The two ransomware actors in this chain (Play, Alphv/BlackCat) represent a pattern shared by 10+ additional groups. SentinelOne documented that leaked Babuk source code spawned ESXi encryptors for RansomHub, LockBit, Akira, Cactus, RTM Locker, Conti successors, REvil/Revix, Rorschach/BabLock, and others — all using identical tradecraft: SSH to ESXi → `vim-cmd vmsvc/power.off` → encrypt `/vmfs/volumes`. The detection chokepoints in this chain cover all of them because the underlying prerequisites are identical regardless of which encryptor binary is deployed.
+The two ransomware actors in this chain (Play, Alphv/BlackCat) represent a pattern shared by 10+ additional groups. SentinelOne documented that leaked Babuk source code spawned ESXi encryptors for RansomHub, LockBit, Akira, Cactus, RTM Locker, Conti successors, REvil/Revix, Rorschach/BabLock, and others. All use identical tradecraft: SSH to ESXi &rarr; `vim-cmd vmsvc/power.off` &rarr; encrypt `/vmfs/volumes`. The detection chokepoints in this chain cover all of them because the underlying prerequisites are identical regardless of which encryptor binary is deployed.
 
-**Source:** [SentinelOne — Multiple groups build ESXi lockers from leaked Babuk code](https://www.sentinelone.com/labs/hypervisor-ransomware-multiple-threat-actor-groups-hop-on-leaked-babuk-code-to-build-esxi-lockers/)
+**Source:** [SentinelOne: Multiple groups build ESXi lockers from leaked Babuk code](https://www.sentinelone.com/labs/hypervisor-ransomware-multiple-threat-actor-groups-hop-on-leaked-babuk-code-to-build-esxi-lockers/)
 
 ## Related Attack Chains
 
-- [Ransomware]({{ '/attack-chains/ransomware/' | relative_url }}) — ESXi-targeting ransomware reuses identical vSphere access patterns; 8 groups tracked in the ransomware chain
-- [Infostealers]({{ '/attack-chains/infostealers/' | relative_url }}) — Stolen VPN/RDP creds from infostealer logs provide initial vSphere access
-- [AiTM / Phishing Kits]({{ '/attack-chains/aitm/' | relative_url }}) — AiTM-compromised Okta sessions enable vSphere web client access
+- [Ransomware]({{ '/attack-chains/ransomware/' | relative_url }}) - ESXi-targeting ransomware reuses identical vSphere access patterns; 8 groups tracked in the ransomware chain
+- [Infostealers]({{ '/attack-chains/infostealers/' | relative_url }}) - Stolen VPN/RDP creds from infostealer logs provide initial vSphere access
+- [AiTM / Phishing Kits]({{ '/attack-chains/aitm/' | relative_url }}) - AiTM-compromised Okta sessions enable vSphere web client access

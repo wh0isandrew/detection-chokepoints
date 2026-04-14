@@ -1,6 +1,8 @@
 # Hypervisor Compromise TTP Overlap Data
-# Groups match the 5 actors in the Hypervisor Compromise attack chain.
-# TTP coverage sourced from Mandiant vSphere/BRICKSTORM report (April 2026).
+# Generated from Kitsune pipeline analysis of 12 threat reports via ORKL.
+# 5 actors targeting VMware vSphere / ESXi, cross-report corroboration for convergence.
+# Shared techniques (2+ actors): 22
+# Generated: 2026-04-14
 
 groups:
   - id: brick
@@ -14,95 +16,102 @@ groups:
     color: "#ec4899"
   - id: play
     name: "Play Ransomware"
-    color: "#84cc16"
+    color: "#f59e0b"
   - id: alphv
-    name: "Alphv/BlackCat"
-    color: "#06b6d4"
+    name: "Alphv / BlackCat"
+    color: "#3b82f6"
 
 phases:
-  - label: "Initial Access"
+  - label: "Initial Access & Recon"
     techniques:
-      - id: "T1190"
-        name: "Exploit Public-Facing App"
-        groups: [brick, unc3886, unc3944, play, alphv]
       - id: "T1078"
         name: "Valid Accounts"
-        groups: [brick, unc3944, play, alphv]
+        groups: [brick, unc3886, unc3944, play]
+      - id: "T1078.003"
+        name: "Local Accounts"
+        groups: [unc3886, play]
       - id: "T1133"
         name: "External Remote Services"
-        groups: [brick]
+        groups: [unc3886, play]
+      - id: "T1190"
+        name: "Exploit Public-Facing Application"
+        groups: [brick, unc3886, unc3944, play]
 
-  - label: "Execution"
+  - label: "Mgmt Plane Takeover"
     techniques:
-      - id: "T1059.004"
-        name: "Unix Shell"
-        groups: [brick, unc3886, unc3944, play, alphv]
-      - id: "T1203"
-        name: "Exploitation for Client Execution"
-        groups: [brick, unc3886]
+      - id: "T1059"
+        name: "Command and Scripting Interpreter"
+        groups: [brick, unc3944, play]
+
+  - label: "Credential Theft"
+    techniques:
+      - id: "T1552"
+        name: "Unsecured Credentials"
+        groups: [unc3886, play]
 
   - label: "Persistence"
     techniques:
-      - id: "T1037"
-        name: "Boot or Logon Init Scripts"
-        groups: [brick, unc3886, unc3944, play, alphv]
-      - id: "T1098.004"
-        name: "Account Manipulation: SSH Keys"
+      - id: "T1543"
+        name: "Create or Modify System Process"
         groups: [brick, unc3886]
-      - id: "T1136.001"
-        name: "Create Account: Local"
-        groups: [brick]
 
-  - label: "Privilege Escalation"
+  - label: "Lateral Movement"
     techniques:
-      - id: "T1548.003"
-        name: "Abuse Elevation Control: Sudo"
-        groups: [brick, unc3886, unc3944, play, alphv]
-      - id: "T1078.004"
-        name: "Valid Accounts: Cloud"
+      - id: "T1021"
+        name: "Remote Services"
+        groups: [brick, play]
+      - id: "T1021.001"
+        name: "Remote Desktop Protocol"
+        groups: [brick, unc3944]
+      - id: "T1021.006"
+        name: "Windows Remote Management"
         groups: [brick, unc3944]
 
   - label: "Defense Evasion"
     techniques:
-      - id: "T1070.002"
-        name: "Indicator Removal: Clear Linux Logs"
-        groups: [brick, unc3886, unc3944, play, alphv]
+      - id: "T1027"
+        name: "Obfuscated Files or Information"
+        groups: [brick, play]
       - id: "T1036.005"
-        name: "Masquerading: Match Legitimate Name"
-        groups: [brick]
-      - id: "T1497"
-        name: "Virtualization/Sandbox Evasion"
+        name: "Match Legitimate Name or Location"
+        groups: [brick, unc3886, unc3944]
+      - id: "T1070"
+        name: "Indicator Removal"
+        groups: [brick, unc3886]
+      - id: "T1562.001"
+        name: "Disable or Modify Tools"
+        groups: [brick, unc3886, play]
+
+  - label: "Discovery"
+    techniques:
+      - id: "T1083"
+        name: "File and Directory Discovery"
         groups: [brick, unc3886]
 
-  - label: "Credential Access"
+  - label: "C2 & Exfiltration"
     techniques:
-      - id: "T1555"
-        name: "Credentials from Password Stores"
-        groups: [brick, unc3886, unc3944, play, alphv]
-      - id: "T1003.008"
-        name: "OS Credential Dumping: /etc/shadow"
-        groups: [brick]
-      - id: "T1552.004"
-        name: "Unsecured Credentials: Private Keys"
-        groups: [brick, alphv]
-
-  - label: "Lateral Movement"
-    techniques:
-      - id: "T1210"
-        name: "Exploitation of Remote Services"
-        groups: [brick, unc3886, unc3944, play, alphv]
-      - id: "T1021.004"
-        name: "Remote Services: SSH"
-        groups: [brick, unc3944]
-
-  - label: "Exfiltration & Impact"
-    techniques:
-      - id: "T1090.003"
-        name: "Proxy: SOCKS / DoH Tunneling"
-        groups: [brick]
-      - id: "T1213"
-        name: "Data from Information Repositories"
+      - id: "T1041"
+        name: "Exfiltration Over C2 Channel"
+        groups: [unc3944, play, alphv]
+      - id: "T1048"
+        name: "Exfil Over Alternative Protocol"
+        groups: [unc3944, play]
+      - id: "T1071"
+        name: "Application Layer Protocol"
+        groups: [brick, play]
+      - id: "T1071.001"
+        name: "Web Protocols"
         groups: [brick, unc3886]
+      - id: "T1105"
+        name: "Ingress Tool Transfer"
+        groups: [brick, unc3886]
+
+  - label: "Impact"
+    techniques:
       - id: "T1486"
         name: "Data Encrypted for Impact"
-        groups: [play, alphv]
+        groups: [unc3944, play, alphv]
+      - id: "T1490"
+        name: "Inhibit System Recovery"
+        groups: [unc3944, alphv]
+
