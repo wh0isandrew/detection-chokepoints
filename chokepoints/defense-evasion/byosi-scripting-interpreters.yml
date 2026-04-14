@@ -305,15 +305,7 @@ Detections:
   - Sysmon Event ID 1 (Process Creation)
   - Sysmon Event ID 11 (File Create)
   - Windows Security Event ID 4688 (Process Creation)
-  Logic: >
-    Monitor process creation events for known scripting interpreter binaries
-    (python.exe, python3.exe, pythonw.exe, php.exe, php-cgi.exe, node.exe, ruby.exe,
-    perl.exe, lua.exe, wish.exe, tclsh.exe, Rscript.exe, dart.exe, deno.exe, bun.exe,
-    AutoHotkey.exe, AutoHotkey64.exe) executing from non-standard paths. Standard
-    paths to exclude: Program Files, known development tool directories, package
-    manager caches. Flag any interpreter execution from C:\Temp, C:\Users\*\Downloads,
-    C:\Users\*\AppData, C:\Windows\Temp, or any user-writable directory.
-    Also monitor file creation events for interpreter binaries written to these paths.
+  Logic: 'Any process creation or file create for known scripting interpreter binaries (python.exe, python3.exe, pythonw.exe, php.exe, php-cgi.exe, node.exe, ruby.exe, perl.exe, lua.exe, wish.exe, tclsh.exe, Rscript.exe, dart.exe, deno.exe, bun.exe, AutoHotkey.exe, AutoHotkey64.exe) from user-writable paths like C:\Temp, C:\Users\*\Downloads, C:\Users\*\AppData, or C:\Windows\Temp. Exclude Program Files, development tool directories, and package manager caches. Run to baseline the allowlist.'
   ExpectedFPRate: High
   UseCase: >
     Baseline which interpreters exist in the environment. Identify systems where
@@ -326,14 +318,7 @@ Detections:
   - Sysmon Event ID 1 (Process Creation)
   - Sysmon Event ID 3 (Network Connection)
   - Windows Security Event ID 4688 (Process Creation)
-  Logic: >
-    Process creation where Image matches known interpreter list AND ImagePath is NOT
-    in an approved development directory AND one of: (A) CommandLine contains a script
-    file path (.py, .pyc, .php, .js, .rb, .pl, .lua, .tcl, .r, .ahk, .dart, .ts),
-    OR (B) CommandLine contains inline execution flags (-e, -c, --eval, -exec, -r),
-    OR (C) within 60 seconds the interpreter process creates an outbound network
-    connection (Sysmon EID 3) to a non-RFC1918 destination. Exclude known CI/CD
-    runners and developer workstations by hostname or OU.
+  Logic: 'Interpreter process from outside an approved development directory AND one of: CommandLine references a script file (.py, .pyc, .php, .js, .rb, .pl, .lua, .tcl, .r, .ahk, .dart, .ts), OR CommandLine uses inline execution flags (-e, -c, --eval, -exec, -r), OR within 60 seconds the process opens an outbound connection to a non-RFC1918 destination. Exclude CI/CD runners and developer workstations by hostname or OU.'
   ExpectedFPRate: Medium
   UseCase: >
     Active threat hunting for BYOSI deployment. Correlates interpreter execution with
@@ -348,15 +333,7 @@ Detections:
   - Sysmon Event ID 3 (Network Connection)
   - Sysmon Event ID 11 (File Create)
   - Windows Security Event ID 4688 (Process Creation)
-  Logic: >
-    Correlation chain within 120-second window: (1) File creation of interpreter
-    binary in user-writable directory (C:\Temp, %APPDATA%, %LOCALAPPDATA%,
-    Downloads, Windows\Temp), THEN (2) Process creation of that interpreter binary
-    with parent process being PowerShell, cmd.exe, wscript.exe, mshta.exe, or
-    explorer.exe, AND CommandLine references a script file in a temp directory or uses
-    inline execution flags, THEN (3) The interpreter process initiates an outbound
-    network connection to a non-RFC1918, non-Microsoft IP address. Exclude developer
-    machines, CI/CD build agents, and known package manager update processes.
+  Logic: 'Within a 120-second window: interpreter binary dropped to C:\Temp, %APPDATA%, %LOCALAPPDATA%, Downloads, or Windows\Temp, THEN executed with parent powershell/cmd/wscript/mshta/explorer and CommandLine referencing a temp-dir script or inline execution flags, THEN outbound to a non-RFC1918, non-Microsoft IP. Exclude developer machines, CI/CD build agents, and package manager update processes.'
   ExpectedFPRate: Low
   UseCase: >
     SOC alerting; direct escalation trigger for active BYOSI deployment. The three-stage

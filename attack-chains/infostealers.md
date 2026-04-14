@@ -1,8 +1,8 @@
 ---
 layout: attack-chain
 title: Infostealer Attack Chain
-subtitle: "How infostealer operators all follow the same five-stage chokepoint sequence — regardless of family, brand, or C2 infrastructure."
-last_updated: 2025-01-15
+subtitle: "How infostealer operators all follow the same five-stage chokepoint sequence, regardless of family, brand, or C2 infrastructure."
+last_updated: 2026-04-13
 permalink: /attack-chains/infostealers/
 show_ttp_overlap: true
 ttp_data_key: infostealer_ttp_overlap
@@ -10,12 +10,6 @@ ttp_data_key: infostealer_ttp_overlap
 stages:
   - id: distribution
     label: Distribution
-    mitre_tactic: "TA0001"
-    mitre_techniques:
-      - id: "T1608.005"
-        name: "Link Target (SEO)"
-      - id: "T1566.002"
-        name: "Spearphishing Link"
     detection_status: detected
     attacker_action: "Malvertising / SEO poison"
     systems: "Browser · DNS"
@@ -25,32 +19,18 @@ stages:
       - "Installer with missing or untrusted digital signature"
   - id: execution
     label: Execution
-    mitre_tactic: "TA0002"
-    mitre_techniques:
-      - id: "T1204.002"
-        name: "Malicious File"
-      - id: "T1059.005"
-        name: "Visual Basic"
-      - id: "T1218.005"
-        name: "Mshta"
     detection_status: detected
     attacker_action: "LOLBin chain / fake installer"
     systems: "Endpoint"
     detection_signals:
       - "Executable launched from %USERPROFILE%\\Downloads\\ or %TEMP%\\"
       - "Browser process spawning unexpected child process"
-      - "LOLBin chain: mshta → wscript → rundll32 (no legitimate parent)"
+      - "LOLBin chain: mshta, wscript, rundll32 without legitimate parent"
     chokepoint_links:
       - label: "ClickFix Techniques"
         slug: "clickfix-techniques"
   - id: collection
     label: Collection
-    mitre_tactic: "TA0009"
-    mitre_techniques:
-      - id: "T1555.003"
-        name: "Credentials from Browsers"
-      - id: "T1539"
-        name: "Steal Web Session Cookie"
     detection_status: exploited
     attacker_action: "Browser DB / DPAPI decrypt"
     systems: "Endpoint · Browser"
@@ -63,12 +43,6 @@ stages:
         slug: "browser-credential-theft"
   - id: exfiltration
     label: Exfiltration
-    mitre_tactic: "TA0010"
-    mitre_techniques:
-      - id: "T1041"
-        name: "Exfiltration Over C2"
-      - id: "T1048"
-        name: "Exfil Over Alt Protocol"
     detection_status: detected
     attacker_action: "HTTPS POST to C2 / Telegram"
     systems: "Network · Firewall"
@@ -78,12 +52,6 @@ stages:
       - "Compressed archive (.zip/.7z) created then immediately sent over network"
   - id: monetization
     label: Monetization
-    mitre_tactic: "TA0040"
-    mitre_techniques:
-      - id: "T1657"
-        name: "Financial Theft"
-      - id: "T1078"
-        name: "Valid Accounts (downstream)"
     detection_status: unknown
     attacker_action: "IAB sale · Session replay"
     systems: "Dark web · SaaS"
@@ -103,7 +71,7 @@ actors:
   - name: LummaC2
     status: Active
     distribution: "Fake CAPTCHA / ClickFix lure pages"
-    execution: "LOLBin chain (mshta → wscript → rundll32)"
+    execution: "LOLBin chain (mshta, wscript, rundll32)"
     collection: "Browsers + 2FA extensions + crypto wallets (DPAPI)"
     exfiltration: "Encrypted HTTPS POST to rotating C2"
     monetization: "IAB sale + direct RaaS operator supply"
@@ -138,12 +106,16 @@ chokepoints:
 
 ---
 
-## References
+## Research Methodology
 
-- [CISA: LummaC2 malware analysis report (2025)](https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-071a)
-- [Recorded Future: Infostealer ecosystem and IAB supply chain (2024)](https://www.recordedfuture.com/research/infostealer-ecosystem-research)
-- [Sekoia: StealC malware analysis](https://blog.sekoia.io/stealc-a-copycat-of-vidar-and-raccoon-infostealers-gaining-in-popularity-part-1/)
-- [ESET: RedLine Stealer disruption (Operation Magnus, 2024)](https://www.welivesecurity.com/en/eset-research/operation-magnus-disrupting-redline-and-meta-infostealer-infrastructure/)
+Procedure-level data in this attack chain was extracted and corroborated using
+[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
+13 vendor and government reports were analyzed across 5 infostealer families, with
+cross-report corroboration used to validate convergence patterns. Reports were sourced from
+[ORKL](https://orkl.eu/) and direct vendor publications including CISA, Trend Micro,
+Palo Alto Unit 42, Zscaler, Cybereason, Sekoia, and Picus Security. Only techniques
+observed in two or more families appear in the TTP diagram above. Actor-specific
+procedures are recorded in the source data but filtered from the convergence view.
 
 ## Related Attack Chains
 

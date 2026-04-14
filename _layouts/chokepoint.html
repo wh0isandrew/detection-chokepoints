@@ -941,7 +941,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% endif %}
     </div>
     {% else %}
-    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy — regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
+    <p class="section-intro mb-5">Each stage is an invariant condition the attacker must satisfy, regardless of tool, variant, or threat actor. Detection at any stage breaks the chain.</p>
     {% endif %}
 
     <div class="chokepoints-list">
@@ -960,7 +960,6 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <summary class="chokepoint-header">
           <span class="cp-number">{{ forloop.index }}</span>
           <span class="cp-title">{{ stage.Stage }}</span>
-          <span class="cp-maturity mat-{{ stage.DetectionTier | downcase }}">{{ stage.DetectionTier }}</span>
           <span class="cp-chevron">&#9654;</span>
         </summary>
         <div class="chokepoint-body">
@@ -1059,7 +1058,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       Variations
       <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
     </h2>
-    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint — the list grows; the chokepoint doesn't change.</p>
+    <p class="section-intro mb-4">Tools and methods that exploit this chokepoint. The list grows. The chokepoint doesn't change.</p>
 
     <div class="variations-list">
       {% for v in cp.Variations %}
@@ -1505,13 +1504,6 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% if log.EventId %}<span class="log-eid">EID {{ log.EventId }}</span>{% endif %}
           <span class="log-source">{{ log.Type }}</span>
           <span class="log-desc">{{ log.Description }}</span>
-          {% if log.MatchedRules %}
-          <div class="rule-badges">
-            {% for rule in log.MatchedRules %}
-            <span class="rule-badge rb-{{ rule | downcase }}">{{ rule }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
           <span class="log-chevron">&#9654;</span>
         </summary>
         <div class="log-body">{{ log.Sample | xml_escape }}</div>
