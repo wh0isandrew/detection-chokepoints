@@ -1,0 +1,49 @@
+name: Link Check (Built Site)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Aggregate chokepoint data
+        run: python scripts/aggregate.py
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Build Jekyll site
+        run: bundle exec jekyll build --baseurl "/detection-chokepoints"
+        env:
+          JEKYLL_ENV: production
+
+      - name: Install HTMLProofer
+        run: gem install html-proofer
+
+      - name: Check internal links in _site
+        run: |
+          htmlproofer ./_site \
+            --disable-external \
+            --check-html \
+            --assume-extension \
+            --typhoeus-config '{"timeout":10,"connecttimeout":10}' \
+            --ignore-urls '/^https:\/\/github\.com\/.*\/blob\/main\//'

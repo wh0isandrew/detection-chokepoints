@@ -35,3 +35,18 @@ __pycache__/
 
 # Local test output
 /tmp/masq_infra_test.json
+
+# Local AI / assistant tooling (machine-specific; not part of the published site)
+.claude/
+.cursor/skills-cursor/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
+
+# Local preview / mockups (remove these lines to track in git)
+preview.html
+framework-mockup.html
