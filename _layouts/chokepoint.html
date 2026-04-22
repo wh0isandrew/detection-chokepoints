@@ -348,6 +348,12 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
   transition: background .15s;
 }
 .variant-source-link:hover { background: rgba(88,166,255,.08); text-decoration: none; }
+.variant-source-link--missing {
+  opacity: .65;
+  cursor: default;
+  user-select: none;
+}
+.variant-source-link--missing:hover { background: transparent; }
 
 /* ── Variant Lure / Payload / Chokepoint Mapping ────────────────── */
 .variant-section-label {
@@ -916,7 +922,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
     {% if cp.AttackerControls or cp.AttackerCannotControl %}
     <p class="section-intro mb-4">Applying the chokepoint framework to {{ cp.Name }}.
-      <a href="{{ '/' | relative_url }}">Learn the framework &rarr;</a>
+      <a href="{{ '/framework/' | relative_url }}">Learn the framework &rarr;</a>
     </p>
     <div class="controls-table">
       {% if cp.AttackerControls %}
@@ -1139,7 +1145,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               Source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
             {% endif %}
           {% else %}
-          <a class="variant-source-link" href="#">Source link needed &#8594;</a>
+          <span class="variant-source-link variant-source-link--missing">Source link needed &#8594;</span>
           {% endif %}
         </div>
       </details>
@@ -1546,7 +1552,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
           </div>
-          {% assign emu_lang = "language-" | append: (emu.Language | downcase | default: "plaintext") %}
+          {% assign emu_lang_raw = emu.Language | downcase | default: "plaintext" %}
+          {% assign emu_lang = "language-" | append: emu_lang_raw %}
           <pre class="sigma-code rounded-lg p-4 overflow-x-auto text-[.8rem]"><code class="{{ emu_lang }}">{{ cp._emulation_content | xml_escape }}</code></pre>
         </div>
       </div>
