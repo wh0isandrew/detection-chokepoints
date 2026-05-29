@@ -1,0 +1,54 @@
+title: Entra ID AiTM Device PRT Enrollment — Non-Native UA Correlated with Preceding AiTM Sign-In
+id: a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d
+status: experimental
+description: >
+  Detects a synthetic Entra ID device registration (non-native UA) within 15 minutes
+  of a preceding AiTM kit relay sign-in (Node.js UA on OfficeHome/Auth Broker) for the
+  same UPN. This correlation confirms the Tycoon 2FA persistence chain: kit relay steals
+  session token → kit immediately enrolls synthetic device using DRS API with axios UA →
+  device-bound PRT acquired → persists through revokeSignInSessions. IR teams MUST delete
+  registered devices BEFORE revoking sessions; skipping device deletion leaves the PRT
+  active and allows immediate re-authentication.
+  NOTE: This rule requires correlation across two log sources (AuditLogs + SigninLogs) --
+  implement as KQL join or SIEM correlation rule.
+  KQL join (Sentinel):
+    let AiTMSignIn = SigninLogs
+      | where ResultType == "0"
+        and UserAgent has_any ("node","axios","undici","node-fetch")
+        and AppDisplayName has_any ("OfficeHome","Microsoft Authentication Broker")
+      | project AiTMTime = TimeGenerated, UserPrincipalName;
+    AuditLogs
+    | where OperationName == "Add registered users to device" and ResultType == "0"
+    | where not(UserAgent has_any ("Dsreg","DeviceRegistrationClient","Dalvik"))
+    | extend UPN = tostring(InitiatedBy.user.userPrincipalName)
+    | join kind=inner AiTMSignIn on $left.UPN == $right.UserPrincipalName
+    | where TimeGenerated between (AiTMTime .. AiTMTime + 15m)
+references:
+  - https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
+author: '@iimp0ster'
+date: 2026-05-27
+tags:
+  - attack.persistence
+  - attack.t1098.005
+  - detection.maturity.analyst
+logsource:
+  product: azure
+  service: auditlogs
+detection:
+  # This rule requires correlation across AuditLogs and SigninLogs — use the KQL join above.
+  # Sigma stub fires on device registration with non-native UA; full correlation requires SIEM.
+  selection_device_registration:
+    OperationName: 'Add registered users to device'
+    ResultType: '0'
+  filter_native_ua:
+    UserAgent|contains:
+      - 'Dsreg'
+      - 'DeviceRegistrationClient'
+      - 'Dalvik'
+      - 'Windows-AzureAD-Authentication-Provider'
+  # CORRELATION: same UPN in SigninLogs with Node.js UA within 900s preceding -- KQL required
+  condition: selection_device_registration and not filter_native_ua
+falsepositives:
+  - Automated device enrollment workflows triggered by sign-in event (document and exclude)
+  - Split-session scenarios where Node.js tooling and device enrollment coincidentally overlap
+level: high
