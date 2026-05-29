@@ -687,3 +687,27 @@ EmulationScript:
   SafetyNotes: Run in isolated lab VM only. Makes a benign outbound HTTP request to example.com.
   AtomicRef: T1204.004
 TheConstant: Clipboard write → user pastes into interpreter → outbound C2 connection
+PreventionSummary: >
+  ClickFix works because browsers can write to the clipboard and users can run whatever is
+  pasted into them. Restricting which interpreters browsers are permitted to spawn limits
+  damage when users fall for the lure, even without blocking the lure page itself.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Block scripting interpreters (mshta.exe, wscript.exe, powershell.exe, cscript.exe)
+    spawned by browsers or shell processes on standard user workstations
+  Impact: Breaks the ClickFix chain at interpreter spawn — even if the user pastes and
+    executes the command, no interpreter is permitted to run.
+  MagicSwordFit: MagicSword's Spawn Control rules restrict which child processes browsers
+    are permitted to spawn, blocking clipboard-delivered payloads without breaking
+    legitimate browser behavior.
+  MagicSwordTag: lolbas
+- Category: Endpoint
+  Control: Restrict Run dialog execution and enforce PowerShell Constrained Language Mode
+    on standard user workstations
+  Impact: Raises the bar for successful clipboard payload execution without a secondary
+    privilege escalation step.
+- Category: Network
+  Control: Deploy DNS filtering to block newly-registered domains and known ClickFix
+    distribution infrastructure before the lure page loads
+  Impact: Prevents the malicious page from loading and writing to the clipboard in the
+    first place; effective at stopping commodity campaigns that rely on fresh domain churn.

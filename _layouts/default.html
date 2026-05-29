@@ -39,6 +39,12 @@
         <a href="https://attack.mitre.org/" target="_blank" rel="noopener">MITRE ATT&amp;CK</a>
       </span>
     </div>
+    {% if site.magic_sword_enabled and site.magic_sword_affiliate_url %}
+    <div class="footer-disclosure max-w-[1280px] mx-auto mt-3 px-0" style="font-size:.7rem;color:var(--text-dim);font-style:italic;">
+      Some links on this site (marked with &#8594; or labeled MagicSword) are affiliate links.
+      We only link tools we would recommend to defenders regardless of any affiliate relationship.
+    </div>
+    {% endif %}
   </footer>
 
   <script>

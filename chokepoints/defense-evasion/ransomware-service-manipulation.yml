@@ -370,3 +370,24 @@ EmulationScript:
   SafetyNotes: Requires Administrator. Creates dummy test services. Optionally targets VSS. Lab VM only.
   AtomicRef: T1562.001
 TheConstant: SYSTEM-level process → service enumeration → bulk service stop/delete → encryption begins
+PreventionSummary: >
+  Ransomware's pre-encryption kill phase relies on a small set of well-known binaries to stop
+  security and backup services. Application control can block or alert on these tools before
+  they succeed, buying defenders critical response time before encryption begins.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Restrict which processes may invoke service stop/delete commands
+  Impact: Blocks or delays the pre-encryption kill phase; even a short delay gives defenders
+    time to intervene before files are encrypted.
+  MagicSwordFit: MagicSword's Spawn Control rules restrict which parent processes can invoke
+    service-manipulation binaries (sc.exe, net.exe, taskkill.exe), blocking ransomware kill
+    scripts without affecting legitimate IT workflows.
+  MagicSwordTag: lolbas
+- Category: Endpoint
+  Control: Enable Tamper Protection on your EDR/AV and all security tools
+  Impact: Prevents security services from being stopped even by processes running as SYSTEM,
+    preserving visibility at the point when it matters most.
+- Category: Backup
+  Control: Enforce immutable, offline-separated backups and restrict vssadmin access
+  Impact: Preserves recovery options even if ransomware completes its kill list; removes the
+    business leverage that makes ransom payment attractive.
