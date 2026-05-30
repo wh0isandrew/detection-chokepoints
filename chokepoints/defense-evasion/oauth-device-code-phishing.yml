@@ -37,7 +37,8 @@ Prerequisites:
 Chokepoints:
 - Stage: Device Code Redemption via MAB App
   Input: Victim has entered the device code at microsoft.com/devicelogin
-  Invariant: The attacker MUST use a specific OAuth application to initiate the
+  Invariant: >
+    The attacker MUST use a specific OAuth application to initiate the
     device code flow — Tycoon 2FA hardcodes the Microsoft Authentication Broker
     (client ID 29d9ed98-a469-4536-ade2-f981bc1d605e). Redemption generates an
     interactive sign-in event with authenticationProtocol: deviceCode and the MAB
@@ -147,7 +148,7 @@ EvolutionTimeline:
     "Block device code flow" (error 53003) provides prevention. Tenant admins
     should audit frequency of interactive device-code flows — most managed users
     never initiate them.
-  TheConstant: authenticationProtocol: deviceCode + MAB app ID + resultType 0 on interactive sign-in
+  TheConstant: "authenticationProtocol: deviceCode + MAB app ID + resultType 0 on interactive sign-in"
   Variants: []
   EventType: event
 
@@ -197,7 +198,8 @@ Detections:
     resultType == "0" AND isInteractive == true.
     Exclude known-legitimate automation (document per tenant).
   ExpectedFPRate: Very Low
-  UseCase: SOC alerting. Immediate investigation. Trigger: enumerate registered devices,
+  UseCase: >
+    SOC alerting. Immediate investigation. Trigger: enumerate registered devices,
     review recent sign-ins, revoke if confirmed phishing.
   SigmaRule: sigma-rules/oauth-device-code-phishing/analyst.yml
 

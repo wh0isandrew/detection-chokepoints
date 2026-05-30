@@ -64,7 +64,8 @@ Chokepoints:
 
 - Stage: PRT Persistence Post-Revocation
   Input: IR team has executed revokeSignInSessions (but NOT deleted device objects first)
-  Invariant: The attacker MUST use the PRT + session key to sign per-request
+  Invariant: >
+    The attacker MUST use the PRT + session key to sign per-request
     HMAC-SHA256 assertions for ongoing oauth2/token calls — these generate
     non-interactive sign-in records with incomingTokenType: primaryRefreshToken
     even after revokeSignInSessions has been executed.
@@ -227,7 +228,7 @@ Intel:
     Automated response workflow (disable → delete devices → revoke → reset)
     executes in <10 seconds.
 
-- Name: MITRE ATT&CK — T1098.005 Account Manipulation: Device Registration
+- Name: "MITRE ATT&CK — T1098.005 Account Manipulation: Device Registration"
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1098/005/
   Description: Primary technique definition.

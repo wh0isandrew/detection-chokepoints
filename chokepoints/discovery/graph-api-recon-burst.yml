@@ -232,7 +232,7 @@ Intel:
     /beta/ API disproportionate usage as secondary signal. 10-20 minute
     kit-to-operator handoff window quantified.
 
-- Name: MITRE ATT&CK — T1087.004 Account Discovery: Cloud Account
+- Name: "MITRE ATT&CK — T1087.004 Account Discovery: Cloud Account"
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1087/004/
   Description: Primary technique definition.
