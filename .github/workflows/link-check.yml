@@ -44,5 +44,4 @@ jobs:
           htmlproofer ./_site \
             --disable-external \
             --checks Links,Images,Scripts,OpenGraph \
-            --assume-extension \
-            --ignore-urls '/^https:\/\/github\.com\/.*\/blob\/main\//'
+            --assume-extension
