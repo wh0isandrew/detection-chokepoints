@@ -45,4 +45,5 @@ jobs:
             --disable-external \
             --checks Links,Images,Scripts \
             --assume-extension .html \
-            --ignore-files "/assets\/lures\//"
+            --ignore-files "/assets\/lures\//" \
+            --swap-urls "^/detection-chokepoints:"
