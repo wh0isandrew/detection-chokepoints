@@ -16,7 +16,7 @@ permalink: /attack-chains/
   </div>
 </section>
 
-<div class="max-w-[1280px] mx-auto px-6 py-10">
+<div style="max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;">
 
   <!-- Section 1: Why Map Attack Chains -->
   <div class="ac-why-section">

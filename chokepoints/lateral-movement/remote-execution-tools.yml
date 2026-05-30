@@ -455,3 +455,24 @@ EmulationScript:
   SafetyNotes: Requires Administrator. All activity targets localhost only. Run in isolated lab VM.
   AtomicRef: T1021.002
 TheConstant: Valid admin credentials → authenticated protocol (SMB/WMI/WinRM) → remote command execution
+PreventionSummary: >
+  Valid credentials alone are not sufficient if the offensive tools that use them are blocked.
+  Restricting dual-use admin utilities (PsExec, Impacket, NetExec) from executing on endpoints
+  prevents lateral movement even when an attacker has valid admin credentials.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Block dual-use offensive tools from executing on workstations and servers
+  Impact: Prevents lateral movement even when the attacker holds valid admin credentials — the
+    tools themselves become the chokepoint that is blocked.
+  MagicSwordFit: MagicSword's LOLBAS / dual-use controls block offensive admin tools
+    (Impacket, NetExec, PsExec, CrackMapExec) by default, with policy tuned to allow only
+    what your teams legitimately need.
+  MagicSwordTag: lolbas
+- Category: Identity
+  Control: Enforce tiered admin accounts with MFA and eliminate standing admin access
+  Impact: Valid credentials are harder to obtain and reuse across the network; removes the
+    "credentials = immediate access" assumption.
+- Category: Network
+  Control: Segment workstation-to-workstation SMB (445/TCP) and WMI (135/TCP) traffic
+  Impact: Blocks the lateral movement protocols at the network layer even if tools execute,
+    limiting the blast radius of any single compromised host.

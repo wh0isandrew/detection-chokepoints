@@ -37,13 +37,13 @@ jobs:
           JEKYLL_ENV: production
 
       - name: Install HTMLProofer
-        run: gem install html-proofer
+        run: gem install html-proofer -v '~> 5.2'
 
       - name: Check internal links in _site
         run: |
           htmlproofer ./_site \
             --disable-external \
-            --check-html \
-            --assume-extension \
-            --typhoeus-config '{"timeout":10,"connecttimeout":10}' \
-            --ignore-urls '/^https:\/\/github\.com\/.*\/blob\/main\//'
+            --checks Links,Images,Scripts \
+            --assume-extension .html \
+            --ignore-files "/assets\/lures\//" \
+            --swap-urls "^/detection-chokepoints:"

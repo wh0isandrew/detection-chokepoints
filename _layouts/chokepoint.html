@@ -14,8 +14,10 @@ layout: default
 
 .controls-col {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: .75rem 1rem;
+  border-radius: var(--radius-lg);
+  padding: .85rem 1.1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color .2s, box-shadow .2s;
 }
 .controls-col-variable { background: var(--bg); }
 .controls-col-chokepoint {
@@ -43,23 +45,30 @@ layout: default
 .chokepoints-list { display: flex; flex-direction: column; gap: 0; }
 
 .chokepoint-item {
-  background: var(--bg-card);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color .15s;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.03);
 }
-details.chokepoint-item[open] { border-color: var(--accent); }
+.chokepoint-item:hover { border-color: rgba(240,136,62,.25); }
+details.chokepoint-item[open] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.25), 0 8px 24px rgba(0,0,0,.25);
+}
 
 .chokepoint-header {
   display: flex;
   align-items: center;
   gap: .75rem;
-  padding: .75rem 1rem;
+  padding: .85rem 1.1rem;
   cursor: pointer;
   user-select: none;
   list-style: none;
+  transition: background .15s;
 }
+.chokepoint-header:hover { background: rgba(240,136,62,.04); }
 .chokepoint-header::-webkit-details-marker { display: none; }
 
 .cp-number {
@@ -126,13 +135,15 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
 .cp-why-unavoidable {
   background: rgba(218,54,51,.06);
   border: 1px solid rgba(218,54,51,.2);
-  border-radius: 4px;
-  padding: .55rem .85rem;
+  border-left: 3px solid var(--critical);
+  border-radius: var(--radius-lg);
+  padding: .65rem .95rem;
   margin: .6rem 0;
   font-size: .78rem;
   line-height: 1.5;
   color: var(--text-muted);
   font-style: italic;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .cp-why-label {
   font-family: var(--font-mono);
@@ -149,12 +160,14 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
 .cp-invariant {
   background: rgba(240,136,62,.07);
   border: 1px solid rgba(240,136,62,.2);
-  border-radius: 4px;
-  padding: .65rem .85rem;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: .75rem .95rem;
   margin: .75rem 0;
   font-size: .82rem;
   line-height: 1.5;
   color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .cp-invariant-label {
   font-family: var(--font-mono);
@@ -186,14 +199,16 @@ details.chokepoint-item[open] .cp-chevron { transform: rotate(90deg); }
   display: flex;
   gap: .5rem;
   align-items: flex-start;
-  background: rgba(227,179,65,.07);
-  border: 1px solid rgba(227,179,65,.2);
-  border-radius: 4px;
-  padding: .55rem .75rem;
+  background: rgba(227,179,65,.08);
+  border: 1px solid rgba(227,179,65,.25);
+  border-left: 3px solid var(--high);
+  border-radius: var(--radius-lg);
+  padding: .65rem .85rem;
   margin-top: .75rem;
   font-size: .78rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .bypass-warning .warn-icon { color: var(--high); flex-shrink: 0; }
 
@@ -254,13 +269,14 @@ details.cp-true-positive[open] .cp-tp-chevron { transform: rotate(90deg); }
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  background: rgba(240,136,62,.08);
-  border: 1px solid rgba(240,136,62,.25);
+  background: rgba(240,136,62,.1);
+  border: 1px solid rgba(240,136,62,.3);
   border-radius: 20px;
-  padding: .25rem .75rem;
+  padding: .3rem .85rem;
   font-family: var(--font-mono);
   font-size: .68rem;
   color: var(--accent);
+  box-shadow: 0 0 12px rgba(240,136,62,.12);
 }
 .connector-arrow { font-size: .75rem; }
 
@@ -285,21 +301,37 @@ details.cp-true-positive[open] .cp-tp-chevron { transform: rotate(90deg); }
 
 .variant-item {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color .15s;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.03);
 }
+.variant-item:hover {
+  border-color: rgba(240,136,62,.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+details.variant-item[open] {
+  border-color: rgba(240,136,62,.35);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.2), 0 8px 24px rgba(0,0,0,.2);
+}
+.variant-item:has(.status-active) { border-left: 3px solid rgba(63,185,80,.5); }
+.variant-item:has(.status-emerging) { border-left: 3px solid rgba(240,136,62,.5); }
+.variant-item:has(.status-declining) { border-left: 3px solid rgba(227,179,65,.5); }
+.variant-item:has(.status-disrupted) { border-left: 3px solid rgba(218,54,51,.5); }
 
 .variant-header {
   display: flex;
   align-items: center;
   gap: .65rem;
-  padding: .65rem .85rem;
+  padding: .75rem .95rem;
   cursor: pointer;
   user-select: none;
   list-style: none;
   background: var(--bg-card);
+  transition: background .15s;
 }
+.variant-header:hover { background: rgba(240,136,62,.04); }
 .variant-header::-webkit-details-marker { display: none; }
 
 .variant-name  { font-weight: 600; font-size: .85rem; flex: 1; }
@@ -367,11 +399,12 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
 /* Lure preview iframe */
 .variant-lure-preview {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin: .5rem 0 .75rem;
   background: #fff;
   position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 .variant-lure-preview iframe {
   width: 100%;
@@ -502,9 +535,11 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
   display: flex;
   align-items: center;
   gap: .65rem;
-  margin-bottom: .65rem;
-  padding-bottom: .4rem;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: .75rem;
+  padding: .55rem .75rem;
+  background: rgba(240,136,62,.04);
+  border: 1px solid rgba(240,136,62,.15);
+  border-radius: var(--radius-lg);
 }
 .det-stage-num {
   width: 22px;
@@ -531,23 +566,30 @@ details.variant-item[open] .variant-chevron { transform: rotate(90deg); }
 
 .det-rule-item {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color .15s;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.03);
 }
-details.det-rule-item[open] { border-color: var(--accent); }
+.det-rule-item:hover { border-color: rgba(240,136,62,.2); }
+details.det-rule-item[open] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.25), 0 8px 24px rgba(0,0,0,.22);
+}
 
 .det-rule-header {
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .6rem .85rem;
+  padding: .7rem .95rem;
   cursor: pointer;
   user-select: none;
   list-style: none;
   background: var(--bg-card);
   flex-wrap: wrap;
+  transition: background .15s;
 }
+.det-rule-header:hover { background: rgba(240,136,62,.04); }
 .det-rule-header::-webkit-details-marker { display: none; }
 
 .det-rule-title {
@@ -592,14 +634,16 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
   display: flex;
   gap: .5rem;
   align-items: flex-start;
-  background: rgba(227,179,65,.07);
-  border: 1px solid rgba(227,179,65,.2);
-  border-radius: 4px;
-  padding: .5rem .75rem;
+  background: rgba(227,179,65,.08);
+  border: 1px solid rgba(227,179,65,.25);
+  border-left: 3px solid var(--high);
+  border-radius: var(--radius-lg);
+  padding: .65rem .85rem;
   margin-top: .75rem;
   font-size: .78rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .det-correlation-note .warn-icon { color: var(--high); flex-shrink: 0; }
 
@@ -654,10 +698,11 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
 }
 
 .det-meta-card {
-  background: var(--bg-card);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: .65rem .85rem;
+  border-radius: var(--radius-lg);
+  padding: .75rem .95rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 .det-meta-label {
   font-family: var(--font-mono);
@@ -676,9 +721,10 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
 /* .sigma-block replaces .sigma-rule-block */
 .sigma-block {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin-top: 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 /* .sigma-header replaces .sigma-rule-header */
@@ -693,41 +739,56 @@ details.det-rule-item[open] .det-rule-chevron { transform: rotate(90deg); }
 
 /* .sigma-btn replaces .btn-sm */
 .sigma-btn {
-  background: none;
+  background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: .65rem;
-  padding: .18rem .5rem;
-  border-radius: 3px;
+  padding: .22rem .55rem;
+  border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
-  transition: color .15s, border-color .15s;
+  transition: color .15s, border-color .15s, background .15s, box-shadow .15s;
   display: inline-flex;
   align-items: center;
 }
-.sigma-btn:hover { color: var(--text); border-color: var(--border); text-decoration: none; }
+.sigma-btn:hover {
+  color: var(--accent);
+  border-color: rgba(240,136,62,.4);
+  background: rgba(240,136,62,.06);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.15);
+  text-decoration: none;
+}
 
 /* ── Raw Log Samples ─────────────────────────────────────────────── */
 .log-samples { display: flex; flex-direction: column; gap: .4rem; }
 
 .log-item {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.log-item:hover { border-color: rgba(240,136,62,.2); transform: translateY(-1px); }
+details.log-item[open] {
+  border-color: rgba(240,136,62,.3);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.15), 0 6px 20px rgba(0,0,0,.18);
 }
 
 .log-header {
   display: flex;
   align-items: center;
   gap: .6rem;
-  padding: .55rem .85rem;
+  padding: .65rem .95rem;
   cursor: pointer;
   user-select: none;
   list-style: none;
   background: var(--bg-card);
   flex-wrap: wrap;
+  transition: background .15s;
 }
+.log-header:hover { background: rgba(240,136,62,.04); }
 .log-header::-webkit-details-marker { display: none; }
 
 .log-eid {
@@ -774,20 +835,28 @@ details.log-item[open] .log-chevron { transform: rotate(90deg); }
 /* ── Emulation ───────────────────────────────────────────────────── */
 .emulation-wrapper {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: border-color .2s, box-shadow .2s;
+}
+details.emulation-wrapper[open] {
+  border-color: rgba(240,136,62,.3);
+  box-shadow: 0 0 0 1px rgba(240,136,62,.15), 0 8px 24px rgba(0,0,0,.2);
 }
 
 .emulation-header {
   display: flex;
   align-items: center;
   gap: .65rem;
-  padding: .65rem .85rem;
+  padding: .75rem .95rem;
   background: var(--bg-card);
   cursor: pointer;
   user-select: none;
   list-style: none;
+  transition: background .15s;
 }
+.emulation-header:hover { background: rgba(240,136,62,.04); }
 .emulation-header::-webkit-details-marker { display: none; }
 
 .emulation-attck {
@@ -840,6 +909,18 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   flex-shrink: 0;
 }
 
+.chokepoint-content .logic-block,
+.chokepoint-content pre.logic-block {
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.chokepoint-content .sigma-code,
+.chokepoint-content pre.sigma-code {
+  background: #010409 !important;
+}
+
 .osint-desc { font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
 </style>
 
@@ -851,8 +932,46 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </div>
 {% else %}
 
-<div class="chokepoint-layout max-w-[1100px] mx-auto px-6 py-10 pb-20">
-  <nav class="chokepoint-sidebar" id="chokepoint-nav">
+<div class="cp-page-wrap">
+
+<header class="cp-hero" id="overview">
+  <div class="cp-hero-inner max-w-[1100px] mx-auto px-6">
+    <div class="cp-hero-top">
+      <a href="{{ '/' | relative_url }}" class="cp-back-pill">&larr; All Chokepoints</a>
+      <span class="badge priority-{{ cp.DetectionPriority | downcase }}">{{ cp.DetectionPriority }}</span>
+    </div>
+
+    <h1 class="cp-hero-title">{{ cp.Name }}</h1>
+
+    {% if cp.TheConstant %}
+    <p class="cp-hero-constant">{{ cp.TheConstant }}</p>
+    {% endif %}
+
+    <div class="cp-hero-badges">
+      {% for tactic in cp.Tactics %}
+        <span class="badge tactic-badge">{{ tactic }}</span>
+      {% endfor %}
+      {% for mid in cp.MitreIds %}
+        <a class="badge mitre-badge"
+           href="https://attack.mitre.org/techniques/{{ mid | replace: '.', '/' }}/"
+           target="_blank" rel="noopener">{{ mid }}</a>
+      {% endfor %}
+      <span class="badge diff-badge">Detection difficulty: {{ cp.DetectionDifficulty }}</span>
+      <span class="badge prev-badge">Prevalence: {{ cp.ThreatPrevalence }}</span>
+    </div>
+
+    <p class="cp-hero-desc">{{ cp.Description }}</p>
+
+    <p class="cp-hero-byline">
+      By {{ cp.Author }} &middot; Updated {{ cp.LastUpdated }}
+      &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path }}"
+                  target="_blank" rel="noopener">View source YAML</a>
+    </p>
+  </div>
+</header>
+
+<div class="chokepoint-layout max-w-[1100px] mx-auto px-6 pt-8 pb-20">
+  <nav class="chokepoint-sidebar cp-sidebar-nav" id="chokepoint-nav">
     <a href="#overview" class="sidebar-link active">Overview</a>
     {% if cp.Chokepoints %}
     <a href="#attack-chokepoints" class="sidebar-link">Chokepoints</a>
@@ -861,6 +980,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     <a href="#variations" class="sidebar-link">Variations</a>
     {% endif %}
     <a href="#detection-strategy" class="sidebar-link">Detection</a>
+    {% if cp.PreventionSummary or cp.PreventionOpportunities %}
+    <a href="#prevention" class="sidebar-link">Prevention</a>
+    {% endif %}
     {% if cp.RawLogs %}
     <a href="#raw-logs" class="sidebar-link">Logs</a>
     {% endif %}
@@ -876,47 +998,19 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </nav>
   <article class="chokepoint-content">
 
-  <!-- ── 1. Page Header ─────────────────────────────────────────── -->
-  <header class="detail-header mb-10" id="overview">
-    <div class="flex items-center gap-3 mb-4">
-      <a href="{{ '/' | relative_url }}" class="back-link text-sm">&larr; All Chokepoints</a>
-      <span class="badge priority-{{ cp.DetectionPriority | downcase }}">{{ cp.DetectionPriority }}</span>
-    </div>
-
-    <h1 class="detail-title text-[clamp(1.5rem,4vw,2.25rem)] font-extrabold leading-tight mb-3">
-      {{ cp.Name }}
-    </h1>
-
-    <div class="flex flex-wrap gap-2 mb-4">
-      {% for tactic in cp.Tactics %}
-        <span class="badge tactic-badge">{{ tactic }}</span>
-      {% endfor %}
-      {% for mid in cp.MitreIds %}
-        <a class="badge mitre-badge"
-           href="https://attack.mitre.org/techniques/{{ mid | replace: '.', '/' }}/"
-           target="_blank" rel="noopener">{{ mid }}</a>
-      {% endfor %}
-      <span class="badge diff-badge">Detection difficulty: {{ cp.DetectionDifficulty }}</span>
-      <span class="badge prev-badge">Prevalence: {{ cp.ThreatPrevalence }}</span>
-    </div>
-
-    <p class="detail-description text-[1.05rem] leading-relaxed max-w-[720px] mb-3">{{ cp.Description }}</p>
-
-    <p class="detail-byline">
-      By {{ cp.Author }} &middot; Updated {{ cp.LastUpdated }}
-      &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path }}"
-                  target="_blank" rel="noopener">View source YAML</a>
-    </p>
-  </header>
-
   <!-- ── 2. Attack Chokepoints ──────────────────────────────────── -->
-  <section class="mb-10" id="attack-chokepoints">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
-      Attack Chokepoints
-      {% if cp.Chokepoints %}
-      <span class="section-sub">{{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %}</span>
-      {% endif %}
-    </h2>
+  <section class="cp-section-card" id="attack-chokepoints">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h2 class="cp-section-heading">
+        Attack Chokepoints
+        {% if cp.Chokepoints %}
+        <span class="section-sub">{{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %}</span>
+        {% endif %}
+      </h2>
+    </div>
 
     {% if cp.Chokepoints %}
 
@@ -1059,11 +1153,16 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 3. Variations ─────────────────────────────────────────── -->
   {% if cp.Variations %}
-  <section class="mb-10" id="variations">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">
-      Variations
-      <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
-    </h2>
+  <section class="cp-section-card" id="variations">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>
+      </div>
+      <h2 class="cp-section-heading">
+        Variations
+        <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
+      </h2>
+    </div>
     <p class="section-intro mb-4">Tools and methods that exploit this chokepoint. The list grows. The chokepoint doesn't change.</p>
 
     <div class="variations-list">
@@ -1088,7 +1187,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <span class="variant-chevron">&#9654;</span>
         </summary>
         <div class="variant-body">
-          {{ v.Notes | default: v.NotesShort }}
+          {{ v.Notes | default: v.NotesShort | xml_escape }}
 
           {% if v.Lure %}
           <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
@@ -1111,7 +1210,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% for p in v.Payloads %}
           {% if v.Payloads.size > 1 %}<div class="cp-section-label">{{ p.Platform }}</div>{% endif %}
           <pre class="variant-payload"><code>{{ p.Command | xml_escape }}</code></pre>
-          {% if p.Note %}<div class="variant-payload-note">{{ p.Note }}</div>{% endif %}
+          {% if p.Note %}<div class="variant-payload-note">{{ p.Note | xml_escape }}</div>{% endif %}
           {% endfor %}
           {% endif %}
 
@@ -1155,8 +1254,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   {% endif %}
 
   <!-- ── 4. Detection Strategy ─────────────────────────────────── -->
-  <section class="mb-10" id="detection-strategy">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Detection Strategy</h2>
+  <section class="cp-section-card" id="detection-strategy">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <h2 class="cp-section-heading">Detection Strategy</h2>
+    </div>
 
     {% if cp.Chokepoints and cp.Chokepoints.size > 0 %}
     {%- comment -%} ── Stage-grouped layout (new) ── {%- endcomment -%}
@@ -1496,12 +1600,62 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   </section>
 
   <!-- ── 5. Raw Log Samples ─────────────────────────────────────── -->
+  <!-- ── Prevention Opportunities ──────────────────────────────────────────── -->
+  {% if cp.PreventionSummary or cp.PreventionOpportunities %}
+  <section class="cp-section-card" id="prevention">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2 class="cp-section-heading">Prevention Opportunities</h2>
+    </div>
+    {% if cp.PreventionSummary %}
+    <p class="section-intro mb-4">{{ cp.PreventionSummary }}</p>
+    {% endif %}
+    {% if cp.PreventionOpportunities %}
+    <div class="prevention-grid">
+      {% for opp in cp.PreventionOpportunities %}
+      <article class="prev-card">
+        <div class="prev-label">{{ opp.Category }}</div>
+        <h3 class="prev-title">{{ opp.Control }}</h3>
+        <p class="prev-body">{{ opp.Impact }}</p>
+        {% if opp.MagicSwordFit and site.magic_sword_enabled and site.magic_sword_affiliate_url %}
+        <div class="ms-chip">
+          <a href="{{ site.magic_sword_affiliate_url }}"
+             target="_blank" rel="noopener sponsored"
+             title="{{ opp.MagicSwordFit }}">
+            <img src="{{ site.magic_sword_logo_path }}" alt="" class="ms-chip-icon" width="10" height="10" />
+            <span class="ms-chip-label">MagicSword can help here</span>
+          </a>
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% assign ms_opps = "" %}{% for opp in cp.PreventionOpportunities %}{% if opp.MagicSwordFit %}{% assign ms_opps = "yes" %}{% endif %}{% endfor %}
+    {% if site.magic_sword_enabled and site.magic_sword_affiliate_url and ms_opps == "yes" %}
+    <p class="ms-home-card-disclosure mt-3">
+      MagicSword links are affiliate links &mdash; we only link tools we'd recommend to defenders.
+      <a href="{{ site.magic_sword_affiliate_url }}" target="_blank" rel="noopener sponsored" class="ms-home-card-link">
+        Learn more about MagicSword &#8594;
+      </a>
+    </p>
+    {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if cp.RawLogs %}
-  <section class="mb-10" id="raw-logs">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">
-      Raw Log Samples
-      <span class="section-sub">{{ cp.RawLogs.size }} sample{% if cp.RawLogs.size != 1 %}s{% endif %}</span>
-    </h2>
+  <section class="cp-section-card" id="raw-logs">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h2 class="cp-section-heading">
+        Raw Log Samples
+        <span class="section-sub">{{ cp.RawLogs.size }} sample{% if cp.RawLogs.size != 1 %}s{% endif %}</span>
+      </h2>
+    </div>
     <p class="section-intro mb-4">Real-world log events produced by this technique and which Sigma rules they trigger.</p>
     <div class="log-samples">
       {% for log in cp.RawLogs %}
@@ -1521,9 +1675,14 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 6. Emulation ──────────────────────────────────────────── -->
   {% if cp.EmulationScript and cp._emulation_content %}
-  <section class="mb-10" id="emulation">
+  <section class="cp-section-card" id="emulation">
     {% assign emu = cp.EmulationScript %}
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-2">Emulation</h2>
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <h2 class="cp-section-heading">Emulation</h2>
+    </div>
     <details class="emulation-wrapper">
       <summary class="emulation-header">
         {% if emu.AtomicRef %}<span class="emulation-attck">ATT&amp;CK: {{ emu.AtomicRef }}</span>{% endif %}
@@ -1563,8 +1722,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 7. OSINT Pivots ────────────────────────────────────────── -->
   {% if cp.OsintSources %}
-  <section class="mb-10" id="osint-pivots">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">OSINT Pivots</h2>
+  <section class="cp-section-card" id="osint-pivots">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <h2 class="cp-section-heading">OSINT Pivots</h2>
+    </div>
     <div class="osint-grid">
       {% for src in cp.OsintSources %}
       {% if src.URL %}
@@ -1576,7 +1740,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <span class="osint-source">{{ src.Platform }}</span>
           <code class="osint-query">{{ src.Query }}</code>
         </div>
-        {% if src.Notes %}<div class="osint-desc">{{ src.Notes }}</div>{% endif %}
+        {% if src.Notes %}<div class="osint-desc">{{ src.Notes | xml_escape }}</div>{% endif %}
       {% if src.URL %}</a>{% else %}</div>{% endif %}
       {% endfor %}
     </div>
@@ -1585,8 +1749,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── 8. Related Chokepoints ─────────────────────────────────── -->
   {% if cp.RelatedChokepoints %}
-  <section class="mb-10" id="related">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">Related Chokepoints</h2>
+  <section class="cp-section-card" id="related">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </div>
+      <h2 class="cp-section-heading">Related Chokepoints</h2>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
       {% for slug in cp.RelatedChokepoints %}
         {% assign related = site.data.chokepoints | where: "_slug", slug | first %}
@@ -1604,8 +1773,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   <!-- ── References ────────────────────────────────────────────── -->
   {% if cp.References %}
-  <section class="mb-10">
-    <h2 class="section-heading text-sm font-bold uppercase tracking-[.08em] pb-2 mb-4">References</h2>
+  <section class="cp-section-card">
+    <div class="cp-section-heading-row">
+      <div class="cp-section-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <h2 class="cp-section-heading">References</h2>
+    </div>
     <ul class="ref-list flex flex-col gap-1.5">
       {% for ref in cp.References %}
       <li><a href="{{ ref }}" target="_blank" rel="noopener">{{ ref }}</a></li>
@@ -1616,6 +1790,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
   </article>
 </div>
+
+</div><!-- /.cp-page-wrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>

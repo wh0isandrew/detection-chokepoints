@@ -9,60 +9,74 @@ permalink: /trends/
 /* ── Page layout ────────────────────────────────────────────────────────── */
 .tr-hero {
   position: relative;
-  padding: 4rem 1.5rem 3rem;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(160deg, var(--bg) 0%, var(--bg-card) 50%, var(--bg) 100%);
+  padding: 5.5rem 1.5rem 5rem;
+  background: var(--bg);
   overflow: hidden;
   text-align: center;
 }
-.tr-hero-inner { max-width: 720px; margin: 0 auto; }
+.tr-hero-inner { max-width: 680px; margin: 0 auto; }
 .tr-hero::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(240,136,62,.12) 0%, transparent 70%);
+  background: radial-gradient(ellipse 80% 55% at 50% -5%, rgba(240,136,62,.18) 0%, transparent 65%);
   pointer-events: none;
+}
+.tr-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent);
 }
 .tr-hero > * { position: relative; }
 .tr-hero h1 {
-  font-size: 2.25rem;
+  font-size: 2.75rem;
   font-weight: 800;
   color: var(--text);
-  margin-bottom: .6rem;
+  margin-bottom: .75rem;
+  letter-spacing: -.02em;
 }
-.tr-hero p { font-size: 1rem; color: var(--text-muted); max-width: 640px; line-height: 1.7; }
+.tr-hero p { font-size: 1rem; color: var(--text-muted); max-width: 560px; line-height: 1.8; margin: 0 auto; }
 
 /* ── What lives here ────────────────────────────────────────────────────── */
 .tr-pillars {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: .75rem;
-  margin: 2rem 0 3rem;
+  margin: 2.5rem 0 2.75rem;
 }
 .tr-pillar {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 1rem 1.1rem;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color .15s, box-shadow .15s;
+}
+.tr-pillar:hover {
+  border-color: rgba(240,136,62,0.35);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .tr-pillar-icon {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 6px;
-  background: rgba(240,136,62,0.12);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(240,136,62,0.22) 0%, rgba(240,136,62,0.07) 100%);
+  border: 1px solid rgba(240,136,62,0.2);
   color: var(--accent);
-  margin-bottom: .6rem;
+  margin-bottom: .75rem;
 }
 .tr-pillar-icon svg { width: 18px; height: 18px; }
 .tr-pillar-title {
-  font-size: .8rem;
+  font-size: .78rem;
   font-weight: 700;
   color: var(--text);
   text-transform: uppercase;
-  letter-spacing: .05em;
-  margin-bottom: .3rem;
+  letter-spacing: .06em;
+  margin-bottom: .35rem;
 }
-.tr-pillar-desc { font-size: .8rem; color: var(--text-muted); line-height: 1.55; }
+.tr-pillar-desc { font-size: .8rem; color: var(--text-muted); line-height: 1.6; }
 
 /* ── Section header ─────────────────────────────────────────────────────── */
 .tr-section-header {
@@ -72,17 +86,17 @@ permalink: /trends/
   margin-bottom: 1.25rem;
 }
 .tr-section-header h2 {
-  font-size: 1rem;
+  font-size: .72rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: .12em;
   margin: 0;
 }
 .tr-section-header-line {
   flex: 1;
   height: 1px;
-  background: var(--border);
+  background: linear-gradient(to right, var(--border) 0%, transparent 100%);
 }
 
 /* ── Analysis cards ─────────────────────────────────────────────────────── */
@@ -101,12 +115,13 @@ permalink: /trends/
   padding: 1.25rem 1.4rem;
   text-decoration: none;
   color: inherit;
-  transition: border-color .15s, box-shadow .15s, transform .15s;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 .tr-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0,0,0,.15);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--accent), 0 12px 32px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,0.06);
+  transform: translateY(-2px);
   text-decoration: none;
   color: inherit;
 }
@@ -205,7 +220,7 @@ permalink: /trends/
   </div>
 </section>
 
-<div class="max-w-[1280px] mx-auto px-6 py-10">
+<div style="max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;">
 
   <!-- What lives here -->
   <div class="tr-pillars">
@@ -303,91 +318,41 @@ permalink: /trends/
       </div>
     </a>
 
-    <div class="tr-card stub">
+    <a class="tr-card" href="{{ '/trends/masq-infra/' | relative_url }}">
       <div class="tr-card-header">
         <div class="tr-card-title">Software Impersonation Infrastructure</div>
-        <span class="tr-card-badge soon">Under Construction</span>
+        <span class="tr-card-badge live">Live Data</span>
       </div>
-      <div style="display:flex;justify-content:center;"><pre style="font-size:.2rem;line-height:1.1;margin:.75rem 0 .5rem;opacity:.75;color:var(--text-muted);display:inline-block;">
-                ==-----=++***+-=-**#%%%%%%%%%#*
-            =+****#--#**++=##*#%%%%%%%%%%%%%%%%%%+
-         =+*########+-*##--=#%%%%%%%%%%%%%%%%%%%%%%
-       =**############-=#*#%%%%%%%%%%%%%%%%%%%%%%%%%
-     =+*############%%%#*%%%%%%%@@%%%%%%%%%%%%%%%%#
-    +**###########%%%#+#%@@@%%%%%%@@@@@@@%%%%%%%%#
-   +**########%%%%##**%@%%%%%%%%##%%%%%%%%%%%%%%*
-  +***######%%%#%***%%%%##**++++++++***##%%%%%#
- +**######%%%#%**#%##**+++=====--===++*#%++%#
-+**######%%%%*##*+++++==---::::::-+++-=+#%*-
-+***######%%#%%#*+===-------==::::*+=+++-=%*-                      -
-+**######%%%%%#*+==----+*##*++::::::::::::%=                    -+*+*:
-+*######%%#####*+===-+*=-------::::---::::*=                    ==*---:
-**#####%%######+====------------::--=--:::*                =-::+*=+++==+
-**####%%######*+===------==+++=-:-=:-#--::-              *:-----=+-=+=-
-+*###%######%#+====-----=:...=+=-:++..:-::             .:------=+-
-=*##%%######%#=====----=-:***.:=-=%@*..-:::           .:-----=+=*
- *#%##########======---=-+*@*::=-:**-:::::::          -===-=+-++-::
- *+++++++++###=====--:::----:::::------::::::        =+=       ++:++
-=++++++++++***===-----:::::::-=====-----------       +-         ++-+=:=  :--
-++++++++++=++=====---------:-=++====---------=-     +-           -==--==+====-
-+==+++++++==========--------=++++++====------==                  -+++***++===:
-=+==++++=++====++++==+++++===+++***++++-::--==                  -+=***++++++==-:
- +===++++=+====++++++++#+++=========-::::---=-                 =++**++++++++++=-:
-  +====++++=+==++++==-=*@#+=-----------=-----                  +***+++++++++++===:
-   =+++++++++==++++=--==+@@@@@@@@@@@@@#-:---                   ****++++++++++++===-
-             +==++++======+##%%%%%@%%#-:---                  :=*#***+++++++++++++==
-                =+++++=======-=+++=---:--                 +**+++**#****++++++++*--
-                  =+++++===========----                    +***+++*#**********=:--=
-                    **#*++++++++=+==                         =**+++*###****+=+++=:
-                    +****#######*+==-                      -==+*****+*+++    -=
-                ====+********++=========----            -======+***+++
-         -=====++++++*****++++++================-=    :------===++***+
-  ----==+++++++***+*******+++++++++++===========-:::::----:---===
- -======**********+*******+++++++++++++++++++=+--::::---------==
--=======******************++++++++++****+++++++=--------------
--======++******************++*+++*************++++======----:
--===++++++****###*********++*+*****###*********%+===++=====
--==++++++  **#************++++++++***####*  =**+
--==+++++=        -*******++++++++++++*****-
-:===+++++          ******++++++++=++++++***#
-  *#=+++++**#=        ******++++++=====+++++++*
- +********###*+       ******+++++=========++++
-  +*##**#####*        *****+++++==========++++
-  =#########*         *****++++++==========+++
- +**########*-        +***++++++============+=
--+*******###*+-       *****+++++==============
-=++*********#*+       +****++++++===========-=
--****#*****#**+       +****+++++++=========++=
-***************=      *****+++++++====+=+++=+++
-=*************+++    =++++++=======+==+=====+:+=
--*************+=     +*###*******++++*#====-=+*=
-    =*********=      =****###+*+*+++*#*======**#
-                     =**%###%##+**+*##%=+====#**++++++++******+++
-                     +***###*+=#+*+*###%*+++%################****+
-                  -==++#%%%#-*%%%%%%%%%%%%###%##############******
-                 +*+===++*#%%%%%%%%%%%%####%###%#%%##%#%%%####****
-                 =*++==*#%%#%###############%%%%%%%%%%%%%#%####***
-                      ###%%#%##########*###%%#%%%%%%%%%%%######***+
-                      *##%%##########***#%%%%%%%%%%%%%#%%%#####***+
-    ===++-            #%#%%######******#%#%           #%%%######**+
-   +=++=*#*=          #%#########***#**                #%%######**#
-  +++++*******+-      #%###########+***                *#%######*#+-
- ++++*******++*#%%*   #%########******                 *%%%###+======
- =+=*****+*++*######*=%%########*****                  ****+**+++====
-=+++*****#*+*+%######%%%#########****#                 *##******+*=*#+=**#-::----:
-=+=******#****+%#######%%%*######******                +#*####*++++===++=+++++====-
-+++*******#####*%%%%%###%%%######******                =****++++++++++++**+++++++-:
-++++******+######*%%%%%%%%%%%%%####*****               =#**+**********#####*+-----::
-+++**+++##*##%%***###%%%%%%%%%%%####***+                **+=-------=====++++==+*#
-+++#*++***%%%%*          ##%%%%%%%####**               =**++====**********++
-*+##**++****+                 +#%#####                  +*+++++++
-*+##******#*
- +*###***##
-    ++*+*</pre></div>
+      <p class="tr-card-desc">
+        Validated de-intel-pipeline hunts plus aggregate IOC pipeline data. Tracks favicon-pivot discovery,
+        JS-gated EXE delivery (MROScanner OU cert), ClickFix install modals targeting AI developer tools,
+        and post-launch domain squatting against Codex CLI and LM Studio.
+      </p>
+      <div class="tr-card-stats">
+        {% if site.data.masq_infra_hunts %}
+        <span class="tr-stat-chip"><strong>{{ site.data.masq_infra_hunts.meta.hunt_count }}</strong> validated hunts</span>
+        <span class="tr-stat-chip"><strong>{{ site.data.masq_infra_hunts.meta.brands_targeted | size }}</strong> brands</span>
+        <span class="tr-stat-chip"><strong>{{ site.data.masq_infra_hunts.meta.confirmed_delivery_count }}</strong> confirmed delivery</span>
+        {% endif %}
+        {% if site.data.masq_infra.meta.record_count %}
+        <span class="tr-stat-chip"><strong>{{ site.data.masq_infra.meta.record_count }}</strong> pipeline records</span>
+        {% endif %}
+        {% if site.data.masq_infra_hunts.meta.date_range %}
+        <span class="tr-stat-chip"><strong>{{ site.data.masq_infra_hunts.meta.date_range }}</strong></span>
+        {% endif %}
+      </div>
       <div class="tr-card-footer">
-        <span>Under construction</span>
+        <span>Updated {% if site.data.masq_infra_hunts %}{{ site.data.masq_infra_hunts.meta.generated }}{% else %}{{ site.data.masq_infra.meta.last_updated | default: "—" }}{% endif %}</span>
+        <span class="tr-card-cta">
+          View analysis
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </span>
       </div>
-    </div>
+    </a>
 
   </div>
 

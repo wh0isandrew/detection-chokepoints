@@ -1,0 +1,67 @@
+title: Post-AiTM Graph API Multi-Category Recon Burst — 4+ Categories in 60 Seconds
+id: f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6c
+status: experimental
+description: >
+  Detects a single UPN issuing requests spanning 4 or more distinct Graph API endpoint
+  categories (role, cross-tenant, mailbox, contacts, org/licensing) within 60 seconds
+  with an empty c_DeviceId. This is the Tycoon 2FA operator console automated
+  reconnaissance pattern: 20-30+ calls across all 5 categories within 30-60 seconds,
+  impossible at human portal-navigation speed. Empty c_DeviceId confirms an unmanaged
+  device (operator's residential proxy), not an IT admin managed device.
+  NOTE: This rule requires category-tagging aggregation that cannot be expressed in
+  standard Sigma. Implement via ES|QL or KQL with STATS aggregation.
+  CRITICAL: c_sid in Graph Activity Logs is NOT the user object ID -- pivot on source
+  IP + appId against sign-in logs to identify UPN. DO NOT filter c_sid == user_object_id.
+  REQUIRES Graph Activity Logs enabled and ingested in the tenant.
+  KQL implementation (Sentinel):
+    MicrosoftGraphActivityLogs
+    | extend category = case(
+        RequestUri has_any ("transitiveRoleAssignments","directoryRole","roleManagement/directory/roleAssignments"), "role",
+        RequestUri has "tenantRelationships", "cross-tenant",
+        RequestUri has "mailboxSettings", "mailbox",
+        RequestUri has "contactFolders", "contacts",
+        RequestUri has_any ("subscribedSkus","/organization","appRoleAssignedResources"), "org-licensing",
+        "other")
+    | where category != "other" and isempty(DeviceId)
+    | summarize distinct_categories = dcount(category) by UserId, bin(TimeGenerated, 60s)
+    | where distinct_categories >= 4
+references:
+  - https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
+author: '@iimp0ster'
+date: 2026-05-27
+tags:
+  - attack.discovery
+  - attack.t1087.004
+  - attack.t1069.003
+  - attack.t1526
+  - detection.maturity.hunt
+logsource:
+  product: azure
+  service: MicrosoftGraphActivityLogs
+detection:
+  # Category-count aggregation cannot be expressed in standard Sigma.
+  # Use the KQL implementation in the description for production deployment.
+  # This stub fires on any recon endpoint with empty DeviceId as a partial signal.
+  selection:
+    DeviceId: ''
+    RequestUri|contains:
+      - 'transitiveRoleAssignments'
+      - 'tenantRelationships'
+      - 'mailboxSettings'
+      - 'contactFolders'
+      - 'subscribedSkus'
+      - 'appRoleAssignedResources'
+  filter_managed_devices:
+    DeviceId|exists: true
+  filter_known_tooling:
+    # PENDING: Add known compliance/admin tool service principal app IDs
+    # AppId|contains:
+    #   - '<varonis-app-id>'
+    #   - '<avepoint-app-id>'
+    AppId: ''  # placeholder — remove and populate before production
+  condition: selection and not filter_managed_devices and not filter_known_tooling
+falsepositives:
+  - Broad-scope compliance tools querying multiple categories in automated scans
+  - IT admin portal performing multi-step identity audit (document and exclude by appId)
+  - Identity governance tools with scheduled access reviews
+level: high

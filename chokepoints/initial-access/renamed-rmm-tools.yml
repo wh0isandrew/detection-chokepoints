@@ -678,3 +678,25 @@ EmulationScript:
   SafetyNotes: Run in isolated lab VM only. Uses a benign Windows binary renamed to a campaign filename.
   AtomicRef: T1219.002
 TheConstant: Browser download → renamed signed binary execution → persistent RMM C2 connection
+PreventionSummary: >
+  Restricting which RMM tools are permitted to run on endpoints breaks the C2 persistence phase
+  before it starts. Signer-based and inventory-based allow rules catch renamed binaries that
+  bypass filename controls, because the vendor signature is preserved regardless of the filename.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Block RMM tools not on your authorized inventory
+  Impact: Stops C2 session establishment regardless of which tool or rename trick is used.
+  MagicSwordFit: MagicSword maintains a live, threat-intelligence-backed inventory of 100+ RMM tools
+    and blocks unauthorized ones by default — updated every 2 hours as new tools are weaponized.
+  MagicSwordTag: rmm-abuse
+- Category: Endpoint · Application Control
+  Control: Enforce signer-based allow rules for remote access software
+  Impact: Catches binaries renamed to appear as invoices or installers, because the original vendor
+    signature is preserved and verifiable regardless of the filename.
+  MagicSwordFit: MagicSword's signer-based policy blocks any RMM binary not explicitly approved,
+    even when renamed or placed in an unexpected path.
+  MagicSwordTag: rmm-abuse
+- Category: Network
+  Control: Alert on new outbound connections to unlisted RMM infrastructure domains
+  Impact: Contains C2 persistence even if the binary executes past endpoint controls; limits the
+    attacker's ability to maintain access after the initial session.
