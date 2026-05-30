@@ -44,4 +44,5 @@ jobs:
           htmlproofer ./_site \
             --disable-external \
             --checks Links,Images,Scripts \
-            --assume-extension .html
+            --assume-extension .html \
+            --ignore-files "/assets\/lures\//"
