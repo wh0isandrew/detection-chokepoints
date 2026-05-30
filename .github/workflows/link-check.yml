@@ -43,7 +43,6 @@ jobs:
         run: |
           htmlproofer ./_site \
             --disable-external \
-            --check-html \
+            --checks Links,Images,Scripts,OpenGraph \
             --assume-extension \
-            --typhoeus-config '{"timeout":10,"connecttimeout":10}' \
             --ignore-urls '/^https:\/\/github\.com\/.*\/blob\/main\//'
