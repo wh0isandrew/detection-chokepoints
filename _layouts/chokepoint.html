@@ -922,6 +922,52 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 }
 
 .osint-desc { font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
+
+/* ── Section card / icon heading ──────────────────────────────────────────── */
+.cp-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color .2s, box-shadow .2s;
+}
+.cp-section-card:hover { border-color: rgba(240,136,62,.15); }
+.cp-section-heading-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(to right, var(--accent), var(--border) 35%, transparent) 1;
+}
+.cp-section-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(240,136,62,0.22) 0%, rgba(240,136,62,0.07) 100%);
+  border: 1px solid rgba(240,136,62,0.2);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.cp-section-icon svg { width: 18px; height: 18px; }
+.cp-section-heading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.cp-section-heading .section-sub { font-size: .72rem; font-weight: 500; }
 </style>
 
 {% assign cp = site.data.chokepoints | where: "_slug", page.slug | first %}
