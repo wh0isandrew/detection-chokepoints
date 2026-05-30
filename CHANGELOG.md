@@ -2,6 +2,41 @@
 
 All notable changes to this detection chokepoints repository will be documented in this file.
 
+## [2026-05-29] - AiTM / Tycoon 2FA Chokepoints (4 new entries)
+
+Source: Elastic Security Labs — Tycoon 2FA AiTM Detection Engineering (2026-05-27)
+https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
+
+### Added
+
+- `chokepoints/credential-access/aitm-websocket-relay.yml` — AiTM WebSocket Kit Relay (T1539, T1078.004): Node.js UA on Entra ID sign-in + cloud-VPS/residential two-tier ASN pattern. CRITICAL priority. 2 chokepoint stages, 2 kit variants (Tycoon 2FA, EvilProxy).
+- `sigma-rules/aitm-websocket-relay/research.yml` — Baseline Node.js UA on any Entra sign-in
+- `sigma-rules/aitm-websocket-relay/hunt.yml` — Node.js UA on high-value M365 apps
+- `sigma-rules/aitm-websocket-relay/analyst.yml` — Two-tier ASN correlation stub (KQL required for full correlation)
+
+- `chokepoints/defense-evasion/oauth-device-code-phishing.yml` — OAuth Device Code Phishing via Auth Broker (T1550.001): MAB app ID 29d9ed98-... + deviceCode protocol + isInteractive = high-confidence phishing. HIGH priority. CA policy prevention documented.
+- `sigma-rules/oauth-device-code-phishing/research.yml` — All device-code sign-ins baseline
+- `sigma-rules/oauth-device-code-phishing/hunt.yml` — Device-code on MAB app ID
+- `sigma-rules/oauth-device-code-phishing/analyst.yml` — MAB + deviceCode + isInteractive triple
+
+- `chokepoints/discovery/graph-api-recon-burst.yml` — Post-AiTM Graph API Reconnaissance Burst (T1087.004, T1069.003, T1526): 4+ endpoint categories in 60s = automated operator console, not human navigation. HIGH priority. Requires Graph Activity Logs. c_sid pivot mistake documented.
+- `sigma-rules/graph-api-recon-burst/research.yml` — Any recon endpoint in Graph Activity Logs
+- `sigma-rules/graph-api-recon-burst/hunt.yml` — Empty DeviceId + recon endpoint stub; KQL category-tagging aggregation documented inline
+- `sigma-rules/graph-api-recon-burst/analyst.yml` — Graph burst + preceding AiTM sign-in correlation; KQL join documented inline
+
+- `chokepoints/persistence/aitm-device-prt-enrollment.yml` — AiTM Kit Device PRT Enrollment (T1098.005): axios UA on DRS EnrollmentServer/device call = synthetic device PRT that survives revokeSignInSessions. HIGH priority. IR playbook fix documented (delete devices BEFORE revoking sessions).
+- `sigma-rules/aitm-device-prt-enrollment/research.yml` — All device registration events baseline
+- `sigma-rules/aitm-device-prt-enrollment/hunt.yml` — Non-native UA on device registration
+- `sigma-rules/aitm-device-prt-enrollment/analyst.yml` — Non-native UA correlated with preceding AiTM sign-in; KQL join documented inline
+
+### Pending lab validation (noted inline in each file)
+
+- `RawLogs` sample entries not yet attached — requires live M365 tenant
+- `filter_legit_automation` / `filter_known_legitimate` placeholders in hunt/analyst Sigma rules need tenant-specific service account UPNs
+- `graph-api-recon-burst`: KQL/ES|QL required for production (category-count aggregation unsupported in standard Sigma)
+- `aitm-device-prt-enrollment`: AuditLogs field name for UserAgent requires lab verification
+- `aitm-websocket-relay` analyst.yml: ASN enrichment lookup table required
+
 ## [2026-03-30] - LSASS Credential Dumping Chokepoint
 
 ### Added

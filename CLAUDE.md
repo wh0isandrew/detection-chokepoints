@@ -12,6 +12,30 @@ All detections are anchored to a chokepoint entry that defines the invariant, do
 
 ---
 
+## Research workflow (vault-fed)
+
+**Do not run independent ORKL research sweeps for new chokepoints.** Research enters through the Obsidian intel vault:
+
+```
+/intel-pipeline       → vault entity graph + Handoffs/chokepoints/
+/cp-intel-pipeline    → consume handoffs → drafts/ → cp-reviewer
+```
+
+### Vault paths
+
+| Path | Role |
+|---|---|
+| `C:\Users\Bob\Documents\Obsidian Vault\threat_intel\Handoffs\chokepoints\` | Pending intake (invariant behavior, Sigma stubs) |
+| `...\threat_intel\Procedures\` | Command.Invocation + Artifacts source of truth |
+| `...\threat_intel\Courses-of-Action\` | Detection opportunities as COA nodes |
+| `...\threat_intel\_config\trusted_sources.yaml` | Canonical source tier registry |
+
+Handoffs with `status: pending` are consumed by `/cp-intel-pipeline`. After drafting, status becomes `processed`.
+
+Drafts still land under `drafts/<tactic>/<slug>/` — promotion to `chokepoints/` remains a human step.
+
+---
+
 ## Repository Structure
 
 ```

@@ -599,3 +599,23 @@ EmulationScript:
   SafetyNotes: Run in isolated lab VM only. Creates a text file (not executable) in a test web directory.
   AtomicRef: T1505.003
 TheConstant: HTTP request → web server process → child OS interpreter
+PreventionSummary: >
+  Web shells persist because web server processes are permitted to write files to their own
+  directories and spawn child OS interpreters. Restricting those two behaviors eliminates the
+  chokepoint regardless of the vulnerability used for initial access.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Restrict web server processes from spawning OS interpreters as child processes
+  Impact: Eliminates the primary web shell execution chokepoint; even if a shell file is
+    written to disk, it cannot spawn interactive processes.
+  MagicSwordFit: MagicSword's Spawn Control rules enforce which child processes web server
+    processes (IIS, Apache, nginx) are permitted to execute, blocking OS interpreter spawns.
+  MagicSwordTag: lolbas
+- Category: Endpoint
+  Control: Apply strict filesystem write restrictions to web-accessible directories
+  Impact: Prevents shell files from being written to directories served by the web server;
+    eliminates the delivery mechanism regardless of which vulnerability is exploited.
+- Category: Network
+  Control: Deploy a Web Application Firewall (WAF) with rules for shell upload patterns
+  Impact: Provides a network-layer control that can block web shell uploads before they
+    reach the server, complementing host-based restrictions.

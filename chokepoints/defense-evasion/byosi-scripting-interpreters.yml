@@ -423,3 +423,24 @@ References:
 - https://www.csoonline.com/article/575475/attackers-use-python-compiled-bytecode-to-evade-detection.html
 
 TheConstant: Non-default interpreter binary written to disk → interpreter process launched → attacker-controlled script executes malicious action
+PreventionSummary: >
+  Controlling which scripting interpreters are permitted to execute on endpoints breaks the
+  BYOSI chain before attacker-controlled scripts have a chance to run. Non-default interpreters
+  written to TEMP or AppData paths are a reliable pre-execution signal to block.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Allow-list only approved interpreter versions for each endpoint role
+  Impact: Prevents malicious scripts from executing even when the interpreter binary is
+    legitimately signed, because only authorized interpreter paths and versions are permitted.
+  MagicSwordFit: MagicSword's application control can block non-approved Python, Node.js,
+    PHP, and AutoHotKey binaries — especially those written to non-standard paths like TEMP
+    or AppData — before they execute any scripts.
+  MagicSwordTag: lolbas
+- Category: Endpoint
+  Control: Alert on interpreter binaries written to TEMP, Downloads, or AppData by non-IT processes
+  Impact: Catches the disk-write chokepoint before execution; gives defenders a pre-execution
+    window to investigate and kill the chain.
+- Category: Network
+  Control: Block interpreter downloads from CDNs on non-developer endpoints via web proxy
+  Impact: Prevents delivery of non-standard interpreters to high-risk endpoints; forces
+    attackers to use other staging mechanisms that are easier to detect.

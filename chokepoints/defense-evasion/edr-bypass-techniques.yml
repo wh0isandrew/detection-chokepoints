@@ -654,3 +654,27 @@ EmulationScript:
     '
   AtomicRef: T1562.001
 TheConstant: Admin/SYSTEM privileges → bypass mechanism → security telemetry impaired
+PreventionSummary: >
+  EDR bypass tools are themselves dual-use binaries that can be blocked before they reach the
+  security stack. Blocking vulnerable driver loads and known EDR-killer binaries at the policy
+  layer is the complementary control that EDR cannot provide for itself.
+PreventionOpportunities:
+- Category: Endpoint · Application Control
+  Control: Block known EDR-killer binaries by name, hash, and publisher signature
+  Impact: Prevents bypass tools from executing regardless of which EDR is being targeted;
+    does not rely on the security tool the attacker is trying to disable.
+  MagicSwordFit: MagicSword's built-in intelligence classifies and blocks EDR-killer binaries
+    as they are identified, including EDRKillShifter, PCHunter, and ProcessHacker variants
+    used as LOLBAS in bypass chains.
+  MagicSwordTag: edr-killers
+- Category: Endpoint · Application Control
+  Control: Enforce HVCI and Microsoft's Vulnerable Driver Blocklist to block BYOVD attacks
+  Impact: Removes the kernel escalation path that the majority of BYOVD-based EDR killers
+    depend on; no vulnerable driver = no kernel-level bypass.
+  MagicSwordFit: MagicSword tracks vulnerable driver publishers and can block driver loads
+    from untrusted or revoked signers before they reach the kernel.
+  MagicSwordTag: byovd
+- Category: Endpoint
+  Control: Deploy Windows Credential Guard and Virtualization-Based Security (VBS)
+  Impact: Reduces the kernel attack surface available to BYOVD techniques without requiring
+    per-driver blocklist maintenance; hardens the platform beneath the EDR stack.
