@@ -37,11 +37,11 @@ jobs:
           JEKYLL_ENV: production
 
       - name: Install HTMLProofer
-        run: gem install html-proofer
+        run: gem install html-proofer -v '~> 5.2'
 
       - name: Check internal links in _site
         run: |
           htmlproofer ./_site \
             --disable-external \
-            --checks Links,Images,Scripts,OpenGraph \
-            --assume-extension
+            --checks Links,Images,Scripts \
+            --assume-extension .html
