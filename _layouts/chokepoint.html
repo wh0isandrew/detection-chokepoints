@@ -1187,7 +1187,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <span class="variant-chevron">&#9654;</span>
         </summary>
         <div class="variant-body">
-          {{ v.Notes | default: v.NotesShort }}
+          {{ v.Notes | default: v.NotesShort | xml_escape }}
 
           {% if v.Lure %}
           <div class="variant-section-label variant-section-label-lure">Lure — what the user sees</div>
@@ -1210,7 +1210,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% for p in v.Payloads %}
           {% if v.Payloads.size > 1 %}<div class="cp-section-label">{{ p.Platform }}</div>{% endif %}
           <pre class="variant-payload"><code>{{ p.Command | xml_escape }}</code></pre>
-          {% if p.Note %}<div class="variant-payload-note">{{ p.Note }}</div>{% endif %}
+          {% if p.Note %}<div class="variant-payload-note">{{ p.Note | xml_escape }}</div>{% endif %}
           {% endfor %}
           {% endif %}
 
@@ -1740,7 +1740,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <span class="osint-source">{{ src.Platform }}</span>
           <code class="osint-query">{{ src.Query }}</code>
         </div>
-        {% if src.Notes %}<div class="osint-desc">{{ src.Notes }}</div>{% endif %}
+        {% if src.Notes %}<div class="osint-desc">{{ src.Notes | xml_escape }}</div>{% endif %}
       {% if src.URL %}</a>{% else %}</div>{% endif %}
       {% endfor %}
     </div>
