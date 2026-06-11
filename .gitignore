@@ -50,3 +50,13 @@ Desktop.ini
 # Local preview / mockups (remove these lines to track in git)
 preview.html
 framework-mockup.html
+
+# Internal / non-site material — keep out of the public repo
+.planning/
+drafts/
+mockups/
+docs/ATTEMPTS.md
+docs/DECISIONS.md
+_data/masq_infra_hunts.yml
+scripts/enrich_staging_domains.py
+scripts/transform_intel_hunts.py
