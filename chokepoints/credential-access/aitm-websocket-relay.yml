@@ -21,12 +21,10 @@ Description: >
   Operators then access the compromised account from residential-proxy infrastructure,
   creating a two-tier ASN pattern that is structurally unavoidable: cloud-VPS for kit
   relay performance, residential proxy for operator evasion. Both tiers authenticate as
-  the same UPN within ~20 minutes — a high-confidence correlation no single-ASN rule
-  catches. Tycoon 2FA (Storm-1747) is the most prolific operator as of 2025,
-  accounting for ~62% of AiTM phishing attempts blocked by Microsoft and reaching
-  500,000+ organizations monthly at peak. The Google variant additionally compresses
+  the same UPN within ~20 minutes - a high-confidence correlation no single-ASN rule
+  catches. The Google variant additionally compresses
   the full authentication sequence (login_success → MFA relay → OAuth token →
-  device registration) into ~1 second — mechanically impossible for human interaction.
+  device registration) into ~1 second - mechanically impossible for human interaction.
 
 LastUpdated: '2026-05-29'
 Author: '@iimp0ster'
@@ -45,7 +43,7 @@ Chokepoints:
   Input: Victim has completed MFA on the phishing page; kit has relayed credentials
     server-side to Microsoft/Google
   Invariant: The attacker MUST make server-to-server HTTP calls to Microsoft/Google
-    login endpoints using a non-browser HTTP client (Node.js) — these calls appear in
+    login endpoints using a non-browser HTTP client (Node.js) - these calls appear in
     Entra ID sign-in logs with the kit's user agent.
   Observable: >
     Entra ID SigninLogs: resultType == "0" (success) AND userAgent contains
@@ -53,7 +51,7 @@ Chokepoints:
     Microsoft Authentication Broker / Microsoft Graph / Microsoft Exchange Online.
     Google Workspace Login Audit: login_success → login_verification
     (is_second_factor: true) → token:authorize (Chrome OAuth client 77185425430)
-    → DEVICE_REGISTER_UNREGISTER_EVENT — all within ~1 second.
+    → DEVICE_REGISTER_UNREGISTER_EVENT - all within ~1 second.
   WhyCantBypass: >
     The AiTM relay is server-side: the kit's Node.js process makes the actual
     HTTP calls to Microsoft/Google on behalf of the victim. Using a browser UA
@@ -71,9 +69,9 @@ Chokepoints:
 - Stage: Two-Tier ASN Transition
   Input: Kit relay (Tier 1) has completed session token capture; operator console
     (Tier 2) begins accessing the victim account 10-20 minutes later
-  Invariant: The attacker MUST use two structurally distinct ASN categories —
+  Invariant: The attacker MUST use two structurally distinct ASN categories -
     cloud-VPS for the high-throughput kit relay and residential/ISP proxy for the
-    operator console accessing M365 web apps — creating a detectable dual-ASN
+    operator console accessing M365 web apps - creating a detectable dual-ASN
     authentication pattern for the same UPN within a short window.
   Observable: >
     Entra ID SigninLogs: Two successful sign-ins by the same UPN within 20 minutes
@@ -102,7 +100,7 @@ Chokepoints:
     as a bypass adaptation indicator.
 
 Variations:
-- Name: Tycoon 2FA (Storm-1747) — WebSocket Variant
+- Name: Tycoon 2FA (Storm-1747) - WebSocket Variant
   FirstSeen: 2023-Q3
   Status: Active
   SourceURL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
@@ -116,13 +114,13 @@ Variations:
   VariantId: tycoon-2fa-websocket
   Command:
     Invocation: |
-      # Kit relay tier (cloud VPS) — server-to-server calls:
+      # Kit relay tier (cloud VPS) - server-to-server calls:
       # User-Agent: axios/1.15.2
       POST https://login.microsoftonline.com/common/oauth2/token [Kit relay]
       # Socket.IO relay events:
       # send_to_browser / response_from_browser / recieveid (typo fingerprint)
       #
-      # Google variant — 4-event sequence within ~1s:
+      # Google variant - 4-event sequence within ~1s:
       # login_success → login_verification(is_second_factor:true) →
       # token:authorize(client:77185425430) → DEVICE_REGISTER_UNREGISTER_EVENT
     Context: >
@@ -152,7 +150,7 @@ Variations:
       # EvilProxy architecture similar to Tycoon 2FA
       # Server-side relay generates non-browser UA on IdP sign-in events
     Context: >
-      Commercial AiTM proxy targeting C-suite. Same detection chokepoint applies —
+      Commercial AiTM proxy targeting C-suite. Same detection chokepoint applies -
       server-side relay must make HTTP calls to Microsoft/Google with non-browser UA.
     Artifacts:
     - 'Entra ID SigninLogs: non-browser user agent on O365 sign-in events'
@@ -233,7 +231,7 @@ Detections:
   - Entra ID Sign-in Logs (SigninLogs / AADSignInEventsBeta in MDE)
   Logic: >
     resultType == "0" AND userAgent contains_any [node, axios, undici, node-fetch,
-    node-fetch/1.0]. No app filter — capture all apps to build baseline of
+    node-fetch/1.0]. No app filter - capture all apps to build baseline of
     legitimate Node.js automation. Run for one week to identify known-good
     DevOps pipelines and IT automation.
   ExpectedFPRate: Medium (legitimate Node.js Graph API automation, DevOps pipelines)
@@ -275,13 +273,13 @@ Detections:
     known corporate VPN egress ASNs.
   ExpectedFPRate: Low
   UseCase: >
-    SOC alerting. Two-tier ASN correlation is structurally durable — survives
+    SOC alerting. Two-tier ASN correlation is structurally durable - survives
     user agent rotation and IP rotation because it targets the architectural
     requirement, not the specific kit implementation.
   SigmaRule: sigma-rules/aitm-websocket-relay/analyst.yml
 
 Intel:
-- Name: Elastic Security Labs — Tycoon 2FA AiTM Detection Engineering
+- Name: Elastic Security Labs - Tycoon 2FA AiTM Detection Engineering
   Tier: primary
   URL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
   Description: >
@@ -290,7 +288,7 @@ Intel:
     c_sid pivot mistake, Tier 2 aiConfirmedSafe blind spot, and automated response
     workflow. Grounds invariant behavior and Sigma logic.
 
-- Name: MITRE ATT&CK — T1539 Steal Web Session Cookie
+- Name: MITRE ATT&CK - T1539 Steal Web Session Cookie
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1539/
   Description: Primary technique definition.
@@ -320,7 +318,7 @@ KnownBypasses:
 - Bypass: Routing both tiers through residential proxies (flatten the two-tier model)
   Mitigation: Enable token protection (token binding) to bind tokens to device identity
   Detection: >
-    Monitor for Node.js UA on residential ASN sign-ins — this combination is anomalous
+    Monitor for Node.js UA on residential ASN sign-ins - this combination is anomalous
     regardless of the two-tier model. Single-tier residential routing still generates
     behavioral signals (rapid sequential M365 app access, empty c_DeviceId).
 

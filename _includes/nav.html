@@ -1,11 +1,7 @@
 <nav class="site-nav" role="navigation" aria-label="Main navigation">
   <div class="max-w-[1280px] mx-auto px-6 w-full min-h-[var(--nav-h)] flex flex-wrap items-center justify-between gap-y-1">
     <a class="nav-logo flex items-center gap-2 font-bold text-base flex-shrink-0" href="{{ '/' | relative_url }}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-           stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
+      <img class="nav-logo-pixel" src="{{ '/assets/img/pixel/logo.png' | relative_url }}" alt="" width="24" height="24" aria-hidden="true" />
       <span>Detection Chokepoints</span>
     </a>
 
@@ -17,23 +13,39 @@
           <a class="text-sm px-3 py-2 rounded transition-colors
                     {% if page.url == '/' or page.url == '/index.html' %}active{% endif %}"
              href="{{ '/' | relative_url }}">
-            Chokepoints
+            <img src="{{ '/assets/img/pixel/chokepoint.png' | relative_url }}" alt="" width="18" height="18" class="nav-pixel-icon" />Chokepoints
           </a>
         </li>
         <li>
           <a class="text-sm px-3 py-2 rounded transition-colors
                     {% if page.url contains '/attack-chains' %}active{% endif %}"
-             href="{{ '/attack-chains/' | relative_url }}">Attack Chains</a>
+             href="{{ '/attack-chains/' | relative_url }}"><img src="{{ '/assets/img/pixel/attack-chain.png' | relative_url }}" alt="" width="18" height="18" class="nav-pixel-icon" />Attack Chains</a>
         </li>
-        <li>
+        <li class="relative nav-trends-group">
           <a class="text-sm px-3 py-2 rounded transition-colors
                     {% if page.url contains '/trends' %}active{% endif %}"
-             href="{{ '/trends/' | relative_url }}">Trends</a>
+             href="{{ '/trends/' | relative_url }}"
+             aria-haspopup="true"
+             aria-expanded="false"><img src="{{ '/assets/img/pixel/trends.png' | relative_url }}" alt="" width="18" height="18" class="nav-pixel-icon" />Trends</a>
+          <ul class="nav-trends-menu" role="menu" aria-label="Trend analyses">
+            <li role="none">
+              <a role="menuitem" class="{% if page.url contains '/trends/clickgrab' %}active{% endif %}"
+                 href="{{ '/trends/clickgrab/' | relative_url }}">ClickFix Delivery</a>
+            </li>
+            <li role="none">
+              <a role="menuitem" class="{% if page.url contains '/trends/edge-exploits' %}active{% endif %}"
+                 href="{{ '/trends/edge-exploits/' | relative_url }}">Edge Exploits</a>
+            </li>
+            <li role="none">
+              <a role="menuitem" class="{% if page.url contains '/trends/masq-infra' %}active{% endif %}"
+                 href="{{ '/trends/masq-infra/' | relative_url }}">Masq Infra</a>
+            </li>
+          </ul>
         </li>
         <li>
           <a class="text-sm px-3 py-2 rounded transition-colors
                     {% if page.url contains '/framework' %}active{% endif %}"
-             href="{{ '/framework/' | relative_url }}">Framework</a>
+             href="{{ '/framework/' | relative_url }}"><img src="{{ '/assets/img/pixel/framework.png' | relative_url }}" alt="" width="18" height="18" class="nav-pixel-icon" />Framework</a>
         </li>
         <li>
           <a class="text-sm px-3 py-2 rounded transition-colors"
@@ -85,6 +97,17 @@
                      0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
           </svg>
         </a>
+
+        {% if site.magic_sword_enabled and site.magic_sword_affiliate_url and page.url == '/' %}
+        <a class="ms-nav-link flex items-center gap-1 ml-1"
+           href="{{ site.magic_sword_affiliate_url }}"
+           target="_blank" rel="noopener sponsored"
+           title="MagicSword - threat-driven application control"
+           aria-label="MagicSword prevention tool">
+          <img src="{{ site.magic_sword_logo_path | relative_url }}" alt="" class="ms-nav-icon" width="20" height="20" />
+          <span class="ms-nav-label">MagicSword</span>
+        </a>
+        {% endif %}
       </div>
     </div>
   </div>

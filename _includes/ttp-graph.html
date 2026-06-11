@@ -1,0 +1,69 @@
+{% comment %}
+  _includes/ttp-graph.html
+  ──────────────────────────────────────────────────────────────────────
+  D3 bipartite-column relationship graph for TTP Overlap sections.
+
+  Paired with _includes/ttp-vertical-diagram.html (Grid fallback).
+  ttp-graph.js reveals the toggle bar and defaults to Graph on desktop.
+
+  Requires: page.ttp_data_key, D3 v7 (loaded by attack-chain.html).
+{% endcomment %}
+
+{% assign ttp_data = site.data[page.ttp_data_key] %}
+{% if ttp_data %}
+
+<!-- Toggle bar - hidden by default; ttp-graph.js reveals it on successful boot -->
+<div id="ttp-view-toggle" hidden aria-label="Switch between Graph and Grid views">
+  <button class="ttp-view-btn" data-view="graph" aria-pressed="false">Graph</button>
+  <button class="ttp-view-btn active" data-view="grid" aria-pressed="true">Grid</button>
+</div>
+
+<!-- Graph view - hidden by default; shown by JS on desktop after render -->
+<div id="ttp-graph-view" hidden>
+
+  <!-- Controls: zoom + actor filter -->
+  <div class="ttp-graph-controls" role="group" aria-label="Graph controls">
+    <button class="ttp-graph-zoom-btn" id="ttp-gz-in" title="Zoom in" aria-label="Zoom in">+</button>
+    <button class="ttp-graph-zoom-btn" id="ttp-gz-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+    <button class="ttp-graph-zoom-btn" id="ttp-gz-reset" title="Reset zoom" aria-label="Reset zoom">Reset</button>
+    <span class="ttp-graph-zoom-sep" aria-hidden="true"></span>
+    {% for group in ttp_data.groups %}
+    <button class="ttp-graph-actor-btn"
+            data-actor="{{ group.id }}"
+            style="--actor-color: {{ group.color }}"
+            aria-pressed="false"
+            type="button">
+      <span class="dot" style="background: {{ group.color }}" aria-hidden="true"></span>
+      {{ group.name }}
+    </button>
+    {% endfor %}
+    <button class="ttp-graph-clear-btn" id="ttp-graph-clear" type="button">Clear</button>
+  </div>
+
+  <!-- SVG container + tooltip (tooltip positioned relative to wrap) -->
+  <div id="ttp-graph-svg-wrap" style="position: relative;">
+    <div id="ttp-graph-svg"></div>
+    <div class="ttp-graph-tooltip" role="tooltip" aria-hidden="true">
+      <div class="tt-title"></div>
+      <div class="tt-meta"></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="ttp-graph-legend" aria-hidden="true">
+    <span><span class="ttp-graph-legend-ring"></span>Universal (all actors)</span>
+    <span>Actors left &rarr; Techniques by phase</span>
+    <span>Click actor or button to filter (union)</span>
+  </div>
+
+</div><!-- /#ttp-graph-view -->
+
+<!-- Data injection: raw groups + phases arrays; ttp-graph.js builds nodes/links -->
+<script>
+  window.__TTP_GRAPH_DATA = {
+    groups: {{ ttp_data.groups | jsonify }},
+    phases: {{ ttp_data.phases | jsonify }}
+  };
+</script>
+
+{% endif %}

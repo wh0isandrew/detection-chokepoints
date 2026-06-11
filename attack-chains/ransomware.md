@@ -1,7 +1,7 @@
 ---
 layout: attack-chain
 title: Ransomware Attack Chain
-subtitle: "How ransomware operators all follow the same five-stage chokepoint sequence, regardless of group, brand, or tooling."
+subtitle: "The chokepoint sequence every ransomware operator must follow."
 last_updated: 2026-04-12
 permalink: /attack-chains/ransomware/
 show_ttp_overlap: true
@@ -127,11 +127,7 @@ chokepoints:
 
 ## Research Methodology
 
-Procedure-level data in this attack chain was extracted and corroborated using
-[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
-260 procedures were extracted across 36 reports from 5 ransomware actors, with cross-report
-corroboration used to validate convergence patterns. Reports were sourced from
-[ORKL](https://orkl.eu/) (Open Repository of Knowledge on Libraries) and direct vendor publications.
+Source: [Kitsune](https://github.com/christina23/kitsune) pipeline over [ORKL](https://orkl.eu/) + vendor reports - 260 procedures / 36 reports / 5 actors. Convergent techniques only.
 
 ## Related Attack Chains
 

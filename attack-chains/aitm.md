@@ -1,7 +1,7 @@
 ---
 layout: attack-chain
 title: AiTM / Phishing Kit Attack Chain
-subtitle: "How adversary-in-the-middle phishing kits bypass MFA by stealing session tokens, not credentials, regardless of kit vendor or delivery lure."
+subtitle: "AiTM kits bypass MFA by stealing session tokens - the same chokepoints regardless of kit or lure."
 last_updated: 2026-04-14
 permalink: /attack-chains/aitm/
 show_ttp_overlap: true
@@ -118,14 +118,7 @@ chokepoints:
 
 ## Research Methodology
 
-Procedure-level data in this attack chain was extracted and corroborated using
-[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
-11 vendor and government reports were analyzed across 5 AiTM kit families, with
-cross-report corroboration used to validate convergence patterns. Reports were sourced from
-[ORKL](https://orkl.eu/) and direct vendor publications including Microsoft Threat Intelligence,
-Sekoia, Proofpoint, Volexity, ANY.RUN, Resecurity, and Silent Push. Only techniques observed
-in two or more kits appear in the TTP diagram above. Kit-specific procedures are recorded in
-the source data but filtered from the convergence view.
+Source: [Kitsune](https://github.com/christina23/kitsune) pipeline over [ORKL](https://orkl.eu/) + vendor reports - 11 reports / 5 AiTM kit families. Convergent techniques only.
 
 ## Related Attack Chains
 

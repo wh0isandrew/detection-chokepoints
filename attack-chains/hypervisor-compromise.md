@@ -1,7 +1,7 @@
 ---
 layout: attack-chain
 title: Hypervisor Compromise Attack Chain
-subtitle: "How threat actors target VMware vSphere to operate beneath the guest OS, where EDR cannot see them, achieving persistence, credential theft, and total infrastructure control."
+subtitle: "Threat actors target VMware vSphere to operate beneath the guest OS where EDR can't see - chokepoints that hold across every ESXi encryptor."
 last_updated: 2026-04-14
 permalink: /attack-chains/hypervisor-compromise/
 show_ttp_overlap: true
@@ -141,14 +141,7 @@ chokepoints:
 
 ## Research Methodology
 
-Procedure-level data in this attack chain was extracted and corroborated using
-[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
-12 vendor and government reports were analyzed across 5 actors targeting VMware vSphere and ESXi,
-with cross-report corroboration used to validate convergence patterns. Reports were sourced from
-[ORKL](https://orkl.eu/) and direct vendor publications including Mandiant / Google Threat Intelligence,
-CISA, Trend Micro, Varonis, and Sygnia. Only techniques observed in two or more actors appear in the
-TTP diagram above. Actor-specific procedures are recorded in the source data but filtered from the
-convergence view.
+Source: [Kitsune](https://github.com/christina23/kitsune) pipeline over [ORKL](https://orkl.eu/) + vendor reports - 12 reports / 5 actors targeting vSphere/ESXi. Convergent techniques only.
 
 ## Broader ESXi Ransomware Landscape
 

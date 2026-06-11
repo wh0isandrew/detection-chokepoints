@@ -130,6 +130,45 @@ def load_chokepoints():
             str(v.get("Name", "")) for v in variations if isinstance(v, dict)
         )
 
+        # Build _keywords: concatenated text from fields not in the main description.
+        # Covers tool names, DPAPI terms, log sources, invariant language, bypass names —
+        # anything a defender might type that wouldn't match Name/Description alone.
+        def _t(v):
+            return str(v).strip() if v else ""
+
+        techniques   = data.get("Techniques", []) or []
+        chokepoints  = data.get("Chokepoints", []) or []
+        bypasses     = data.get("KnownBypasses", []) or []
+
+        kw = []
+        # MITRE technique names (e.g. "OS Credential Dumping: LSASS Memory")
+        kw.extend(_t(t) for t in techniques)
+        # Variation names + first 250 chars of their notes (tool-specific keywords)
+        for v in variations:
+            if not isinstance(v, dict):
+                continue
+            if v.get("Name"):
+                kw.append(_t(v["Name"]))
+            notes = _t(v.get("Notes"))
+            if notes:
+                kw.append(notes[:250])
+        # Chokepoint invariant text and log source names
+        for cp in chokepoints:
+            if not isinstance(cp, dict):
+                continue
+            if cp.get("Invariant"):
+                kw.append(_t(cp["Invariant"]))
+            for ls in (cp.get("LogSources") or []):
+                kw.append(_t(ls))
+        # Known bypass names (e.g. "Chrome App-Bound Encryption", "DPAPI")
+        for bp in bypasses:
+            if not isinstance(bp, dict):
+                continue
+            if bp.get("Bypass"):
+                kw.append(_t(bp["Bypass"])[:150])
+
+        data["_keywords"] = " ".join(kw)
+
         entries.append(data)
 
     return entries
@@ -163,6 +202,7 @@ def write_search_index(entries):
             "description": (e.get("Description") or "").strip(),
             "prerequisites": e.get("_prerequisites_text", ""),
             "variationNames": e.get("_variation_names", ""),
+            "keywords": e.get("_keywords", ""),
         })
     out_path = os.path.join(ASSETS_JS_DIR, "search-index.json")
     with open(out_path, "w", encoding="utf-8") as fh:

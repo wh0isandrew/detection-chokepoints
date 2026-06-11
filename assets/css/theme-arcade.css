@@ -1,0 +1,72 @@
+/* ============================================================
+   Tacklebox-anchored arcade theme — PREVIEW OVERLAY
+   Loaded AFTER style.css in _layouts/default.html so it overrides.
+   To revert completely: delete this file and remove its <link>
+   line in _layouts/default.html. (Fonts are pulled from Google
+   Fonts for the preview; self-host before any production use.)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+/* Keep the site's existing ORANGE accent (#f0883e) — it harmonizes with the
+   red/orange/yellow severity scale (teal fought them). The retro feel rides on
+   pixel fonts + pixel art in the warm palette instead of an accent swap. */
+
+/* Pixel chrome only — logo / nav / hero / section + card headings.
+   Body copy, descriptions, rule tables, Sigma and code stay in the
+   original readable fonts. */
+.nav-logo span{ font-family:'Press Start 2P',monospace !important; font-size:.7rem !important; color:var(--accent) !important; letter-spacing:.02em; }
+.nav-logo svg{ color:var(--accent) !important; }
+.nav-links a{ font-family:'VT323',monospace !important; font-size:1.18rem !important; letter-spacing:.03em; }
+
+.hero-title,
+.cp-hero-title{ font-family:'Press Start 2P',monospace !important; line-height:1.55 !important; color:var(--accent) !important;
+  text-shadow:0 2px 0 #3a1c08, 0 0 18px rgba(240,136,62,.4); letter-spacing:.02em; }
+.hero-title{ font-size:clamp(1.1rem,3vw,1.9rem) !important; }
+.hero-tagline{ font-family:'VT323',monospace !important; font-size:1.55rem !important; color:var(--accent) !important; }
+.hero-sub{ font-family:'VT323',monospace !important; font-size:1.25rem !important; }
+
+.cp-section-heading{ font-family:'VT323',monospace !important; letter-spacing:.02em; }
+.chokepoint-card h3, .chokepoint-card-title, #chokepoints-grid h3{ font-family:'VT323',monospace !important; font-size:1.3rem !important; letter-spacing:.02em; }
+.filter-label, .badge-legend-toggle{ font-family:'VT323',monospace !important; font-size:1.05rem !important; }
+
+/* ── Extend pixel chrome to Attack Chains / Trends / Framework / trend pages ── */
+.ac-index-hero h1, .ac-detail-title, .tr-hero h1, .hero-inner h1,
+.cg-page h1, .edge-page h1, .mi-page h1 {
+  font-family:'Press Start 2P',monospace !important;
+  line-height:1.55 !important; color:var(--accent) !important;
+  text-shadow:0 2px 0 #3a1c08, 0 0 18px rgba(240,136,62,.4); letter-spacing:.02em;
+}
+.ac-index-hero h1, .ac-detail-title, .tr-hero h1, .hero-inner h1 { font-size:clamp(1.2rem,3vw,1.9rem) !important; }
+.cg-page h1, .edge-page h1, .mi-page h1 { font-size:clamp(1.05rem,2.2vw,1.5rem) !important; }
+/* section / card / pillar headings in the readable pixel font */
+.ac-why-section h2, .ac-section-heading, .ac-stage-card-label, .ac-card-title,
+.tr-pillar-title, .tr-card-title, .tr-section-header h2,
+.cg-page h2, .cg-page h3, .edge-page h2, .edge-page h3, .mi-page h2, .mi-page h3,
+.fw-section h2, .step-card h3, .maturity-card h3, .compare-card h3 {
+  font-family:'VT323',monospace !important; letter-spacing:.02em;
+}
+
+/* pixel logo + section-heading icons (replace the old SVGs) */
+.nav-logo-pixel{ width:24px; height:24px; image-rendering:pixelated; vertical-align:middle; }
+.cp-section-pixel, .tr-pillar-pixel, .ac-section-pixel{ width:24px; height:24px; image-rendering:pixelated; }
+/* cross-chain ecosystem: box icons + chain-link flow connectors */
+.ac-flow-pixel{ width:28px; height:28px; image-rendering:pixelated; }
+.ac-flow-chain{ width:22px; height:22px; image-rendering:pixelated; vertical-align:middle; }
+/* mobile: make the cross-chain flow a clean centered vertical spine */
+@media (max-width:640px){
+  .ac-ecosystem-flow .ac-flow-row{ align-items:center !important; gap:.5rem; }
+  .ac-ecosystem-flow .ac-flow-box{ width:100%; justify-content:center; text-align:center; }
+  .ac-ecosystem-flow .ac-flow-label{ text-align:center; width:100%; }
+  .ac-ecosystem-flow .ac-flow-arrow{ align-self:center; }
+}
+/* framework: tier icons in maturity labels + the Research->Hunt->Analyst climb */
+.maturity-label img.tier-mini{ width:15px; height:15px; image-rendering:pixelated; vertical-align:-2px; margin-right:5px; }
+.tier-flow-icon{ width:30px; height:30px; image-rendering:pixelated; vertical-align:middle; }
+/* testing-your-chokepoint pixel icons */
+.test-icon img.test-pixel{ width:26px; height:26px; image-rendering:pixelated; }
+/* let the orange pixel marks pop in the section frames instead of orange-on-orange */
+.cp-section-icon, .tr-pillar-icon, .ac-section-icon{ background:rgba(13,17,23,.55) !important; border:1px solid rgba(240,136,62,.30) !important; }
+
+/* subtle CRT scanlines */
+body::after{ content:''; position:fixed; inset:0; pointer-events:none; z-index:9998;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.05) 3px); }

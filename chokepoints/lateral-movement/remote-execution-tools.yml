@@ -268,21 +268,21 @@ Detections:
   UseCase: SOC alerting for active lateral movement; direct IR escalation trigger
   SigmaRule: sigma-rules/remote-execution/analyst.yml
 Intel:
-- Name: MITRE ATT&CK — Impacket Software S0357
+- Name: MITRE ATT&CK - Impacket Software S0357
   Tier: primary
   URL: https://attack.mitre.org/software/S0357/
   Description: Lists every known threat actor (APT groups, ransomware operators) documented using Impacket; far more useful
     to a defender than the raw GitHub repo for understanding real-world prevalence
-- Name: MITRE ATT&CK — T1021.003 DCOM
+- Name: MITRE ATT&CK - T1021.003 DCOM
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1021/003/
   Description: Technique definition for DCOM-based lateral movement; covers dcomexec.py usage and detection guidance
-- Name: MITRE ATT&CK — T1569.002 Service Execution
+- Name: MITRE ATT&CK - T1569.002 Service Execution
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1569/002/
   Description: Technique definition for service-based remote execution (psexec/smbexec pattern); the primary detection signal
     in this chokepoint's hunt and analyst rules
-- Name: Microsoft — Storm-0501 Ransomware Hybrid Cloud Attacks
+- Name: Microsoft - Storm-0501 Ransomware Hybrid Cloud Attacks
   Tier: primary
   URL: https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/
   Description: Documents Storm-0501 using Impacket SecretsDump for lateral movement in hybrid cloud environments; concrete
@@ -298,7 +298,7 @@ Intel:
   Tier: primary
   URL: https://github.com/Pennyw0rth/NetExec
   Description: Active successor to CrackMapExec; track new protocol support and OPSEC improvements that affect detection
-- Name: SOC Investigation — Event ID 5145 Threat Hunting
+- Name: SOC Investigation - Event ID 5145 Threat Hunting
   Tier: primary
   URL: https://www.socinvestigation.com/threat-hunting-with-eventid-5145-object-access-detailed-file-share/
   Description: Detailed guidance on using Event ID 5145 (Detailed File Share) for lateral movement detection; covers IPC$
@@ -462,7 +462,7 @@ PreventionSummary: >
 PreventionOpportunities:
 - Category: Endpoint · Application Control
   Control: Block dual-use offensive tools from executing on workstations and servers
-  Impact: Prevents lateral movement even when the attacker holds valid admin credentials — the
+  Impact: Prevents lateral movement even when the attacker holds valid admin credentials - the
     tools themselves become the chokepoint that is blocked.
   MagicSwordFit: MagicSword's LOLBAS / dual-use controls block offensive admin tools
     (Impacket, NetExec, PsExec, CrackMapExec) by default, with policy tuned to allow only

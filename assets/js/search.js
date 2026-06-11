@@ -26,18 +26,19 @@
   // ── Fuse.js setup ─────────────────────────────────────────────────────────
   const data = window.CHOKEPOINTS_DATA || [];
   const fuse = new Fuse(data, {
-    threshold: 0.35,
-    distance:  200,
+    threshold:      0.3,
+    ignoreLocation: true,   // search full field text, not just near position 0
     minMatchCharLength: 2,
     keys: [
-      { name: 'Name',         weight: 3 },
-      { name: 'MitreIds',     weight: 2.5 },
-      { name: 'Description',  weight: 2 },
-      { name: 'TheConstant',  weight: 1.5 },
-      { name: 'Tactic',       weight: 1.5 },
-      { name: 'Prerequisites',weight: 1 },
-      { name: 'Variations.Name',       weight: 1 },
-      { name: 'Variations.Description',weight: 0.8 },
+      { name: 'Name',               weight: 4   },
+      { name: 'MitreIds',           weight: 3   },
+      { name: 'Description',        weight: 2   },
+      { name: 'TheConstant',        weight: 2   },
+      { name: 'Tactics',            weight: 1.5 },
+      { name: '_keywords',          weight: 1.5 }, // techniques, variation notes, invariants, log sources, bypass terms
+      { name: 'Techniques',         weight: 1.2 },
+      { name: 'Variations.Name',    weight: 1.5 },
+      { name: '_prerequisites_text',weight: 0.8 },
     ],
   });
 

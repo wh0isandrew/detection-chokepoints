@@ -23,7 +23,7 @@ Description: >
   and indicates automated tooling. The operator automation uses first-party apps with
   pre-consented broad scopes, an empty c_DeviceId (unmanaged device), and
   disproportionate /beta/ API usage. A common analyst mistake is filtering on c_sid
-  (Graph Activity Log client session ID) as if it were the user object ID — c_sid is
+  (Graph Activity Log client session ID) as if it were the user object ID - c_sid is
   a session/security-context identifier and does NOT equal the user object ID;
   filtering c_sid == user_object_id returns empty results.
 
@@ -43,7 +43,7 @@ Chokepoints:
   Invariant: The attacker MUST enumerate multiple distinct Graph API endpoint
     categories to triage the compromised identity's value (roles, cross-tenant trust,
     mailbox configuration, contacts, licensing). The automation cannot perform all
-    reconnaissance from a single endpoint — each category requires distinct API
+    reconnaissance from a single endpoint - each category requires distinct API
     calls. Covering 4+ categories within 60 seconds is not achievable by human
     portal navigation (normal = 1-2 categories per session).
   Observable: >
@@ -60,24 +60,24 @@ Chokepoints:
     /beta/ API usage, mixed GET/POST methods, mixed 200/400/403 response codes.
   WhyCantBypass: >
     The operator automation requires breadth to triage the compromised identity's
-    value — checking roles, cross-tenant trusts, mailbox forwarding rules, contact
+    value - checking roles, cross-tenant trusts, mailbox forwarding rules, contact
     lists, and licensing in one pass. These data are spread across 5 distinct Graph
     API endpoint categories. Slowing the requests to human-navigation speed (>60s
     between categories) would add 10+ minutes to the recon phase, increasing
     detection window and reducing the automation's value. The category diversity
-    is the invariant — the attacker cannot collapse it into a single endpoint.
+    is the invariant - the attacker cannot collapse it into a single endpoint.
   LogSources:
   - Microsoft Graph Activity Logs (MicrosoftGraphActivityLogs Sentinel table)
   - Entra ID Sign-in Logs (for ASN correlation with Tier 2 residential proxy)
   DetectionTier: Hunt
   SigmaRef: sigma-rules/graph-api-recon-burst/hunt.yml
   BypassNote: >
-    Graph Activity Logs may not be enabled in all tenants — check ingestion before
+    Graph Activity Logs may not be enabled in all tenants - check ingestion before
     relying on this detection. c_sid is NOT the user object ID; pivot on source IP
     + appId cross-referenced with sign-in logs to identify UPN.
 
 Variations:
-- Name: Tycoon 2FA Operator Console — 5-Category Recon Automation
+- Name: Tycoon 2FA Operator Console - 5-Category Recon Automation
   FirstSeen: 2023-Q3
   Status: Active
   SourceURL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
@@ -195,7 +195,7 @@ Detections:
     AND c_DeviceId is empty. Exclude known IT admin service accounts and
     compliance tool service principals. ES|QL or KQL recommended over Sigma
     for the category-count aggregation.
-    NOTE: c_sid is NOT the user object ID — pivot on source IP + appId against
+    NOTE: c_sid is NOT the user object ID - pivot on source IP + appId against
     sign-in logs to identify UPN. Do NOT filter c_sid == user_object_id.
   ExpectedFPRate: Low (third-party compliance/audit tools; document and exclude)
   UseCase: >
@@ -223,7 +223,7 @@ Detections:
   SigmaRule: sigma-rules/graph-api-recon-burst/analyst.yml
 
 Intel:
-- Name: Elastic Security Labs — Tycoon 2FA AiTM Detection Engineering
+- Name: Elastic Security Labs - Tycoon 2FA AiTM Detection Engineering
   Tier: primary
   URL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
   Description: >
@@ -232,7 +232,7 @@ Intel:
     /beta/ API disproportionate usage as secondary signal. 10-20 minute
     kit-to-operator handoff window quantified.
 
-- Name: "MITRE ATT&CK — T1087.004 Account Discovery: Cloud Account"
+- Name: "MITRE ATT&CK - T1087.004 Account Discovery: Cloud Account"
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1087/004/
   Description: Primary technique definition.
@@ -259,7 +259,7 @@ KnownBypasses:
 
 OsintSources:
 - Platform: N/A
-  Query: 'N/A — Graph API recon bursts are internal Microsoft log signals'
+  Query: 'N/A - Graph API recon bursts are internal Microsoft log signals'
   Notes: >
     Graph API recon bursts are not externally observable via OSINT tools
     (URLScan, Shodan, Hunt.io). Detection relies entirely on Graph Activity Log
@@ -271,7 +271,7 @@ OsintSources:
 # filter_known_tooling in hunt.yml: Replace <UNKNOWN> placeholder with known-good
 # compliance/admin tool service principal app IDs (Varonis, AvePoint, Stealthbits).
 # KQL aggregation: The category-count logic in hunt.yml/analyst.yml Sigma stubs
-# cannot be expressed in standard Sigma — KQL/ES|QL implementation required.
+# cannot be expressed in standard Sigma - KQL/ES|QL implementation required.
 # Confirm Graph Activity Logs are ingested in target tenant before deployment.
 
 TheConstant: >
