@@ -192,6 +192,25 @@ pre, table {
     margin-top: .4rem;
   }
   .site-nav[data-open="true"] .nav-links { display: flex; }
+
+  /* Keep the brand + toolbar from colliding on narrow screens.
+     The Tailwind Play CDN (loaded after style.css) injects single-class
+     utilities (.flex / .flex-shrink-0 / .text-base), so these overrides are
+     scoped under .site-nav to win on specificity. Pare the toolbar to the two
+     essential controls (theme + hamburger); GitHub stays reachable via the
+     menu's Contribute link, MagicSword via the homepage prevention card. */
+  .site-nav .nav-logo { flex-shrink: 1; min-width: 0; max-width: calc(100% - 80px); }
+  .site-nav .nav-logo span {
+    /* brand is Press Start 2P (set !important in theme-arcade.css) and very wide;
+       shrink it so the full title fits beside the toolbar, with ellipsis as a
+       safety net on even narrower screens. */
+    font-size: .6rem !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav .nav-github, .site-nav .ms-nav-link { display: none; }
 }
 
 /* ─── Page-local anchor nav ──────────────────────────────────────────────── */
