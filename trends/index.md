@@ -211,12 +211,7 @@ permalink: /trends/
 <section class="tr-hero">
   <div class="tr-hero-inner">
     <h1>Trends</h1>
-    <p>
-      Chokepoints stay stable. The techniques layered around them shift constantly.
-      These analyses track what adversaries are actually doing: which payloads and cradle families dominate,
-      which evasion techniques are rising or dying, and what infrastructure they keep coming back to.
-      Data-driven signal for prioritizing detection work.
-    </p>
+    <p>Chokepoints stay stable; the techniques around them shift. Track what's actually prevalent - payloads, evasion, infrastructure.</p>
   </div>
 </section>
 
@@ -226,28 +221,28 @@ permalink: /trends/
   <div class="tr-pillars">
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true" title="Telemetry">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <img class="tr-pillar-pixel" src="{{ '/assets/img/pixel/tr-prevalence.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <div class="tr-pillar-title">Payload Prevalence</div>
       <div class="tr-pillar-desc">Which command lines, scripts, and file types are most common vs. rare across real-world campaigns</div>
     </div>
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true" title="Technique pivot">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <img class="tr-pillar-pixel" src="{{ '/assets/img/pixel/tr-shifts.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <div class="tr-pillar-title">Technique Shifts</div>
       <div class="tr-pillar-desc">When adversaries pivot. New evasion methods emerging, old ones dying as defenders catch up.</div>
     </div>
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true" title="Adversary infrastructure">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <img class="tr-pillar-pixel" src="{{ '/assets/img/pixel/tr-infra.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <div class="tr-pillar-title">Malicious Infrastructure</div>
       <div class="tr-pillar-desc">Staging domains, CDN abuse, C2 hosting patterns, and reused infrastructure clusters</div>
     </div>
     <div class="tr-pillar">
       <div class="tr-pillar-icon" aria-hidden="true" title="Time-series trend">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+        <img class="tr-pillar-pixel" src="{{ '/assets/img/pixel/tr-timeseries.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <div class="tr-pillar-title">Time-Series Intel</div>
       <div class="tr-pillar-desc">Monthly aggregations showing acceleration, plateau, or decline, not just point-in-time snapshots</div>
@@ -342,7 +337,7 @@ permalink: /trends/
         {% endif %}
       </div>
       <div class="tr-card-footer">
-        <span>Updated {% if site.data.masq_infra_hunts %}{{ site.data.masq_infra_hunts.meta.generated }}{% else %}{{ site.data.masq_infra.meta.last_updated | default: "—" }}{% endif %}</span>
+        <span>Updated {% if site.data.masq_infra_hunts %}{{ site.data.masq_infra_hunts.meta.generated }}{% else %}{{ site.data.masq_infra.meta.last_updated | default: "-" }}{% endif %}</span>
         <span class="tr-card-cta">
           View analysis
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"

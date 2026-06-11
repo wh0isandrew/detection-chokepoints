@@ -14,10 +14,10 @@ Description: >
   synthetic device with Microsoft Device Registration Service (DRS) to obtain a
   Primary Refresh Token (PRT) bound to a kit-controlled device object. This PRT
   survives the standard IR playbook of revokeSignInSessions because the device is a
-  separate Entra ID principal — its PRT remains valid indefinitely unless the device
+  separate Entra ID principal - its PRT remains valid indefinitely unless the device
   object is explicitly deleted first. The enrollment call always uses the kit's
   Node.js HTTP client (axios/1.15.2), not the native Entra ID join clients (Dsreg,
-  DeviceRegistrationClient, Dalvik) — a binary distinction exploitable as a
+  DeviceRegistrationClient, Dalvik) - a binary distinction exploitable as a
   high-fidelity detection. Critical IR finding: the correct containment sequence is
   atomically disable account → enumerate and DELETE all registered devices →
   THEN revoke sign-in sessions → reset password. Reversing steps 2 and 3 leaves
@@ -38,7 +38,7 @@ Chokepoints:
   Input: Kit has captured MAB refresh token; proceeds to register synthetic device
     for PRT persistence
   Invariant: The attacker MUST call the DRS EnrollmentServer/device endpoint to
-    register a device — this is the only path to a device-bound PRT in Entra ID.
+    register a device - this is the only path to a device-bound PRT in Entra ID.
     The enrollment always generates an audit event in Entra ID AuditLogs.
     The kit's HTTP client (axios/1.15.2) is the user agent on this call, not the
     native clients (Dsreg / DeviceRegistrationClient / Dalvik) used by legitimate
@@ -47,12 +47,12 @@ Chokepoints:
     Entra ID AuditLogs: operationName == "Add registered users to device" AND
     resultType == "0" (success) AND userAgent NOT IN [Dsreg,
     DeviceRegistrationClient, Dalvik, Windows-AzureAD-Authentication-Provider].
-    The non-native UA is the binary invariant — legitimate device enrollment
+    The non-native UA is the binary invariant - legitimate device enrollment
     from managed endpoints never uses axios or node.
   WhyCantBypass: >
     DRS EnrollmentServer/device is the only API path to obtain a device-bound PRT
     in Entra ID. There is no alternative enrollment mechanism. The audit event is
-    generated server-side by Microsoft's DRS — the attacker cannot suppress it.
+    generated server-side by Microsoft's DRS - the attacker cannot suppress it.
     The kit cannot use native Dsreg/DeviceRegistrationClient because those are
     Windows OS components that would require code execution on a managed endpoint,
     defeating the purpose of the cloud-side AiTM kit.
@@ -66,7 +66,7 @@ Chokepoints:
   Input: IR team has executed revokeSignInSessions (but NOT deleted device objects first)
   Invariant: >
     The attacker MUST use the PRT + session key to sign per-request
-    HMAC-SHA256 assertions for ongoing oauth2/token calls — these generate
+    HMAC-SHA256 assertions for ongoing oauth2/token calls - these generate
     non-interactive sign-in records with incomingTokenType: primaryRefreshToken
     even after revokeSignInSessions has been executed.
   Observable: >
@@ -89,7 +89,7 @@ Chokepoints:
     indicator, not a preventive detection.
 
 Variations:
-- Name: Tycoon 2FA — Device PRT Enrollment Chain
+- Name: Tycoon 2FA - Device PRT Enrollment Chain
   FirstSeen: 2023-Q3
   Status: Active
   SourceURL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
@@ -124,11 +124,11 @@ Variations:
         grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer
         assertion=<RS256_JWT_signed_with_device_key>
 
-      # Step 5: Ongoing — sign PRT assertions with HMAC-SHA256 session key
+      # Step 5: Ongoing - sign PRT assertions with HMAC-SHA256 session key
     Context: >
       Audit event fires on Step 2 (DRS enrollment). Kit user agent (axios/1.15.2)
       is the binary distinguishing signal vs. legitimate Dsreg/DeviceRegistrationClient.
-      PRT obtained in Step 4 survives revokeSignInSessions — device must be deleted first.
+      PRT obtained in Step 4 survives revokeSignInSessions - device must be deleted first.
     Artifacts:
     - 'Entra ID AuditLogs: operationName "Add registered users to device" resultType "0" userAgent "axios/1.15.2"'
     - 'Entra ID Device objects: fabricated DeviceDisplayName, OSVersion on registeredDevices/ownedDevices'
@@ -176,7 +176,7 @@ Detections:
   - Entra ID AuditLogs
   Logic: >
     ActivityDisplayName == "Add device" OR operationName == "Add registered users
-    to device" AND Result == "success". No UA filter — capture all to understand
+    to device" AND Result == "success". No UA filter - capture all to understand
     baseline enrollment volume and UA distribution.
   ExpectedFPRate: Medium (legitimate MDM enrollment, Intune, SCCM)
   UseCase: Baseline enrollment activity; identify MDM and Intune patterns before
@@ -219,7 +219,7 @@ Detections:
   SigmaRule: sigma-rules/aitm-device-prt-enrollment/analyst.yml
 
 Intel:
-- Name: Elastic Security Labs — Tycoon 2FA AiTM Detection Engineering
+- Name: Elastic Security Labs - Tycoon 2FA AiTM Detection Engineering
   Tier: primary
   URL: https://www.elastic.co/security-labs/tycoon-2fa-aitm-detection-engineering
   Description: >
@@ -228,7 +228,7 @@ Intel:
     Automated response workflow (disable → delete devices → revoke → reset)
     executes in <10 seconds.
 
-- Name: "MITRE ATT&CK — T1098.005 Account Manipulation: Device Registration"
+- Name: "MITRE ATT&CK - T1098.005 Account Manipulation: Device Registration"
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1098/005/
   Description: Primary technique definition.
@@ -252,12 +252,12 @@ KnownBypasses:
   Detection: >
     Device objects with display names matching no corporate naming convention.
     Device cert issued for non-corporate domain. Cross-reference with Intune/SCCM
-    inventory — any device in Entra not in MDM inventory is suspicious.
+    inventory - any device in Entra not in MDM inventory is suspicious.
 
 # PENDING LAB VALIDATION
 # RawLogs: No sample Entra ID AuditLogs device registration entries attached yet.
 # UserAgent field: Verify that AuditLogs surface the user agent in the UserAgent field
-# vs. InitiatedBy.app.displayName, AdditionalDetails, or a nested property — field
+# vs. InitiatedBy.app.displayName, AdditionalDetails, or a nested property - field
 # name must be confirmed against real AuditLogs from a lab tenant.
 # filter_known_automation in hunt.yml: Replace <UNKNOWN> with documented MDM/Intune
 # service principal IDs.

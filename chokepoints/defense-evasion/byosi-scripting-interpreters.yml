@@ -114,7 +114,7 @@ Variations:
     - 'Sysmon EID 1: Interpreter running from non-standard path'
     - 'Sysmon EID 3: Interpreter making outbound C2 connection'
   ChokepointMapping: 'Interpreter downloaded to TEMP → launched from non-standard path → script executes → C2 callback'
-- Name: IronNetInjector (Turla APT — IronPython BYOI)
+- Name: IronNetInjector (Turla APT - IronPython BYOI)
   FirstSeen: 2021-Q1
   Status: Active
   SourceURL: https://unit42.paloaltonetworks.com/ironnetinjector/
@@ -342,45 +342,45 @@ Detections:
   SigmaRule: sigma-rules/byosi/analyst.yml
 
 Intel:
-- Name: 'MITRE ATT&CK — T1059.006: Command and Scripting Interpreter: Python'
+- Name: 'MITRE ATT&CK - T1059.006: Command and Scripting Interpreter: Python'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1059/006/
   Description: >
     Primary technique definition for Python interpreter abuse. Documents real-world
     procedure examples including Turla IronNetInjector and ESXi-targeted Python scripts.
-- Name: 'MITRE ATT&CK — T1059.007: Command and Scripting Interpreter: JavaScript'
+- Name: 'MITRE ATT&CK - T1059.007: Command and Scripting Interpreter: JavaScript'
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1059/007/
   Description: >
     Covers Node.js and JavaScript runtime abuse. References JScript, Node.js, and
     browser-based JavaScript execution for malicious purposes.
-- Name: BYOSI — GitHub (oldkingcone)
+- Name: BYOSI - GitHub (oldkingcone)
   Tier: primary
   URL: https://github.com/oldkingcone/BYOSI
   Description: >
     Original BYOSI proof-of-concept demonstrating PHP interpreter delivery and EDR
     evasion. Essential reference for understanding the four-line PowerShell delivery
     mechanism and EDR blind spot.
-- Name: PolyDrop — GitHub (MalwareSupportGroup)
+- Name: PolyDrop - GitHub (MalwareSupportGroup)
   Tier: primary
   URL: https://github.com/MalwareSupportGroup/PolyDrop
   Description: >
     Multi-language BYOSI toolkit. Reference for understanding the breadth of interpreter
     options (13 languages) and cross-platform deployment automation.
-- Name: 'Black Hills InfoSec — Red Teamer''s Cookbook: BYOI'
+- Name: 'Black Hills InfoSec - Red Teamer''s Cookbook: BYOI'
   Tier: supporting
   URL: https://www.blackhillsinfosec.com/red-teamers-cookbook-byoi-bring-your-own-interpreter/
   Description: >
     Foundational BYOI tradecraft documentation. Explains .NET embedding of third-party
     interpreters for in-memory execution. Essential context for understanding the
     evolution from PowerShell to BYOI payloads.
-- Name: Microsoft — Threat Actors Misuse Node.js
+- Name: Microsoft - Threat Actors Misuse Node.js
   Tier: supporting
   URL: https://www.microsoft.com/en-us/security/blog/2025/04/15/threat-actors-misuse-node-js-to-deliver-malware-and-other-malicious-payloads/
   Description: >
     Microsoft's analysis of Node.js abuse in ClickFix delivery chains and inline
     JavaScript execution for C2. Documents NodeLoader privilege escalation technique.
-- Name: Unit 42 — IronNetInjector (Turla BYOI)
+- Name: Unit 42 - IronNetInjector (Turla BYOI)
   Tier: supporting
   URL: https://unit42.paloaltonetworks.com/ironnetinjector/
   Description: >
@@ -433,8 +433,8 @@ PreventionOpportunities:
   Impact: Prevents malicious scripts from executing even when the interpreter binary is
     legitimately signed, because only authorized interpreter paths and versions are permitted.
   MagicSwordFit: MagicSword's application control can block non-approved Python, Node.js,
-    PHP, and AutoHotKey binaries — especially those written to non-standard paths like TEMP
-    or AppData — before they execute any scripts.
+    PHP, and AutoHotKey binaries - especially those written to non-standard paths like TEMP
+    or AppData - before they execute any scripts.
   MagicSwordTag: lolbas
 - Category: Endpoint
   Control: Alert on interpreter binaries written to TEMP, Downloads, or AppData by non-IT processes
