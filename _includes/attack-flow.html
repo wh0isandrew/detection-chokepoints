@@ -46,7 +46,7 @@
        aria-labelledby="af-title-{{ page.title | slugify }}"
        focusable="false">
 
-    <title id="af-title-{{ page.title | slugify }}">{{ page.title }} — attack flow diagram</title>
+    <title id="af-title-{{ page.title | slugify }}">{{ page.title }} - attack flow diagram</title>
     <desc>
       Attack chain with {{ _n }} stages:
       {% for s in page.stages %}{{ s.label }}{% unless forloop.last %}, {% endunless %}{% endfor %}.
@@ -95,15 +95,15 @@
       {% assign _status = stage.detection_status | default: 'unknown' %}
 
       {%- comment -%} Build pipe-delimited technique string for data attribute {%- endcomment -%}
-      {% capture _tech_str %}{% for _t in stage.mitre_techniques %}{% unless forloop.first %}||{% endunless %}{{ _t.id }} — {{ _t.name }}{% endfor %}{% endcapture %}
+      {% capture _tech_str %}{% for _t in stage.mitre_techniques %}{% unless forloop.first %}||{% endunless %}{{ _t.id }} - {{ _t.name }}{% endfor %}{% endcapture %}
 
       {%- comment -%} Build pipe-delimited signals string {%- endcomment -%}
       {% assign _sig_str = stage.detection_signals | join: "||" %}
 
       {%- comment -%} Human-readable status label {%- endcomment -%}
-      {% if _status == 'exploited' %}{% assign _status_label = 'Exploited — Detection Gap' %}
-      {% elsif _status == 'detected' %}{% assign _status_label = 'Detected — Opportunity' %}
-      {% elsif _status == 'blocked'  %}{% assign _status_label = 'Blocked — Control Active' %}
+      {% if _status == 'exploited' %}{% assign _status_label = 'Exploited - Detection Gap' %}
+      {% elsif _status == 'detected' %}{% assign _status_label = 'Detected - Opportunity' %}
+      {% elsif _status == 'blocked'  %}{% assign _status_label = 'Blocked - Control Active' %}
       {% else %}{% assign _status_label = 'Unknown' %}
       {% endif %}
 

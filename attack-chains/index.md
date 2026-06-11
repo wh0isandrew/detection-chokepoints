@@ -45,16 +45,16 @@ permalink: /attack-chains/
       <div class="ac-flow-row">
         <a class="ac-flow-box" href="{{ '/attack-chains/infostealers/' | relative_url }}">
           <span class="ac-flow-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <img class="ac-flow-pixel" src="{{ '/assets/img/pixel/eco-infostealer.png' | relative_url }}" alt="" width="28" height="28" />
           </span>
           Infostealer Chain
         </a>
-        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-arrow"><img class="ac-flow-chain" src="{{ '/assets/img/pixel/sec-related.png' | relative_url }}" alt="leads to" width="22" height="22" /></span>
         <span class="ac-flow-label">credentials sold to IABs</span>
-        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-arrow"><img class="ac-flow-chain" src="{{ '/assets/img/pixel/sec-related.png' | relative_url }}" alt="leads to" width="22" height="22" /></span>
         <a class="ac-flow-box" href="{{ '/attack-chains/ransomware/' | relative_url }}">
           <span class="ac-flow-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg>
+            <img class="ac-flow-pixel" src="{{ '/assets/img/pixel/eco-ransomware.png' | relative_url }}" alt="" width="28" height="28" />
           </span>
           Ransomware Chain
         </a>
@@ -62,16 +62,16 @@ permalink: /attack-chains/
       <div class="ac-flow-row">
         <a class="ac-flow-box" href="{{ '/attack-chains/aitm/' | relative_url }}">
           <span class="ac-flow-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="3" y1="3" x2="21" y2="21" stroke-dasharray="2 2"/></svg>
+            <img class="ac-flow-pixel" src="{{ '/assets/img/pixel/eco-aitm.png' | relative_url }}" alt="" width="28" height="28" />
           </span>
           AiTM / Phish Chain
         </a>
-        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-arrow"><img class="ac-flow-chain" src="{{ '/assets/img/pixel/sec-related.png' | relative_url }}" alt="leads to" width="22" height="22" /></span>
         <span class="ac-flow-label">session tokens &rarr; account takeover</span>
-        <span class="ac-flow-arrow">&rarr;</span>
+        <span class="ac-flow-arrow"><img class="ac-flow-chain" src="{{ '/assets/img/pixel/sec-related.png' | relative_url }}" alt="leads to" width="22" height="22" /></span>
         <span class="ac-flow-box">
           <span class="ac-flow-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <img class="ac-flow-pixel" src="{{ '/assets/img/pixel/eco-bec.png' | relative_url }}" alt="" width="28" height="28" />
           </span>
           BEC / Double Extortion
         </span>

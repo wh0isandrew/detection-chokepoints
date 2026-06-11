@@ -1,7 +1,7 @@
 ---
 layout: attack-chain
 title: Active Directory & Identity Domination Attack Chain
-subtitle: "How threat actors compromise on-prem AD, hybrid identity, and cloud Entra ID by exploiting protocol-level invariants that haven't changed since Kerberos was designed."
+subtitle: "Protocol-level invariants in on-prem AD, hybrid identity, and Entra ID that haven't changed since Kerberos was designed."
 last_updated: 2026-04-14
 permalink: /attack-chains/identity-domination/
 show_ttp_overlap: true
@@ -157,14 +157,7 @@ long-term persistence.
 
 ## Research Methodology
 
-Procedure-level data in this attack chain was extracted and corroborated using
-[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
-12 vendor and government reports were analyzed across 5 actors covering on-prem AD, hybrid identity,
-and cloud Entra ID attack paths. Reports were sourced from [ORKL](https://orkl.eu/) and direct
-vendor publications including Microsoft Threat Intelligence, CrowdStrike, Mandiant / Google Threat
-Intelligence, CISA, ReliaQuest, and The DFIR Report. Only techniques observed in two or more
-actors appear in the TTP diagram above. Actor-specific procedures are recorded in the source data
-but filtered from the convergence view.
+Source: [Kitsune](https://github.com/christina23/kitsune) pipeline over [ORKL](https://orkl.eu/) + vendor reports - 12 reports / 5 actors across AD/hybrid/Entra ID. Convergent techniques only.
 
 ## Related Attack Chains
 

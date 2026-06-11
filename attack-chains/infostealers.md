@@ -1,7 +1,7 @@
 ---
 layout: attack-chain
 title: Infostealer Attack Chain
-subtitle: "How infostealer operators all follow the same five-stage chokepoint sequence, regardless of family, brand, or C2 infrastructure."
+subtitle: "The chokepoint sequence every infostealer must follow."
 last_updated: 2026-04-13
 permalink: /attack-chains/infostealers/
 show_ttp_overlap: true
@@ -108,14 +108,7 @@ chokepoints:
 
 ## Research Methodology
 
-Procedure-level data in this attack chain was extracted and corroborated using
-[Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline.
-13 vendor and government reports were analyzed across 5 infostealer families, with
-cross-report corroboration used to validate convergence patterns. Reports were sourced from
-[ORKL](https://orkl.eu/) and direct vendor publications including CISA, Trend Micro,
-Palo Alto Unit 42, Zscaler, Cybereason, Sekoia, and Picus Security. Only techniques
-observed in two or more families appear in the TTP diagram above. Actor-specific
-procedures are recorded in the source data but filtered from the convergence view.
+Source: [Kitsune](https://github.com/christina23/kitsune) pipeline over [ORKL](https://orkl.eu/) + vendor reports - 13 reports / 5 families. Convergent techniques only.
 
 ## Related Attack Chains
 

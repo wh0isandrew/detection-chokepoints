@@ -33,9 +33,7 @@ layout: default
       <div>
         <strong class="ac-insight-headline">The Chokepoint Convergence Principle</strong>
         <p class="ac-insight-body">
-          Every actor in the matrix below follows the same sequence of stages. They <em>must</em>, because each
-          stage reflects an unavoidable prerequisite condition. Their tools, loaders, and C2 infrastructure
-          change constantly. The underlying chokepoints do not. Detect the prerequisite; catch any actor.
+          Same stages, different tools. Each stage is an unavoidable prerequisite - the underlying chokepoints don't change. Detect the prerequisite; catch any actor.
         </p>
       </div>
     </div>
@@ -47,15 +45,18 @@ layout: default
   {% if page.stages %}
 
   {% if page.show_ttp_overlap %}
-  <!-- TTP Overlap Filter Diagram -->
+  <!-- TTP Overlap - Graph + Grid views -->
   <section class="ac-section-card ac-ttp-overlap-section" aria-labelledby="ttp-overlap-title">
     <div class="ac-section-heading-row">
       <div class="ac-section-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <img class="ac-section-pixel" src="{{ '/assets/img/pixel/sec-osint.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <h2 class="ac-section-heading" id="ttp-overlap-title">TTP Overlap Across Groups</h2>
     </div>
-    {% include ttp-vertical-diagram.html %}
+    {% include ttp-graph.html %}
+    <div id="ttp-grid-view">
+      {% include ttp-vertical-diagram.html %}
+    </div>
   </section>
   {% endif %}
 
@@ -64,14 +65,11 @@ layout: default
   <section class="ac-section-card">
     <div class="ac-section-heading-row">
       <div class="ac-section-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <img class="ac-section-pixel" src="{{ '/assets/img/pixel/logo.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <h2 class="ac-section-heading">Chokepoint Opportunities by Stage</h2>
     </div>
-    <p class="ac-section-desc">
-      Each card shows the invariant prerequisite an attacker must satisfy at that stage,
-      the top detection signals, and links to the full chokepoint analysis.
-    </p>
+    <p class="ac-section-desc">Invariant prerequisite per stage, top signals, and links to the full chokepoint analysis.</p>
     <div class="ac-stage-cards">
       {% for stage in page.stages %}{% if page.chokepoints[stage.id] %}
       <div class="ac-stage-card">
@@ -126,17 +124,14 @@ layout: default
   <section class="ac-section-card">
     <div class="ac-section-heading-row">
       <div class="ac-section-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <img class="ac-section-pixel" src="{{ '/assets/img/pixel/ac-users.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <h2 class="ac-section-heading">
         Actor Convergence Matrix
         <span class="ac-section-badge">{{ page.actors | size }} actors tracked</span>
       </h2>
     </div>
-    <p class="ac-section-desc">
-      Different tools. Different operators. Same chokepoints. The highlighted bottom row shows the
-      invariant prerequisite condition your detections must cover, regardless of which actor you're facing.
-    </p>
+    <p class="ac-section-desc">Different tools, different operators - same chokepoints. Bottom row: the invariant your detections must cover.</p>
 
     <div class="ac-matrix-wrapper" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <table class="ac-matrix" aria-label="Actor convergence matrix">
@@ -185,7 +180,7 @@ layout: default
   <div class="ac-section-card ac-prose-card">
     <div class="ac-section-heading-row">
       <div class="ac-section-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <img class="ac-section-pixel" src="{{ '/assets/img/pixel/sec-logs.png' | relative_url }}" alt="" width="24" height="24" />
       </div>
       <h2 class="ac-section-heading">Analysis &amp; References</h2>
     </div>
@@ -201,6 +196,8 @@ layout: default
 {% if page.stages %}
 {% if page.show_ttp_overlap %}
 <script src="{{ '/assets/js/ttp-filter.js' | relative_url }}" defer></script>
+<script src="https://d3js.org/d3.v7.min.js" defer></script>
+<script src="{{ '/assets/js/ttp-graph.js' | relative_url }}" defer></script>
 {% endif %}
 {% endif %}
 
@@ -490,42 +487,6 @@ layout: default
 }
 
 /* ── TTP Overlap Diagram ──────────────────────────────────────────────── */
-.ttp-diagram-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-}
-
-.ttp-phase-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  fill: var(--text-muted, #8b949e);
-  font-family: inherit;
-}
-
-.ttp-node {
-  cursor: pointer;
-  outline: none;
-}
-
-.ttp-node:focus rect,
-.ttp-node:hover rect {
-  opacity: 0.88;
-}
-
-.ttp-node-name {
-  font-size: 10px;
-  fill: var(--text-primary, #e6edf3);
-  font-family: inherit;
-}
-
-.ttp-node-id {
-  font-size: 9px;
-  fill: var(--text-muted, #8b949e);
-  font-family: inherit;
-}
 
 /* Legend */
 .ttp-legend {
@@ -557,35 +518,37 @@ layout: default
   flex-shrink: 0;
 }
 
-/* Tooltip */
-.ttp-tooltip {
-  position: fixed;
-  background: var(--surface-raised, #21262d);
-  border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-lg);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.8rem;
-  color: var(--text-primary, #e6edf3);
-  line-height: 1.55;
-  max-width: 280px;
-  pointer-events: none;
-  z-index: 200;
-  display: none;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-}
+/* ── TTP Graph View Toggle ───────────────────────────────────────────── */
+#ttp-view-toggle { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+#ttp-view-toggle[hidden] { display: none; }
+.ttp-view-btn { background: transparent; border: 1px solid var(--border, #30363d); border-radius: 4px; color: var(--text-muted, #8b949e); font-size: .8rem; padding: .25rem .75rem; cursor: pointer; font-family: inherit; transition: border-color .15s, color .15s, background .15s; }
+.ttp-view-btn.active { border-color: var(--accent, #f0883e); color: var(--accent, #f0883e); background: rgba(240,136,62,.08); }
+.ttp-view-btn:hover:not(.active) { border-color: var(--text-muted, #8b949e); color: var(--text, #e6edf3); }
 
-.ttp-tooltip--visible {
-  display: block;
-}
-
-.ttp-tt-id {
-  color: var(--text-muted, #8b949e);
-  font-size: 0.74rem;
-}
-
-.ttp-tt-groups {
-  font-size: 0.77rem;
-  color: var(--text-secondary, #c9d1d9);
+/* ── TTP Graph container ─────────────────────────────────────────────── */
+#ttp-graph-view[hidden] { display: none; }
+#ttp-grid-view[hidden] { display: none; }
+.ttp-graph-controls { display: flex; flex-wrap: wrap; gap: .4rem .5rem; align-items: center; margin-bottom: .75rem; }
+.ttp-graph-zoom-sep { width: 1px; height: 18px; background: var(--border, #30363d); margin: 0 .2rem; flex-shrink: 0; }
+.ttp-graph-zoom-btn { background: var(--bg-card, #161b22); border: 1px solid var(--border, #30363d); border-radius: 4px; color: var(--text-muted, #8b949e); font-size: .8rem; line-height: 1; padding: .2rem .55rem; cursor: pointer; font-family: var(--font-mono, ui-monospace, monospace); transition: border-color .15s, color .15s; }
+.ttp-graph-zoom-btn:hover { border-color: var(--accent, #f0883e); color: var(--accent, #f0883e); }
+.ttp-graph-actor-btn { display: inline-flex; align-items: center; gap: .3rem; background: transparent; border: 1px solid var(--border, #30363d); border-radius: 4px; font-size: .78rem; color: var(--text-muted, #8b949e); padding: .2rem .5rem; cursor: pointer; font-family: inherit; transition: border-color .15s, color .15s, background .15s; }
+.ttp-graph-actor-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ttp-graph-actor-btn.state-lit { border-color: var(--actor-color, var(--accent)); color: var(--text, #e6edf3); background: rgba(255,255,255,.04); }
+.ttp-graph-clear-btn { background: transparent; border: 1px solid var(--border, #30363d); border-radius: 4px; color: var(--text-muted, #8b949e); font-size: .75rem; padding: .15rem .55rem; cursor: pointer; font-family: inherit; margin-left: auto; transition: border-color .15s, color .15s; }
+.ttp-graph-clear-btn:hover { border-color: var(--text-muted, #8b949e); color: var(--text, #e6edf3); }
+#ttp-graph-svg-wrap { position: relative; }
+#ttp-graph-svg svg { display: block; background: var(--bg-card, #161b22); border: 1px solid var(--border, #30363d); border-radius: var(--radius-lg, 8px); cursor: grab; overflow: hidden; }
+#ttp-graph-svg svg:active { cursor: grabbing; }
+.ttp-graph-tooltip { position: absolute; background: var(--bg-card, #161b22); border: 1px solid var(--border, #30363d); border-radius: 6px; padding: .5rem .75rem; font-size: .8rem; color: var(--text, #e6edf3); line-height: 1.5; max-width: 280px; pointer-events: none; z-index: 100; opacity: 0; transition: opacity .1s; }
+.ttp-graph-tooltip.visible { opacity: 1; }
+.ttp-graph-tooltip .tt-title { font-weight: 600; margin-bottom: .15rem; }
+.ttp-graph-tooltip .tt-meta { color: var(--text-muted, #8b949e); font-size: .75rem; }
+.ttp-graph-legend { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-top: .75rem; font-size: .75rem; color: var(--text-muted, #8b949e); align-items: center; }
+.ttp-graph-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .3rem; vertical-align: middle; }
+.ttp-graph-legend-ring { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--accent, #f0883e); margin-right: .3rem; vertical-align: middle; }
+@media (prefers-reduced-motion: reduce) {
+  .ttp-graph-tooltip, .ttp-view-btn, .ttp-graph-actor-btn, .ttp-graph-zoom-btn { transition: none; }
 }
 
 /* ── Actor Status Badges (reuse .badge base from style.css) ────────────── */
