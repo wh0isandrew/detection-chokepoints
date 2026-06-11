@@ -1,37 +1,38 @@
 (() => {
-  const nav = document.querySelector('.site-nav');
-  if (!nav) return;
-
-  const button = nav.querySelector('.nav-hamburger');
-  const menu = document.getElementById('site-nav-menu');
-  if (!button || !menu) return;
+  const menu = document.getElementById('mobile-menu');
+  const openBtn = document.querySelector('.nav-hamburger');
+  if (!menu || !openBtn) return;
+  const closeBtn = document.getElementById('mobile-menu-close');
 
   const setOpen = (open) => {
-    nav.setAttribute('data-open', open ? 'true' : 'false');
-    button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu.classList.toggle('is-open', open);
+    document.body.classList.toggle('menu-open', open);
+    menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    openBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   };
-
   setOpen(false);
 
-  button.addEventListener('click', () => {
-    const isOpen = nav.getAttribute('data-open') === 'true';
-    setOpen(!isOpen);
-  });
+  openBtn.addEventListener('click', () => setOpen(true));
+  if (closeBtn) closeBtn.addEventListener('click', () => setOpen(false));
 
-  // Close on navigation (mobile) so the menu doesn't remain open.
+  // Trends accordion
+  const trendsToggle = document.getElementById('m-trends-toggle');
+  const trendsPanel = document.getElementById('m-trends-panel');
+  if (trendsToggle && trendsPanel) {
+    trendsToggle.addEventListener('click', () => {
+      const expanded = trendsToggle.getAttribute('aria-expanded') === 'true';
+      trendsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      trendsPanel.classList.toggle('is-open', !expanded);
+    });
+  }
+
+  // Close when a link is tapped (page navigates), on Escape, and on resize to desktop.
   menu.addEventListener('click', (e) => {
-    const a = e.target && e.target.closest ? e.target.closest('a') : null;
-    if (!a) return;
-    setOpen(false);
+    const a = e.target.closest ? e.target.closest('a') : null;
+    if (a) setOpen(false);
   });
-
-  // Close on escape.
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setOpen(false);
-  });
-
-  // Close if resized to desktop.
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
   window.addEventListener('resize', () => {
     if (window.matchMedia('(min-width: 901px)').matches) setOpen(false);
   });
