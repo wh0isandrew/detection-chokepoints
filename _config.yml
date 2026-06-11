@@ -1,3 +1,10 @@
+# ─── MagicSword affiliate integration ───────────────────────────────────────
+# Set magic_sword_enabled: false to hide all MagicSword callouts site-wide.
+# Replace the affiliate URL with your personal affiliate link before going live.
+magic_sword_enabled: true
+magic_sword_affiliate_url: "https://www.magicsword.io/?ref=detection-chokepoints"
+magic_sword_logo_path: "/assets/img/magicsword-logo.png"
+
 title: Detection Chokepoints
 tagline: "TTPs evolve. Chokepoints don't."
 description: >

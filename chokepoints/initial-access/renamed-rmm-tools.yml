@@ -10,12 +10,10 @@ Techniques:
 DetectionPriority: HIGH
 ThreatPrevalence: HIGH
 DetectionDifficulty: MEDIUM
-Description: 'Legitimate remote management and monitoring (RMM) tools are renamed or masqueraded to appear as trusted applications
-  (tax documents, invoices, IT support tools) and delivered via browser download. Once executed, the RMM establishes persistent
-  command-and-control to attacker infrastructure while appearing to be a signed, legitimate binary. Because the binary is
-  legitimately signed by the vendor, many security tools will not flag it. The chokepoint is the browser download, file masquerading,
-  user execution, and outbound connection to RMM infrastructure. All of which are required regardless of which RMM tool is
-  used.
+Description: 'Legitimate RMM tools are renamed or masqueraded to appear as trusted applications (tax documents, invoices,
+  IT support tools) and delivered via browser download. Once executed, the RMM establishes persistent C2 to attacker infrastructure
+  while appearing as a signed, legitimate binary. The chokepoint: browser download, file masquerading, user execution, and
+  outbound connection to RMM infrastructure - all required regardless of which tool is used.
 
   '
 LastUpdated: '2026-03-07'
@@ -97,7 +95,7 @@ Variations:
     Scattered Spider operations mid-2023; broader adoption through 2024
   VariantId: rustdesk
   Command:
-    Invocation: "# Open-source self-hosted RMM — no vendor relay to block\n# Attacker runs their own RustDesk server\n# Victim downloads renamed rustdesk.exe\n# Config points to attacker relay: hxxps[://]attacker-relay[.]com:21116"
+    Invocation: "# Open-source self-hosted RMM - no vendor relay to block\n# Attacker runs their own RustDesk server\n# Victim downloads renamed rustdesk.exe\n# Config points to attacker relay: hxxps[://]attacker-relay[.]com:21116"
     Context: 'Self-hosted = domain/IP blocking ineffective. Adopted by Akira and Scattered Spider. Detection must be behavioral, not domain-based.'
     Artifacts:
     - 'Sysmon EID 11: rustdesk.exe written with non-standard filename'
@@ -114,7 +112,7 @@ Variations:
     it; CISA advisory AA25-163A issued June 2025; CISA KEV listed February 2025
   VariantId: simplehelp
   Command:
-    Invocation: "# Two attack paths:\n# Path 1: Renamed binary (social engineering) — PE metadata mismatch\n# Path 2: CVE exploitation (server-side):\n# CVE-2024-57727 (path traversal) + CVE-2024-57726 (privesc) + CVE-2024-57728 (RCE)"
+    Invocation: "# Two attack paths:\n# Path 1: Renamed binary (social engineering) - PE metadata mismatch\n# Path 2: CVE exploitation (server-side):\n# CVE-2024-57727 (path traversal) + CVE-2024-57726 (privesc) + CVE-2024-57728 (RCE)"
     Context: 'Three critical CVEs (Jan 2025) enabled exploitation of 18,000+ exposed instances. Both social engineering AND server-side paths. Used by DragonForce for ransomware.'
     Artifacts:
     - 'Path 1: Same as other renamed RMM (PE metadata mismatch)'
@@ -195,7 +193,7 @@ MasqueradeThemes:
     '
   Sources:
   - Microsoft Security Blog (April 2025)
-  - Red Canary — four phishing lures
+  - Red Canary - four phishing lures
   - NJCCIC advisories
 - Theme: SSN / SSA / Social Security Verification
   EvidenceQuality: Strong
@@ -218,7 +216,7 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Cloudflare Force One — New SSA-themed phishing campaign installs trojanized ScreenConnect
+  - Cloudflare Force One - New SSA-themed phishing campaign installs trojanized ScreenConnect
   - SC Media
   - NJCCIC
 - Theme: Invoice / Financial Documents
@@ -244,9 +242,9 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Proofpoint — RMM Tooling Increasingly an Attacker's First Choice
+  - Proofpoint - RMM Tooling Increasingly an Attacker's First Choice
   - Intel 471 TOAD analysis
-  - WithSecure — Email-Delivered RMM (November 2024)
+  - WithSecure - Email-Delivered RMM (November 2024)
   - Mimecast threat intelligence hub
 - Theme: IT Helpdesk / Technical Support
   EvidenceQuality: Very Strong
@@ -272,8 +270,8 @@ MasqueradeThemes:
     '
   Sources:
   - Rapid7 (May 2024)
-  - ReliaQuest — New Black Basta Social Engineering Scheme
-  - Microsoft — Quick Assist misuse (May 2024)
+  - ReliaQuest - New Black Basta Social Engineering Scheme
+  - Microsoft - Quick Assist misuse (May 2024)
   - Arctic Wolf (December 2024)
 - Theme: Calendar Invite / Meeting Link (Teams, Zoom, Google Meet)
   EvidenceQuality: Strong
@@ -303,9 +301,9 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Microsoft Security Blog — Signed malware impersonating workplace apps (March 2026)
-  - Red Canary — four phishing lures
-  - Netskope — Attackers Weaponize Signed RMM Tools
+  - Microsoft Security Blog - Signed malware impersonating workplace apps (March 2026)
+  - Red Canary - four phishing lures
+  - Netskope - Attackers Weaponize Signed RMM Tools
   - Check Point (December 2024)
 - Theme: Software / App Update Masquerade (Chrome, Windows, Adobe)
   EvidenceQuality: Strong
@@ -334,8 +332,8 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Microsoft Security Blog — Signed malware impersonating workplace apps (March 2026)
-  - Red Canary — four phishing lures
+  - Microsoft Security Blog - Signed malware impersonating workplace apps (March 2026)
+  - Red Canary - four phishing lures
   - Hackread
   - Blackpoint Cyber APG research
 - Theme: HR / Onboarding / Payroll
@@ -355,7 +353,7 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Mimecast — HR-Themed Cyberattack Campaign Shifts from Credential Harvesting to RMM Tool Deployment
+  - Mimecast - HR-Themed Cyberattack Campaign Shifts from Credential Harvesting to RMM Tool Deployment
   - Proofpoint salary/bonus lure research
 - Theme: Security Alert / Verification
   EvidenceQuality: Moderate
@@ -378,8 +376,8 @@ MasqueradeThemes:
 
     '
   Sources:
-  - Cloudflare Force One — SSA-themed ScreenConnect campaign
-  - Red Canary — fake update pages with security framing
+  - Cloudflare Force One - SSA-themed ScreenConnect campaign
+  - Red Canary - fake update pages with security framing
 Prerequisites:
 - User account can execute binaries from browser download paths (Downloads, Temp, AppData)
 - RMM binary carries a valid vendor code-signing certificate; hash-based detection does not fire
@@ -508,24 +506,24 @@ Detections:
   UseCase: SOC alerting; campaign-themed file name detection catches targeted pretexts
   SigmaRule: sigma-rules/renamed-rmm/analyst.yml
 Intel:
-- Name: CISA AA23-025A — Protecting Against Malicious Use of RMM Software
+- Name: CISA AA23-025A - Protecting Against Malicious Use of RMM Software
   Tier: primary
   URL: https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-025a
   Description: Foundational joint advisory from CISA, NSA, and MS-ISAC documenting malicious RMM use; specifically covers
     portable executable delivery bypassing software installation controls, AnyDesk and ScreenConnect campaign mechanics
-- Name: Huntress — A Series of Unfortunate (RMM) Events
+- Name: Huntress - A Series of Unfortunate (RMM) Events
   Tier: primary
   URL: https://www.huntress.com/blog/series-of-unfortunate-rmm-events
   Description: Covers RMM-to-RMM chaining, detection evasion patterns, and the broader RMM abuse landscape from an MSP incident
     response perspective
   LinkedFrom:
   - RMM-to-RMM Deployment
-- Name: 'Microsoft — Keys to the kingdom: RMM exploits enabling human-operated intrusions in 2024–25'
+- Name: 'Microsoft - Keys to the kingdom: RMM exploits enabling human-operated intrusions in 2024–25'
   Tier: primary
   URL: https://techcommunity.microsoft.com/blog/microsoftsecurityexperts/keys-to-the-kingdom-rmm-exploits-enabling-human-operated-intrusions-in-2024%E2%80%9325/4410903
   Description: Microsoft Security Experts analysis of RMM exploitation patterns across incident response engagements; covers
     both social engineering delivery and direct CVE exploitation vectors
-- Name: MITRE ATT&CK — T1219.002 Remote Desktop Software
+- Name: MITRE ATT&CK - T1219.002 Remote Desktop Software
   Tier: primary
   URL: https://attack.mitre.org/techniques/T1219/002/
   Description: Technique definition, procedure examples including RMM tool abuse, and detection guidance for remote desktop
@@ -687,7 +685,7 @@ PreventionOpportunities:
   Control: Block RMM tools not on your authorized inventory
   Impact: Stops C2 session establishment regardless of which tool or rename trick is used.
   MagicSwordFit: MagicSword maintains a live, threat-intelligence-backed inventory of 100+ RMM tools
-    and blocks unauthorized ones by default — updated every 2 hours as new tools are weaponized.
+    and blocks unauthorized ones by default - updated every 2 hours as new tools are weaponized.
   MagicSwordTag: rmm-abuse
 - Category: Endpoint · Application Control
   Control: Enforce signer-based allow rules for remote access software
