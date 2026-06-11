@@ -182,35 +182,95 @@ pre, table {
   .nav-links a { display: inline-block; }
 }
 
+/* ─── Mobile menu overlay ────────────────────────────────────────────────── */
+/* Hidden on desktop; the @media block below turns it into the overlay. The new
+   classes here are not Tailwind utilities, so no specificity fight. */
+.mobile-menu { display: none; }
+
 @media (max-width: 900px) {
   .nav-hamburger { display: inline-flex; }
-  .nav-links {
-    display: none;
-    width: 100%;
-    border-top: 1px solid var(--border);
-    padding: .5rem 0 0;
-    margin-top: .4rem;
-  }
-  .site-nav[data-open="true"] .nav-links { display: flex; }
 
-  /* Keep the brand + toolbar from colliding on narrow screens.
-     The Tailwind Play CDN (loaded after style.css) injects single-class
-     utilities (.flex / .flex-shrink-0 / .text-base), so these overrides are
-     scoped under .site-nav to win on specificity. Pare the toolbar to the two
-     essential controls (theme + hamburger); GitHub stays reachable via the
-     menu's Contribute link, MagicSword via the homepage prevention card. */
-  .site-nav .nav-logo { flex-shrink: 1; min-width: 0; max-width: calc(100% - 80px); }
+  /* Bar shows brand + hamburger only; everything else lives in the overlay.
+     (Tailwind Play CDN loads after style.css, so brand/toolbar overrides are
+     scoped under .site-nav to win on specificity.) */
+  .nav-links { display: none; }
+  .site-nav .theme-toggle,
+  .site-nav .nav-github,
+  .site-nav .ms-nav-link { display: none; }
+  .site-nav .nav-logo { flex-shrink: 1; min-width: 0; max-width: calc(100% - 56px); }
   .site-nav .nav-logo span {
-    /* brand is Press Start 2P (set !important in theme-arcade.css) and very wide;
-       shrink it so the full title fits beside the toolbar, with ellipsis as a
-       safety net on even narrower screens. */
+    /* brand is Press Start 2P (set !important in theme-arcade.css) and wide */
     font-size: .6rem !important;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .site-nav .nav-github, .site-nav .ms-nav-link { display: none; }
+
+  /* Full-screen overlay */
+  .mobile-menu {
+    display: flex; flex-direction: column;
+    position: fixed; inset: 0; z-index: 200; background: var(--bg);
+    opacity: 0; visibility: hidden; transform: translateY(-8px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+  }
+  .mobile-menu.is-open { opacity: 1; visibility: visible; transform: none; }
+  body.menu-open { overflow: hidden; }
+
+  .mobile-menu-head {
+    flex: 0 0 var(--nav-h); display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; border-bottom: 1px solid var(--border);
+  }
+  .mobile-menu-brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .mobile-menu-brand > span {
+    font-family: 'Press Start 2P', monospace; font-size: .6rem; color: var(--accent);
+    letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .mobile-menu-close {
+    flex: 0 0 auto; width: 40px; height: 36px; border: 1px solid var(--border); border-radius: 7px;
+    background: transparent; color: var(--text-muted); font-size: 22px; line-height: 1; cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .mobile-menu-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  .mobile-menu-nav { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 0; }
+  .m-item {
+    display: flex; align-items: center; gap: 14px; width: 100%; min-height: 54px; padding: 0 20px;
+    font-family: 'VT323', monospace; font-size: 1.45rem; letter-spacing: .02em;
+    color: var(--text); text-decoration: none; background: transparent; border: 0;
+    border-left: 3px solid transparent; cursor: pointer; text-align: left;
+  }
+  .m-item:hover { background: var(--bg-card); text-decoration: none; }
+  .m-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(240,136,62,.06); }
+  .m-item + .m-item, .m-acc + .m-item { border-top: 1px solid var(--border); }
+  .m-ic { width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center; color: var(--accent); opacity: .85; }
+  .m-ic svg { width: 20px; height: 20px; }
+  .m-chev { margin-left: auto; display: grid; place-items: center; color: var(--text-dim); transition: transform .2s; }
+  .m-trends[aria-expanded="true"] .m-chev { transform: rotate(90deg); }
+  .m-ext { margin-left: auto; color: var(--text-dim); font-size: 1rem; }
+
+  .m-acc { max-height: 0; overflow: hidden; transition: max-height .22s ease; background: rgba(0,0,0,.12); }
+  .m-acc.is-open { max-height: 220px; }
+  .m-sub {
+    display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 20px 0 56px;
+    font-family: 'VT323', monospace; font-size: 1.2rem; color: var(--text-muted); text-decoration: none;
+  }
+  .m-sub::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--text-dim); flex: 0 0 5px; }
+  .m-sub:hover, .m-sub.active { color: var(--accent); text-decoration: none; }
+
+  .mobile-menu-foot {
+    flex: 0 0 auto; border-top: 1px solid var(--border); padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .m-util {
+    width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 9px; background: transparent;
+    color: var(--text-muted); display: grid; place-items: center; cursor: pointer; text-decoration: none;
+  }
+  .m-util:hover { border-color: var(--accent); color: var(--accent); }
+  .m-util svg { width: 19px; height: 19px; }
+  .m-util-ms {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px;
+    border: 1px solid var(--border); border-radius: 20px; font-family: var(--font-mono); font-size: .62rem;
+    color: var(--text-dim); text-decoration: none;
+  }
+  .m-util-ms:hover { color: var(--text-muted); border-color: var(--text-dim); text-decoration: none; }
 }
 
 /* ─── Page-local anchor nav ──────────────────────────────────────────────── */

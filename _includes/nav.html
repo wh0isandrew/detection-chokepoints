@@ -56,7 +56,7 @@
       <div class="nav-toolbar flex items-center gap-1 flex-shrink-0 order-1 min-[901px]:order-2">
         <button class="nav-hamburger" type="button"
                 aria-label="Open menu"
-                aria-controls="site-nav-menu"
+                aria-controls="mobile-menu"
                 aria-expanded="false">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -67,7 +67,7 @@
           </svg>
         </button>
 
-        <button class="theme-toggle p-1.5" id="theme-toggle"
+        <button class="theme-toggle js-theme-toggle p-1.5" id="theme-toggle"
                 aria-label="Toggle colour theme" title="Switch light/dark mode">
           <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -112,3 +112,54 @@
     </div>
   </div>
 </nav>
+
+<!-- Mobile menu overlay (<=900px). Desktop uses the inline .nav-links above. -->
+  <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu-head">
+      <span class="mobile-menu-brand">
+        <img class="nav-logo-pixel" src="{{ '/assets/img/pixel/logo.png' | relative_url }}" alt="" width="24" height="24" aria-hidden="true" />
+        <span>Detection Chokepoints</span>
+      </span>
+      <button class="mobile-menu-close" id="mobile-menu-close" type="button" aria-label="Close menu">&times;</button>
+    </div>
+
+    <nav class="mobile-menu-nav" aria-label="Mobile navigation">
+      <a class="m-item {% if page.url == '/' or page.url == '/index.html' %}active{% endif %}" href="{{ '/' | relative_url }}">
+        <span class="m-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></span>Chokepoints
+      </a>
+      <a class="m-item {% if page.url contains '/attack-chains' %}active{% endif %}" href="{{ '/attack-chains/' | relative_url }}">
+        <span class="m-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h8"/><path d="M16 4l4 3-4 3"/></svg></span>Attack Chains
+      </a>
+
+      <button class="m-item m-trends {% if page.url contains '/trends' %}active{% endif %}" id="m-trends-toggle" type="button" aria-expanded="false" aria-controls="m-trends-panel">
+        <span class="m-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 7-8"/></svg></span>Trends
+        <span class="m-chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      </button>
+      <div class="m-acc" id="m-trends-panel">
+        <a class="m-sub {% if page.url contains '/trends/clickgrab' %}active{% endif %}" href="{{ '/trends/clickgrab/' | relative_url }}">ClickFix Delivery</a>
+        <a class="m-sub {% if page.url contains '/trends/edge-exploits' %}active{% endif %}" href="{{ '/trends/edge-exploits/' | relative_url }}">Edge Exploits</a>
+        <a class="m-sub {% if page.url contains '/trends/masq-infra' %}active{% endif %}" href="{{ '/trends/masq-infra/' | relative_url }}">Masq Infra</a>
+      </div>
+
+      <a class="m-item {% if page.url contains '/framework' %}active{% endif %}" href="{{ '/framework/' | relative_url }}">
+        <span class="m-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 9v11"/></svg></span>Framework
+      </a>
+      <a class="m-item" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">
+        <span class="m-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Contribute<span class="m-ext" aria-hidden="true">&#8599;</span>
+      </a>
+    </nav>
+
+    <div class="mobile-menu-foot">
+      <button class="m-util js-theme-toggle" type="button" aria-label="Toggle colour theme" title="Switch light/dark mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="m-util" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+      {% if site.magic_sword_enabled and site.magic_sword_affiliate_url and page.url == '/' %}
+      <a class="m-util-ms" href="{{ site.magic_sword_affiliate_url }}" target="_blank" rel="noopener sponsored" title="MagicSword - threat-driven application control">
+        <img src="{{ site.magic_sword_logo_path | relative_url }}" alt="" width="16" height="16" /><span>MagicSword</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
