@@ -1,5 +1,9 @@
 # Detection Chokepoints
 
+<p align="center">
+  <img src="assets/img/detection-chokepoints-logo.png" alt="Detection Chokepoints — 16-bit arcade fighting-game scene of a jiu-jitsu rear naked choke with body triangle: the fighter in red has back control and strangles the fighter in blue, with health bars and a match timer overhead" width="512" />
+</p>
+
 > **TTPs evolve. Chokepoints don't.**
 
 A community detection engineering resource organized around invariant prerequisites. Every chokepoint here is a condition the attacker cannot avoid, no matter which tool they pick or how they obfuscate it. Detect the prerequisite, catch every variant that needs it.
