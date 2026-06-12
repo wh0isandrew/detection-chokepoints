@@ -33,6 +33,17 @@ collections:
 plugins:
   - jekyll-seo-tag
 
+# Site-wide social preview card (og:image / twitter:image via jekyll-seo-tag).
+# Pages can override with their own `image:` front matter.
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /assets/img/social/og.png
+
+twitter:
+  card: summary_large_image
+
 # Files/dirs Jekyll should not copy or process into _site/
 exclude:
   - Gemfile
