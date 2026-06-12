@@ -18,25 +18,29 @@ Kaspersky analyzed eight major ransomware operations in 2022 and found they all 
 
 That pattern is not ransomware-specific. We rebuilt the TTP overlap analysis across 5 attack chains using [Kitsune](https://github.com/christina23/kitsune), an AI-driven threat intelligence pipeline, correlating procedure-level data from 60+ vendor and government reports sourced via [ORKL](https://orkl.eu/). Every chain converges on a handful of unavoidable chokepoints. The framework is the same every time.
 
-Meanwhile dwell time keeps compressing. Mandiant M-Trends 2025 puts the median Time to Ransom under 24 hours. That's down from 21 days in 2020. There is no time to chase tool signatures. You need detections that survive tool rotation on the first try.
+Meanwhile attacker speed keeps compressing the response window. Mandiant M-Trends 2025 puts global median dwell time at 11 days, down from 416 in 2011 — and Unit 42's 2026 Global Incident Response Report clocks the fastest quartile of intrusions at 72 minutes from compromise to data exfiltration. There is no time to chase tool signatures. You need detections that survive tool rotation on the first try.
 
 ---
 
 ## Chokepoint Index
 
-9 chokepoints tracked. Each has a canonical YAML entry, Sigma rules at three maturity levels, and emulation scripts for validation.
+13 chokepoints tracked. Each has a canonical YAML entry and Sigma rules at three maturity levels; endpoint-side chokepoints also ship PowerShell emulation scripts for lab validation.
 
 | Chokepoint | Tactic | Priority | Prevalence | Difficulty |
 |------------|--------|----------|------------|------------|
 | [LSASS Credential Dumping](chokepoints/credential-access/lsass-credential-dumping.yml) | Credential Access | CRITICAL | VERY HIGH | MEDIUM |
-| [Browser Credential Theft](chokepoints/credential-access/browser-credential-theft.yml) | Credential Access | CRITICAL | HIGH | MEDIUM |
-| [Ransomware Service Manipulation](chokepoints/defense-evasion/ransomware-service-manipulation.yml) | Defense Evasion / Impact | CRITICAL | HIGH | LOW |
+| [AiTM WebSocket Kit Relay](chokepoints/credential-access/aitm-websocket-relay.yml) | Credential Access | CRITICAL | HIGH | MEDIUM |
+| [Infostealer Browser Credential Theft](chokepoints/credential-access/browser-credential-theft.yml) | Credential Access / Collection / Exfiltration | CRITICAL | HIGH | MEDIUM |
 | [EDR Bypass Techniques](chokepoints/defense-evasion/edr-bypass-techniques.yml) | Defense Evasion | CRITICAL | HIGH | HIGH |
-| [Web Shell Persistence](chokepoints/persistence/web-shells.yml) | Persistence / Initial Access | CRITICAL | HIGH | MEDIUM |
+| [Ransomware Service Manipulation](chokepoints/defense-evasion/ransomware-service-manipulation.yml) | Defense Evasion / Impact | CRITICAL | HIGH | LOW |
+| [Web Shell Persistence](chokepoints/persistence/web-shells.yml) | Persistence / Initial Access / Execution | CRITICAL | HIGH | MEDIUM |
 | [ClickFix Techniques](chokepoints/initial-access/clickfix-techniques.yml) | Initial Access | HIGH | HIGH | LOW |
 | [Renamed RMM Tools](chokepoints/initial-access/renamed-rmm-tools.yml) | Initial Access / C2 | HIGH | HIGH | MEDIUM |
-| [Remote Execution Tools](chokepoints/lateral-movement/remote-execution-tools.yml) | Lateral Movement | HIGH | HIGH | MEDIUM |
-| [BYOSI Scripting Interpreters](chokepoints/defense-evasion/byosi-scripting-interpreters.yml) | Defense Evasion | HIGH | EMERGING | HIGH |
+| [Remote Execution Tools (HackTools)](chokepoints/lateral-movement/remote-execution-tools.yml) | Lateral Movement / Execution | HIGH | HIGH | MEDIUM |
+| [BYOSI Scripting Interpreters](chokepoints/defense-evasion/byosi-scripting-interpreters.yml) | Defense Evasion / Execution | HIGH | EMERGING | HIGH |
+| [OAuth Device Code Phishing via Auth Broker](chokepoints/defense-evasion/oauth-device-code-phishing.yml) | Defense Evasion | HIGH | MEDIUM | LOW |
+| [Post-AiTM Graph API Reconnaissance Burst](chokepoints/discovery/graph-api-recon-burst.yml) | Discovery | HIGH | MEDIUM | MEDIUM |
+| [AiTM Kit Device PRT Enrollment](chokepoints/persistence/aitm-device-prt-enrollment.yml) | Persistence | HIGH | MEDIUM | LOW |
 
 ---
 
@@ -46,7 +50,7 @@ Each chain maps 5 actors against the same kill chain to show where every group c
 
 | Chain | Actors Tracked | Shared Techniques |
 |-------|----------------|-------------------|
-| [Ransomware](attack-chains/ransomware.md) | BlackBasta, LockBit 3.0, Akira, Alphv/BlackCat, Play | See page |
+| [Ransomware](attack-chains/ransomware.md) | BlackBasta, LockBit 3.0, Akira, Alphv/BlackCat, Play | 260 procedures, 36 reports |
 | [Infostealers](attack-chains/infostealers.md) | RedLine, LummaC2, Vidar, StealC, Raccoon | 28 shared |
 | [AiTM / Phishing Kits](attack-chains/aitm.md) | Tycoon 2FA, Evilginx, EvilProxy, Sneaky 2FA, Device Code | 12 shared |
 | [Hypervisor Compromise](attack-chains/hypervisor-compromise.md) | BRICKSTORM/UNC5221, UNC3886, Scattered Spider, Play, Alphv | 22 shared |
@@ -62,12 +66,12 @@ Adapted from [Matt Graeber's threat research methodology at Red Canary](https://
 2. What must be true for it to succeed?
 3. What does the attacker control?
 4. **What can't the attacker control?** ← the chokepoint
-5. Can we observe it independent of intent?
-6. What are all the possible variations?
+5. Can we observe it?
+6. What are all the variations?
 
 Steps 1-3 build understanding. Step 4 identifies the chokepoint. Steps 5-6 turn it into a detection.
 
-Full walkthrough with worked examples, the relationship graph, and the maturity model: [Framework page](https://iimp0ster.github.io/detection-chokepoints/framework/).
+Full walkthrough with worked examples, the interactive chokepoint relationship map (chokepoints ↔ ATT&CK techniques ↔ tool variations, filterable by tactic), and the maturity model: [Framework page](https://iimp0ster.github.io/detection-chokepoints/framework/).
 
 ---
 
@@ -85,12 +89,19 @@ Start with Research to learn what's in your environment. Tune to Hunt. Harden to
 
 ---
 
+## Prevention Layer
+
+Detection is half the value. Every chokepoint also documents categorized prevention opportunities — application control, LOLBAS/interpreter blocking, Credential Guard/PPL, MFA enforcement — mapped where applicable to [MagicSword](https://magicsword.io) threat-driven application control profiles.
+
+---
+
 ## Trends
 
 Data-driven analysis of shifts in the chokepoint landscape. What cradles dominate, which evasion techniques are rising, what infrastructure actors reuse.
 
-- [ClickFix Delivery Chain](trends/clickgrab.md): 10 months of MHaggis ClickGrab data across 20K+ malicious sites. Tracks cradle family evolution, evasion acceleration, self-delete emergence, and CDN staging.
-- [Edge Device Exploit Trends](trends/edge-exploits/): Defused Cyber honeypot telemetry across 25 decoy types. CitrixBleed 2 proliferation, CVE-2022-22536 SAP burst, multi-stage kill chains, self-replicating worms.
+- [ClickFix Delivery Chain](trends/clickgrab.md): a year of MHaggis ClickGrab / ClickFix Hunter crawl data — 21,500+ sites analyzed, 20,500+ malicious. Tracks cradle family evolution (the IWR→curl pivot), 18x growth in Base64 evasion, self-delete emergence, and CDN staging.
+- [Edge Device Exploit Trends](trends/edge-exploits/): Defused Cyber honeypot telemetry across 25 decoy types and 40+ CVEs — 15,000+ exploit attempts. CitrixBleed 2 toolkit prevalence, the CVE-2022-22536 SAP burst, multi-stage kill chains, self-replicating worms.
+- [Software Impersonation Infrastructure](trends/masq-infra.md): validated favicon-pivot hunts plus a 1,500+ record IOC pipeline (MalwareBazaar, ThreatFox, URLScan). JavaScript-gated EXE delivery, ClickFix install modals, developer-tool domain squats.
 
 ---
 
