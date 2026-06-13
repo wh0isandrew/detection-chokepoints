@@ -1,12 +1,12 @@
 {% assign cp = include.cp %}
 {% assign priority_class = cp.DetectionPriority | downcase %}
 <article class="chokepoint-card rounded-xl transition-all"
-         data-tactic="{{ cp._tactic }}"
-         data-priority="{{ cp.DetectionPriority }}"
-         data-difficulty="{{ cp.Difficulty }}">
+         data-tactic="{{ cp._tactic | escape }}"
+         data-priority="{{ cp.DetectionPriority | escape }}"
+         data-difficulty="{{ cp.Difficulty | escape }}">
   <a href="{{ cp._slug | prepend: '/chokepoints/' | append: '/' | relative_url }}"
      class="card-link flex flex-col gap-2.5 p-5 h-full"
-     aria-label="View {{ cp.Name }}">
+     aria-label="View {{ cp.Name | escape }}">
 
     <div class="card-header flex items-center gap-2">
       <span class="priority-badge priority-{{ priority_class }} text-[.6875rem] font-bold uppercase tracking-[.06em] px-2 py-0.5 rounded-sm">
@@ -19,17 +19,17 @@
       {% endif %}
     </div>
 
-    <h3 class="card-title text-[1.05rem] font-bold leading-snug">{{ cp.Name }}</h3>
+    <h3 class="card-title text-[1.05rem] font-bold leading-snug">{{ cp.Name | escape }}</h3>
 
     <p class="card-tactic flex items-center gap-1.5 text-xs uppercase tracking-[.05em]">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
       </svg>
-      {{ cp.Tactic }}
+      {{ cp.Tactic | escape }}
     </p>
 
     <p class="card-description text-sm leading-relaxed flex-grow">
-      {{ cp.Description | truncate: 120 }}
+      {{ cp.Description | truncate: 120 | escape }}
     </p>
 
     <div class="card-meta flex items-center justify-between flex-wrap gap-2 mt-1">
@@ -55,7 +55,7 @@
     {% if cp.TheConstant %}
     <div class="card-constant rounded px-3 py-2 mt-1">
       <span class="constant-label block text-[.6rem] font-bold uppercase tracking-[.1em] mb-1">THE CONSTANT</span>
-      <span class="constant-value text-[.78rem] italic">{{ cp.TheConstant | truncate: 80 }}</span>
+      <span class="constant-value text-[.78rem] italic">{{ cp.TheConstant | truncate: 80 | escape }}</span>
     </div>
     {% endif %}
 

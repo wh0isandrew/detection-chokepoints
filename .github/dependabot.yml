@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # Pin/refresh the GitHub Actions used in workflows (they are SHA-pinned;
+  # Dependabot bumps the SHA + version comment when a new release ships).
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci(deps)"
+
+  # Ruby gems (Jekyll + plugins) via the Gemfile.
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Node tooling via package.json.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Python enrichment pipeline.
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"

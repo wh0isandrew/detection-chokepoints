@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}" />
   <link rel="stylesheet" href="{{ '/assets/css/theme-arcade.css' | relative_url }}" />
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/img/favicon.svg' | relative_url }}" />
+  <!-- SECURITY: cdn.tailwindcss.com is the JIT dev build — it is a mutable,
+       non-versioned script and CANNOT carry a Subresource Integrity hash, so a
+       CDN compromise would execute on every page. Acceptable for now; the real
+       fix is to compile Tailwind to a static, SRI-pinnable stylesheet at build
+       time (tailwindcss CLI in the Pages workflow) and drop this CDN tag. -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Restore saved theme before first paint to prevent flash -->
   <script>

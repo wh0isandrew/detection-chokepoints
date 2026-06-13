@@ -1,0 +1,12 @@
+# Default owner for everything in the repo.
+# With branch protection requiring review, this routes PR review requests
+# to the owner automatically.
+*       @iimp0ster
+
+# Security-sensitive surfaces — call them out explicitly so changes here
+# are never rubber-stamped.
+/.github/        @iimp0ster
+/_config.yml     @iimp0ster
+/_layouts/       @iimp0ster
+/_includes/      @iimp0ster
+/scripts/        @iimp0ster

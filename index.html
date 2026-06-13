@@ -171,7 +171,7 @@ description: "Community resource for detection engineering: high-signal chokepoi
 
 <script>
   // Pass Jekyll data to JS
-  window.CHOKEPOINTS_DATA = {{ site.data.chokepoints | jsonify }};
+  window.CHOKEPOINTS_DATA = {{ site.data.chokepoints | jsonify | replace: '</', '<\/' }};
   window.SITE_BASEURL = "{{ site.baseurl }}";
 </script>
 <script src="{{ '/assets/js/fuse.min.js' | relative_url }}"></script>
