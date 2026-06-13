@@ -42,7 +42,7 @@
 <div id="ttp-overlap-tooltip" class="ttp-tooltip" role="tooltip" aria-hidden="true"></div>
 
 <script>
-  window.TTP_OVERLAP_DATA = {{ ttp_data | jsonify }};
+  window.TTP_OVERLAP_DATA = {{ ttp_data | jsonify | replace: '</', '<\/' }};
 </script>
 
 {% endif %}

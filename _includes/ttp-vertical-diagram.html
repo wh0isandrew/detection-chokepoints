@@ -76,7 +76,7 @@
 </div>
 
 <script>
-  window.TTP_FILTER_GROUPS = {{ ttp_data.groups | jsonify }};
+  window.TTP_FILTER_GROUPS = {{ ttp_data.groups | jsonify | replace: '</', '<\/' }};
 </script>
 
 {% endif %}

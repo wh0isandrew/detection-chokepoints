@@ -984,33 +984,33 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
   <div class="cp-hero-inner max-w-[1100px] mx-auto px-6">
     <div class="cp-hero-top">
       <a href="{{ '/' | relative_url }}" class="cp-back-pill">&larr; All Chokepoints</a>
-      <span class="badge priority-{{ cp.DetectionPriority | downcase }}">{{ cp.DetectionPriority }}</span>
+      <span class="badge priority-{{ cp.DetectionPriority | downcase | escape }}">{{ cp.DetectionPriority | escape }}</span>
     </div>
 
-    <h1 class="cp-hero-title">{{ cp.Name }}</h1>
+    <h1 class="cp-hero-title">{{ cp.Name | escape }}</h1>
 
     {% if cp.TheConstant %}
-    <p class="cp-hero-constant">{{ cp.TheConstant }}</p>
+    <p class="cp-hero-constant">{{ cp.TheConstant | escape }}</p>
     {% endif %}
 
     <div class="cp-hero-badges">
       {% for tactic in cp.Tactics %}
-        <span class="badge tactic-badge">{{ tactic }}</span>
+        <span class="badge tactic-badge">{{ tactic | escape }}</span>
       {% endfor %}
       {% for mid in cp.MitreIds %}
         <a class="badge mitre-badge"
-           href="https://attack.mitre.org/techniques/{{ mid | replace: '.', '/' }}/"
-           target="_blank" rel="noopener">{{ mid }}</a>
+           href="https://attack.mitre.org/techniques/{{ mid | replace: '.', '/' | escape }}/"
+           target="_blank" rel="noopener">{{ mid | escape }}</a>
       {% endfor %}
-      <span class="badge diff-badge">Detection difficulty: {{ cp.DetectionDifficulty }}</span>
-      <span class="badge prev-badge">Prevalence: {{ cp.ThreatPrevalence }}</span>
+      <span class="badge diff-badge">Detection difficulty: {{ cp.DetectionDifficulty | escape }}</span>
+      <span class="badge prev-badge">Prevalence: {{ cp.ThreatPrevalence | escape }}</span>
     </div>
 
-    <p class="cp-hero-desc">{{ cp.Description }}</p>
+    <p class="cp-hero-desc">{{ cp.Description | escape }}</p>
 
     <p class="cp-hero-byline">
-      By {{ cp.Author }} &middot; Updated {{ cp.LastUpdated }}
-      &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path }}"
+      By {{ cp.Author | escape }} &middot; Updated {{ cp.LastUpdated | escape }}
+      &middot; <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ cp._source_path | escape }}"
                   target="_blank" rel="noopener">View source YAML</a>
     </p>
   </div>
@@ -1053,7 +1053,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <h2 class="cp-section-heading">
         Attack Chokepoints
         {% if cp.Chokepoints %}
-        <span class="section-sub">{{ cp.Chokepoints | size }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %}</span>
+        <span class="section-sub">{{ cp.Chokepoints | size | escape }} invariant stage{% if cp.Chokepoints.size != 1 %}s{% endif %}</span>
         {% endif %}
       </h2>
     </div>
@@ -1061,7 +1061,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     {% if cp.Chokepoints %}
 
     {% if cp.AttackerControls or cp.AttackerCannotControl %}
-    <p class="section-intro mb-4">Applying the chokepoint framework to {{ cp.Name }}.
+    <p class="section-intro mb-4">Applying the chokepoint framework to {{ cp.Name | escape }}.
       <a href="{{ '/framework/' | relative_url }}">Learn the framework &rarr;</a>
     </p>
     <div class="controls-table">
@@ -1070,7 +1070,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <div class="controls-col-label">Attacker controls (variables)</div>
         <ul>
           {% for item in cp.AttackerControls %}
-          <li>{{ item }}</li>
+          <li>{{ item | escape }}</li>
           {% endfor %}
         </ul>
       </div>
@@ -1080,7 +1080,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <div class="controls-col-label">Attacker cannot control (chokepoints)</div>
         <ul>
           {% for item in cp.AttackerCannotControl %}
-          <li>{{ item }}</li>
+          <li>{{ item | escape }}</li>
           {% endfor %}
         </ul>
       </div>
@@ -1097,7 +1097,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <div class="stage-connector">
         <span class="connector-pill">
           <span class="connector-arrow">&darr;</span>
-          {% if stage.Input %}{{ stage.Input | truncate: 60 }}{% else %}next stage{% endif %}
+          {% if stage.Input %}{{ stage.Input | truncate: 60 | escape }}{% else %}next stage{% endif %}
         </span>
       </div>
       {% endif %}
@@ -1105,7 +1105,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <details class="chokepoint-item" {% if forloop.first %}open{% endif %}>
         <summary class="chokepoint-header">
           <span class="cp-number">{{ forloop.index }}</span>
-          <span class="cp-title">{{ stage.Stage }}</span>
+          <span class="cp-title">{{ stage.Stage | escape }}</span>
           <span class="cp-chevron">&#9654;</span>
         </summary>
         <div class="chokepoint-body">
@@ -1113,7 +1113,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <div class="cp-section-label">Prerequisites</div>
           <ul class="prereq-list">
             {% for prereq in cp.Prerequisites %}
-            <li>{{ prereq }}</li>
+            <li>{{ prereq | escape }}</li>
             {% endfor %}
           </ul>
           {% endif %}
@@ -1121,7 +1121,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% if stage.Input %}
           <div class="cp-row">
             <span class="cp-row-label cp-row-label-input">Input</span>
-            <span class="cp-row-value">{{ stage.Input }}</span>
+            <span class="cp-row-value">{{ stage.Input | escape }}</span>
           </div>
           {% endif %}
 
@@ -1129,27 +1129,27 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <!-- New structured format -->
           <div class="cp-row">
             <span class="cp-row-label cp-row-label-chokepoint">Chokepoint</span>
-            <span class="cp-row-value cp-chokepoint-value">{{ stage.Invariant }}</span>
+            <span class="cp-row-value cp-chokepoint-value">{{ stage.Invariant | escape }}</span>
           </div>
 
           {% if stage.Observable %}
           <div class="cp-row">
             <span class="cp-row-label cp-row-label-observable">Observable</span>
-            <span class="cp-row-value">{{ stage.Observable }}</span>
+            <span class="cp-row-value">{{ stage.Observable | escape }}</span>
           </div>
           {% endif %}
 
           {% if stage.WhyCantBypass %}
           <div class="cp-why-unavoidable">
             <div class="cp-why-label">Why unavoidable</div>
-            {{ stage.WhyCantBypass }}
+            {{ stage.WhyCantBypass | escape }}
           </div>
           {% endif %}
           {% else %}
           <!-- Legacy format fallback -->
           <div class="cp-invariant">
             <div class="cp-invariant-label">Invariant Condition</div>
-            {{ stage.Invariant }}
+            {{ stage.Invariant | escape }}
           </div>
           {% endif %}
 
@@ -1157,7 +1157,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <div class="cp-section-label">Data Sources</div>
           <ul class="datasource-list">
             {% for src in stage.LogSources %}
-            <li>{{ src }}</li>
+            <li>{{ src | escape }}</li>
             {% endfor %}
           </ul>
           {% endif %}
@@ -1165,7 +1165,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% if stage.BypassNote %}
           <div class="bypass-warning">
             <span class="warn-icon">&#9888;</span>
-            <span><strong>Bypass risk:</strong> {{ stage.BypassNote }}</span>
+            <span><strong>Bypass risk:</strong> {{ stage.BypassNote | escape }}</span>
           </div>
           {% endif %}
 
@@ -1173,17 +1173,17 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           <details class="cp-true-positive">
             <summary class="cp-tp-header">
               <span class="cp-tp-dot"></span>
-              <span>{{ stage.TruePositive.Title }}</span>
+              <span>{{ stage.TruePositive.Title | escape }}</span>
               <span class="cp-tp-chevron">&#9654;</span>
             </summary>
             <div class="cp-tp-body">{{ stage.TruePositive.Log | xml_escape }}{% if stage.TruePositive.KeySignal %}
-<span class="cp-tp-signal">Key signal: {{ stage.TruePositive.KeySignal }}</span>{% endif %}</div>
+<span class="cp-tp-signal">Key signal: {{ stage.TruePositive.KeySignal | escape }}</span>{% endif %}</div>
           </details>
           {% endif %}
 
           {% if stage.SigmaRef and stage.SigmaRef != "" %}
           <a class="cp-rule-link"
-             href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ stage.SigmaRef }}"
+             href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ stage.SigmaRef | escape }}"
              target="_blank" rel="noopener">View rule &#8594;</a>
           {% endif %}
         </div>
@@ -1206,7 +1206,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       </div>
       <h2 class="cp-section-heading">
         Variations
-        <span class="section-sub">{{ cp.Variations | size }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
+        <span class="section-sub">{{ cp.Variations | size | escape }} variant{% if cp.Variations.size != 1 %}s{% endif %} tracked</span>
       </h2>
     </div>
     <p class="section-intro mb-4">Tools and methods that exploit this chokepoint. The list grows. The chokepoint doesn't change.</p>
@@ -1227,9 +1227,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% endif %}
       <details class="variant-item">
         <summary class="variant-header">
-          <span class="variant-name">{{ v.Name }}</span>
-          <span class="variant-date">{{ v.FirstSeen }}</span>
-          <span class="variant-status {{ vstatus_class }}">{{ v.Status }}</span>
+          <span class="variant-name">{{ v.Name | escape }}</span>
+          <span class="variant-date">{{ v.FirstSeen | escape }}</span>
+          <span class="variant-status {{ vstatus_class }}">{{ v.Status | escape }}</span>
           <span class="variant-chevron">&#9654;</span>
         </summary>
         <div class="variant-body">
@@ -1240,13 +1240,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% if v.LurePreview %}
           <div class="variant-lure-preview">
             <span class="variant-lure-preview-label">Simulated lure</span>
-            <iframe src="{{ v.LurePreview | relative_url }}" sandbox loading="lazy" title="Lure preview for {{ v.Name }}"></iframe>
+            <iframe src="{{ v.LurePreview | relative_url }}" sandbox loading="lazy" title="Lure preview for {{ v.Name | escape }}"></iframe>
           </div>
           {% endif %}
-          <div class="variant-lure-desc">{{ v.Lure }}</div>
+          <div class="variant-lure-desc">{{ v.Lure | escape }}</div>
           {% if v.LureTags %}
           <div class="variant-lure-tags">
-            {% for tag in v.LureTags %}<span class="lure-tag">{{ tag }}</span>{% endfor %}
+            {% for tag in v.LureTags %}<span class="lure-tag">{{ tag | escape }}</span>{% endfor %}
           </div>
           {% endif %}
           {% endif %}
@@ -1263,31 +1263,31 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
           {% if v.Command %}
           <div class="variant-section-label variant-section-label-command">Command / artifacts</div>
           {% if v.Command.Context %}
-          <div class="variant-command-context">{{ v.Command.Context }}</div>
+          <div class="variant-command-context">{{ v.Command.Context | escape }}</div>
           {% endif %}
           {% if v.Command.Invocation %}
           <pre class="variant-payload"><code>{{ v.Command.Invocation | xml_escape }}</code></pre>
           {% endif %}
           {% if v.Command.Artifacts %}
           <ul class="variant-artifacts">
-            {% for a in v.Command.Artifacts %}<li>{{ a }}</li>{% endfor %}
+            {% for a in v.Command.Artifacts %}<li>{{ a | escape }}</li>{% endfor %}
           </ul>
           {% endif %}
           {% endif %}
 
           {% if v.ChokepointMapping %}
-          <div class="variant-chokepoint-map">Same chokepoint: {{ v.ChokepointMapping }}</div>
+          <div class="variant-chokepoint-map">Same chokepoint: {{ v.ChokepointMapping | escape }}</div>
           {% endif %}
 
           {% if v.SourceURL %}
             {% if v.SourceURL.first %}
               {% for src in v.SourceURL %}
-              <a class="variant-source-link" href="{{ src }}" target="_blank" rel="noopener">
-                Source: {{ src | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+              <a class="variant-source-link" href="{{ src | escape }}" target="_blank" rel="noopener">
+                Source: {{ src | split: '/' | slice: 2, 1 | first | escape }} &#8594;</a>
               {% endfor %}
             {% else %}
-            <a class="variant-source-link" href="{{ v.SourceURL }}" target="_blank" rel="noopener">
-              Source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first }} &#8594;</a>
+            <a class="variant-source-link" href="{{ v.SourceURL | escape }}" target="_blank" rel="noopener">
+              Source: {{ v.SourceURL | split: '/' | slice: 2, 1 | first | escape }} &#8594;</a>
             {% endif %}
           {% else %}
           <span class="variant-source-link variant-source-link--missing">Source link needed &#8594;</span>
@@ -1316,7 +1316,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     <div class="det-stage-group">
       <div class="det-stage-header">
         <span class="det-stage-num">{{ forloop.index }}</span>
-        <span class="det-stage-name">{{ stage.Stage }}</span>
+        <span class="det-stage-name">{{ stage.Stage | escape }}</span>
       </div>
       <div class="det-rule-list">
 
@@ -1325,12 +1325,12 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         {% for ed in cp.EarlyDetections %}
         <details class="det-rule-item">
           <summary class="det-rule-header">
-            <span class="det-rule-title">{{ ed.Layer | default: "Pre-Execution Detection" }}</span>
+            <span class="det-rule-title">{{ ed.Layer | default: "Pre-Execution Detection" | escape }}</span>
             <div class="det-rule-badges">
               <span class="det-rule-badge det-badge-preexec">Pre-Exec</span>
               {% if ed.ExpectedFPRate %}
               {% assign fp_lower = ed.ExpectedFPRate | downcase %}
-              <span class="det-rule-badge det-badge-fp-{{ fp_lower | replace: 'medium', 'med' }}">{{ ed.ExpectedFPRate }} FP</span>
+              <span class="det-rule-badge det-badge-fp-{{ fp_lower | replace: 'medium', 'med' | escape }}">{{ ed.ExpectedFPRate | escape }} FP</span>
               {% endif %}
             </div>
             <span class="det-rule-chevron">&#9654;</span>
@@ -1339,25 +1339,25 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             <div class="det-meta-row">
               <div class="det-meta-card">
                 <div class="det-meta-label">Goal</div>
-                <div class="det-meta-value">{{ ed.Description }}</div>
+                <div class="det-meta-value">{{ ed.Description | escape }}</div>
               </div>
               <div class="det-meta-card">
                 <div class="det-meta-label">Log Sources</div>
                 <ul class="logsource-list">
-                  {% for src in ed.LogSources %}<li>{{ src }}</li>{% endfor %}
+                  {% for src in ed.LogSources %}<li>{{ src | escape }}</li>{% endfor %}
                 </ul>
               </div>
             </div>
             {% if ed.Logic %}
             <div class="cp-section-label">Detection Logic</div>
-            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ ed.Logic | strip }}</code></pre>
+            <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ ed.Logic | strip | escape }}</code></pre>
             {% endif %}
             <div class="sigma-block">
               <div class="sigma-header">
                 {% if ed.IokRule %}
-                <span class="sigma-label">IOK Rule - {{ ed.Layer }}</span>
+                <span class="sigma-label">IOK Rule - {{ ed.Layer | escape }}</span>
                 {% else %}
-                <span class="sigma-label">Sigma Rule - {{ ed.Layer }}</span>
+                <span class="sigma-label">Sigma Rule - {{ ed.Layer | escape }}</span>
                 {% endif %}
                 <div class="sigma-actions">
                   {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1436,7 +1436,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
               <div class="det-meta-card">
                 <div class="det-meta-label">Log Sources</div>
                 <ul class="logsource-list">
-                  {% for src in det.LogSources %}<li>{{ src }}</li>{% endfor %}
+                  {% for src in det.LogSources %}<li>{{ src | escape }}</li>{% endfor %}
                 </ul>
               </div>
             </div>
@@ -1552,22 +1552,22 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% if forloop.index > 1 %}<hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">{% endif %}
       <div class="det-meta-row">
         <div class="det-meta-card">
-          <div class="det-meta-label">Goal - {{ ed.Layer }}</div>
-          <div class="det-meta-value">{{ ed.Description }}</div>
+          <div class="det-meta-label">Goal - {{ ed.Layer | escape }}</div>
+          <div class="det-meta-value">{{ ed.Description | escape }}</div>
         </div>
         <div class="det-meta-card">
           <div class="det-meta-label">Log Sources</div>
           <ul class="logsource-list">
-            {% for src in ed.LogSources %}<li>{{ src }}</li>{% endfor %}
+            {% for src in ed.LogSources %}<li>{{ src | escape }}</li>{% endfor %}
           </ul>
         </div>
       </div>
       <div class="sigma-block">
         <div class="sigma-header">
           {% if ed.IokRule %}
-          <span class="sigma-label">IOK Rule - {{ ed.Layer }}</span>
+          <span class="sigma-label">IOK Rule - {{ ed.Layer | escape }}</span>
           {% else %}
-          <span class="sigma-label">Sigma Rule - {{ ed.Layer }}</span>
+          <span class="sigma-label">Sigma Rule - {{ ed.Layer | escape }}</span>
           {% endif %}
           <div class="sigma-actions">
             {% assign ed_rule_path = ed.SigmaRule | default: ed.IokRule %}
@@ -1605,18 +1605,18 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
         <div class="det-meta-row">
           <div class="det-meta-card">
             <div class="det-meta-label">Goal</div>
-            <div class="det-meta-value">{{ detection.Description }}</div>
+            <div class="det-meta-value">{{ detection.Description | escape }}</div>
           </div>
           <div class="det-meta-card">
             <div class="det-meta-label">Log Sources</div>
             <ul class="logsource-list">
-              {% for src in detection.LogSources %}<li>{{ src }}</li>{% endfor %}
+              {% for src in detection.LogSources %}<li>{{ src | escape }}</li>{% endfor %}
             </ul>
           </div>
         </div>
         {% if detection.Logic %}
         <div class="cp-section-label">Detection Logic</div>
-        <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip }}</code></pre>
+        <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>{{ detection.Logic | strip | escape }}</code></pre>
         {% endif %}
         {% endif %}
         <div class="sigma-block">
@@ -1624,8 +1624,8 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
             <span class="sigma-label">Sigma Rule - {{ level }} Level</span>
             <div class="sigma-actions">
               {% if detection.SigmaRule %}
-              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule }}" target="_blank" rel="noopener">GitHub &#8594;</a>
-              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule }}" download>Download</a>
+              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/blob/main/{{ detection.SigmaRule | escape }}" target="_blank" rel="noopener">GitHub &#8594;</a>
+              <a class="sigma-btn" href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}/raw/main/{{ detection.SigmaRule | escape }}" download>Download</a>
               {% endif %}
               <button class="sigma-btn" onclick="copyCode(this)">Copy</button>
             </div>
@@ -1656,7 +1656,7 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       <h2 class="cp-section-heading">Prevention Opportunities</h2>
     </div>
     {% if cp.PreventionSummary %}
-    <p class="section-intro mb-4">{{ cp.PreventionSummary }}</p>
+    <p class="section-intro mb-4">{{ cp.PreventionSummary | escape }}</p>
     {% endif %}
     {% if cp.PreventionOpportunities %}
     <div class="prevention-grid">
@@ -1699,9 +1699,9 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
       {% for log in cp.RawLogs %}
       <details class="log-item">
         <summary class="log-header">
-          {% if log.EventId %}<span class="log-eid">EID {{ log.EventId }}</span>{% endif %}
-          <span class="log-source">{{ log.Type }}</span>
-          <span class="log-desc">{{ log.Description }}</span>
+          {% if log.EventId %}<span class="log-eid">EID {{ log.EventId | escape }}</span>{% endif %}
+          <span class="log-source">{{ log.Type | escape }}</span>
+          <span class="log-desc">{{ log.Description | escape }}</span>
           <span class="log-chevron">&#9654;</span>
         </summary>
         <div class="log-body">{{ log.Sample | xml_escape }}</div>
@@ -1770,13 +1770,13 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
     <div class="osint-grid">
       {% for src in cp.OsintSources %}
       {% if src.URL %}
-      <a class="osint-card rounded-xl p-4" href="{{ src.URL }}" target="_blank" rel="noopener">
+      <a class="osint-card rounded-xl p-4" href="{{ src.URL | escape }}" target="_blank" rel="noopener">
       {% else %}
       <div class="osint-card rounded-xl p-4">
       {% endif %}
         <div class="osint-top">
-          <span class="osint-source">{{ src.Platform }}</span>
-          <code class="osint-query">{{ src.Query }}</code>
+          <span class="osint-source">{{ src.Platform | escape }}</span>
+          <code class="osint-query">{{ src.Query | escape }}</code>
         </div>
         {% if src.Notes %}<div class="osint-desc">{{ src.Notes | xml_escape }}</div>{% endif %}
       {% if src.URL %}</a>{% else %}</div>{% endif %}
@@ -1831,10 +1831,10 @@ details.emulation-wrapper[open] .emulation-lang::after { content: ''; }
 
 </div><!-- /.cp-page-wrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/powershell.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css" integrity="sha384-oaMLBGEzBOJx3UHwac0cVndtX5fxGQIfnAeFZ35RTgqPcYlbprH9o9PUV/F8Le07" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js" integrity="sha384-GdEWAbCjn+ghjX0gLx7/N1hyTVmPAjdC2OvoAA0RyNcAOhqwtT8qnbCxWle2+uJX" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/yaml.min.js" integrity="sha384-bMkvdnz+wPu1ro0fqO3BaDWztc7RzSvw05MQFP6bhJKDcwpkrFYTfTFI9ndkP11l" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/powershell.min.js" integrity="sha384-0u0NM3ve01ej9h9zRzZ/ztDGe1h07d6TStpNoJ4f/50I/vtoCsDHI2PfzDZSYz8q" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   hljs.highlightAll();

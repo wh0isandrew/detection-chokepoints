@@ -61,8 +61,8 @@
 <!-- Data injection: raw groups + phases arrays; ttp-graph.js builds nodes/links -->
 <script>
   window.__TTP_GRAPH_DATA = {
-    groups: {{ ttp_data.groups | jsonify }},
-    phases: {{ ttp_data.phases | jsonify }}
+    groups: {{ ttp_data.groups | jsonify | replace: '</', '<\/' }},
+    phases: {{ ttp_data.phases | jsonify | replace: '</', '<\/' }}
   };
 </script>
 
