@@ -197,7 +197,7 @@ Variations:
   Status: Active
   SourceURL:
   - https://pushsecurity.com/blog/installfix/
-  - https://www.bleepingcomputer.com/news/security/installfix-fake-claude-code-install-page-delivers-amatera-infostealer/
+  - https://www.bleepingcomputer.com/news/security/fake-claude-code-install-guides-push-infostealers-in-installfix-attacks/
   NotesShort: Clones AI/developer tool install pages; distributed via Google Ads malvertising
   Notes: 'Clones legitimate software installation pages, particularly AI/developer tools such as Claude Code CLI. Distributed
     via Google Ads malvertising; swaps the legitimate curl-to-bash install one-liner with a malicious equivalent pointing
