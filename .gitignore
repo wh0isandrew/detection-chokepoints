@@ -57,6 +57,4 @@ drafts/
 mockups/
 docs/ATTEMPTS.md
 docs/DECISIONS.md
-_data/masq_infra_hunts.yml
 scripts/enrich_staging_domains.py
-scripts/transform_intel_hunts.py
