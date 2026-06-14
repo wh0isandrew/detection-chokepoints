@@ -138,7 +138,7 @@ Variations:
 - Name: EvilProxy
   FirstSeen: 2022-Q3
   Status: Active
-  SourceURL: https://www.proofpoint.com/us/blog/threat-insight/cloud-account-takeover-campaign-leveraging-evilproxy-targets-top-level-executives
+  SourceURL: https://www.proofpoint.com/us/blog/email-and-cloud-threats/cloud-account-takeover-campaign-leveraging-evilproxy-targets-top-level
   Notes: >
     Commercial AiTM reverse proxy service targeting Microsoft 365 and Google. Uses
     similar reverse-proxy architecture but typically routes through dedicated relay

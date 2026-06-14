@@ -190,7 +190,7 @@ Variations:
 - Name: Polyglot / Steganographic Shells
   FirstSeen: 2020-Q1
   Status: Active
-  SourceURL: https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/hiding-webshell-backdoor-code-in-image-files/
+  SourceURL: https://web.archive.org/web/20250805041446/https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/hiding-webshell-backdoor-code-in-image-files/
   Notes: 'Webshell code embedded in valid image files (GIF89a header + PHP code) or hidden via steganography. Bypass file-type
     validation and content inspection. When the web server processes the file as a script, the embedded code executes. Primarily
     used to evade upload restrictions; once uploaded, execution behavior is identical to traditional webshells.

@@ -1,5 +1,5 @@
 Name: Remote Execution Tools (HackTools)
-Id: d4e6f8a0-2b3c-5d7e-9f1a-4c6b8d0e2f4a
+Id: 36c84325-2c23-4511-8d69-23b94256f846
 MitreIds:
 - T1021.002
 - T1021.003
@@ -103,7 +103,7 @@ Variations:
 - Name: Metasploit psexec
   FirstSeen: '2007'
   Status: Active
-  SourceURL: https://docs.metasploit.com/docs/using-metasploit/intermediate/exploit-modules/psexec.html
+  SourceURL: https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/exploit/windows/smb/psexec.md
   NotesShort: Original PsExec-style SMB execution via Metasploit framework
   Notes: Original PsExec-style SMB execution via Metasploit framework
   VariantId: metasploit-psexec
