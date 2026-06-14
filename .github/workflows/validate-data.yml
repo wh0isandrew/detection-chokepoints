@@ -1,15 +1,18 @@
-name: Validate Chokepoint Data
+name: Validate Data
 
 # Schema/format gate for contributed data. Runs on PRs that touch chokepoint
-# entries or their referenced detection rules, and fails the check if any entry
-# violates schema/chokepoint-schema.yml (missing required fields, bad enums,
-# malformed UUID/date/MITRE ids, or a Sigma path that does not exist on disk).
+# entries, their referenced detection rules, or the generated trends data files,
+# and fails the check on any violation: chokepoint schema errors (missing
+# required fields, bad enums, malformed UUID/date/MITRE ids, a Sigma path that
+# does not exist) or a trends _data file missing a section/meta key its page
+# template depends on.
 on:
   pull_request:
     paths:
       - "chokepoints/**"
       - "sigma-rules/**"
       - "iok-rules/**"
+      - "_data/**"
       - "scripts/validate_schema.py"
       - "schema/chokepoint-schema.yml"
   workflow_dispatch:
@@ -32,5 +35,5 @@ jobs:
       - name: Install dependencies
         run: pip install pyyaml
 
-      - name: Validate chokepoint schema
+      - name: Validate chokepoint + trends data
         run: python scripts/validate_schema.py
