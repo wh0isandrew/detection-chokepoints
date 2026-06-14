@@ -90,6 +90,15 @@ def human(n: int) -> str:
     return f"{n / 1000:.1f}k" if n >= 1000 else str(n)
 
 
+def classify(alert: str) -> str:
+    """Stage from the Alert verb. "Vulnerability Exploited (...)" is the only
+    weaponized verb Defused emits; everything else (Associated with / scan /
+    vuln check / exposure / unauthenticated access) is pre-exploitation probing
+    of a specific CVE. Splits weaponization from recon without changing the
+    high/critical export scope."""
+    return "exploit" if "vulnerability exploited" in alert.lower() else "recon"
+
+
 def aggregate_file(path):
     """One export CSV -> {iso_date: {total, ips:set, cve:Counter, decoy:Counter}}.
 
@@ -103,16 +112,21 @@ def aggregate_file(path):
             if not iso:
                 continue
             rec = days.setdefault(iso, {"total": 0, "ips": set(),
-                                        "cve": Counter(), "decoy": Counter()})
+                                        "cve": Counter(), "decoy": Counter(),
+                                        "cls": Counter(), "cve_cls": Counter()})
             rec["total"] += 1
             ip = (r.get("Attacker IP") or "").strip()
             if ip:
                 rec["ips"].add(ip)
             decoy = (r.get("Decoy Type") or "").strip()
             rec["decoy"][DECOY_DISPLAY.get(decoy, decoy)] += 1
-            m = CVE_RE.search(r.get("Alert") or "")
+            alert = r.get("Alert") or ""
+            cls = classify(alert)
+            rec["cls"][cls] += 1
+            m = CVE_RE.search(alert)
             if m:
                 rec["cve"][m.group(0)] += 1
+                rec["cve_cls"][(m.group(0), cls)] += 1
     return days
 
 
@@ -140,6 +154,35 @@ def build(paths):
         live_cve.update(d["cve"])
         live_decoy.update(d["decoy"])
         live_ips |= d["ips"]
+
+    # --- exploit-vs-recon split + per-CVE recon->exploit lead time ----------
+    # Live window only: the baseline window kept no per-alert verbs to classify.
+    cls_total = Counter()
+    exploit_recon_daily = []
+    cve_first = {}            # cve -> {cls: earliest iso date}
+    cve_exploit = Counter()   # cve -> weaponized hit count
+    for iso in sorted(live_days):
+        rec = live_days[iso]
+        cls_total.update(rec["cls"])
+        exploit_recon_daily.append({"date": iso, "label": label_for(iso),
+                                    "exploit": rec["cls"].get("exploit", 0),
+                                    "recon": rec["cls"].get("recon", 0)})
+        for (cve, cls), n in rec["cve_cls"].items():
+            if n:
+                cve_first.setdefault(cve, {}).setdefault(cls, iso)  # ascending = earliest
+                if cls == "exploit":
+                    cve_exploit[cve] += n
+    lead_times = []
+    for cve, firsts in cve_first.items():
+        if "recon" in firsts and "exploit" in firsts:
+            lead = (date.fromisoformat(firsts["exploit"])
+                    - date.fromisoformat(firsts["recon"])).days
+            if lead >= 1:  # recon genuinely preceded weaponization (>=1 day)
+                lead_times.append({"cve": cve, "recon_first": firsts["recon"],
+                                   "exploit_first": firsts["exploit"],
+                                   "lead_days": lead, "exploit_count": cve_exploit[cve]})
+    lead_times.sort(key=lambda x: (-x["lead_days"], -x["exploit_count"]))
+    lead_times = lead_times[:12]
 
     targets = Counter()
     for name, n in baseline["targets"].items():
@@ -199,6 +242,14 @@ def build(paths):
         "cb2_daily": baseline["cb2_daily"],
         "cves": [{"id": c, "count": n}
                  for c, n in sorted(live_cve.items(), key=lambda kv: (-kv[1], kv[0]))],
+        "exploit_recon": {
+            "exploit_total": cls_total["exploit"],
+            "recon_total": cls_total["recon"],
+            "exploit_pct": round(100 * cls_total["exploit"]
+                                 / max(1, cls_total["exploit"] + cls_total["recon"])),
+            "daily": exploit_recon_daily,
+        },
+        "lead_times": lead_times,
     }
     return out, live_total, live_cve, live_ips
 
@@ -213,6 +264,8 @@ def check_seed(out, live_total, live_cve, live_ips) -> None:
         ("live CVE-2025-55182", live_cve.get("CVE-2025-55182"), 2683),
         ("live CVE-2026-41940", live_cve.get("CVE-2026-41940"), 1515),
         ("live_unique_ips", len(live_ips), 1034),
+        ("exploit_total", out["exploit_recon"]["exploit_total"], 7005),
+        ("recon_total", out["exploit_recon"]["recon_total"], 3414),
     ]
     tg = {t["name"]: t["count"] for t in out["targets"]}
     for name, want in [("Citrix NetScaler", 11995), ("React Server", 2683),
