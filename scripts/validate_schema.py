@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Validate chokepoint YAML entries against schema/chokepoint-schema.yml.
+"""Validate chokepoint YAML entries against schema/chokepoint-schema.yml, plus the
+generated trends data files (_data/*.yml) against the structure their page
+templates depend on.
 
 Run locally or in CI: `python scripts/validate_schema.py`
 Exits non-zero if any entry has errors, so it can gate a pull request.
@@ -154,24 +156,111 @@ def validate_entry(path: Path) -> list[str]:
     return errors
 
 
-def main() -> int:
-    files = sorted(CHOKEPOINTS_DIR.glob("*/*.yml"))
-    if not files:
-        print("No chokepoint files found — nothing to validate.")
-        return 0
+# ── trends data validation ───────────────────────────────────────────────────
+# The trends pages render from generated _data/*.yml files. A transform bug or a
+# stray hand-edit that drops a section or emits a non-numeric count makes the page
+# render blank or breaks the build. These specs assert the structure each template
+# depends on: required meta keys, list sections, and the field types the templates
+# do date/number work on. Add a page here when it goes data-driven.
+_MISSING = object()
+TYPE_DATE = "date"
 
+TRENDS_SPECS = {
+    "_data/edge_exploits.yml": {
+        "meta": {"source": str, "generated": TYPE_DATE, "total_events": int,
+                 "total_display": str, "date_range": str, "live_window": str},
+        "sections": {
+            "headline": {"key": str, "label": str, "count": int, "display": str},
+            "targets": {"name": str, "count": int, "display": str},
+            "daily": {"date": TYPE_DATE},
+            "cves": {"id": str, "count": int},
+        },
+    },
+    "_data/clickgrab_trends.yml": {
+        "meta": {"source": str, "generated": TYPE_DATE, "date_range": str,
+                 "total_reports": int, "total_sites_crawled": int, "total_malicious": int},
+        "sections": {
+            "daily": {"date": TYPE_DATE},
+            "monthly": {"month": str},
+            "staging_domains": {"domain": str, "count": int},
+        },
+    },
+    "_data/masq_infra_hunts.yml": {
+        "meta": {"generated": TYPE_DATE},
+        "sections": {
+            "campaigns": {"slug": str, "brand": str},
+        },
+    },
+}
+
+
+def check_field(errors: list[str], label: str, value, typ) -> None:
+    if value is _MISSING:
+        errors.append(f"{label}: missing")
+    elif typ == TYPE_DATE:
+        if not DATE_RE.match(str(value)):
+            errors.append(f"{label}: {value!r} is not ISO YYYY-MM-DD")
+    elif typ is int:
+        if not isinstance(value, int) or isinstance(value, bool):
+            errors.append(f"{label}: {value!r} is not an integer")
+    elif typ is str:
+        if not isinstance(value, str) or not value:
+            errors.append(f"{label}: {value!r} is not a non-empty string")
+
+
+def validate_trends(rel: str, spec: dict) -> list[str]:
+    errors: list[str] = []
+    try:
+        data = yaml.safe_load((REPO / rel).read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return [f"{rel}: YAML parse error: {exc}"]
+    if not isinstance(data, dict):
+        return [f"{rel}: top-level YAML is not a mapping"]
+
+    meta = data.get("meta")
+    if not isinstance(meta, dict):
+        errors.append(f"{rel}: missing 'meta' mapping")
+    else:
+        for key, typ in spec["meta"].items():
+            check_field(errors, f"{rel}: meta.{key}", meta.get(key, _MISSING), typ)
+
+    for section, elem in spec.get("sections", {}).items():
+        val = data.get(section, _MISSING)
+        if val is _MISSING:
+            errors.append(f"{rel}: missing section {section!r}")
+        elif not isinstance(val, list):
+            errors.append(f"{rel}: section {section!r} must be a list")
+        else:
+            for i, item in enumerate(val):
+                if not isinstance(item, dict):
+                    errors.append(f"{rel}: {section}[{i}] is not a mapping")
+                    continue
+                for key, typ in elem.items():
+                    check_field(errors, f"{rel}: {section}[{i}].{key}",
+                                item.get(key, _MISSING), typ)
+    return errors
+
+
+def main() -> int:
+    chokepoints = sorted(CHOKEPOINTS_DIR.glob("*/*.yml"))
     all_errors: list[str] = []
-    for path in files:
+    for path in chokepoints:
         all_errors.extend(validate_entry(path))
 
+    # trends data files are validated only once a page has gone data-driven
+    trends = [rel for rel in TRENDS_SPECS if (REPO / rel).exists()]
+    for rel in trends:
+        all_errors.extend(validate_trends(rel, TRENDS_SPECS[rel]))
+
+    scope = f"{len(chokepoints)} chokepoint file(s) and {len(trends)} trends data file(s)"
     if all_errors:
-        print(f"\n  {len(all_errors)} error(s) across {len(files)} chokepoint file(s):\n")
+        print(f"\n  {len(all_errors)} error(s) across {scope}:\n")
         for e in all_errors:
             print(f"  [FAIL] {e}")
         print()
         return 1
 
-    print(f"[OK] All {len(files)} chokepoint entries valid.")
+    print(f"[OK] {scope} valid.")
     return 0
 
 
