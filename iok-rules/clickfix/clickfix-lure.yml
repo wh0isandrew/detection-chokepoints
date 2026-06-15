@@ -56,6 +56,9 @@ detection:
 #     js|contains; add dom|contains matchers if your scanner supports post-JS rendering.
 #   - Multilingual lures: add translated execution instructions for your threat landscape
 #     (e.g., Japanese: 'を押して', Korean: '실행', etc.)
+#     Observed in the wild (MHaggis crawls — _data/clickfix_lure_keywords.yml): Dutch
+#     'captcha-verificatie-id' on 290 of 2700 lures. Localized kits evade English-only
+#     matchers; the ranked lure-keyword data file is the source for landscape-specific terms.
 #   - Dynamically injected clipboard write (loaded from external JS) evades js|contains;
 #     pair with requests|contains for known ClickFix JS CDN patterns.
 #

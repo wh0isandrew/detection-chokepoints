@@ -1,703 +1,469 @@
 #!/usr/bin/env python3
 """
 analyze_clickgrab.py
-Parse MHaggis ClickGrab nightly report JSONs and produce _data/clickgrab_trends.yml
-for the Detection Chokepoints Jekyll site.
+Merge new ClickGrab nightly days into _data/clickgrab_trends.yml.
+
+DESIGN (see docs/DECISIONS.md #011) — baseline + append, never regenerate:
+  The committed _data/clickgrab_trends.yml (Apr 2025 .. May 2026) is a FROZEN
+  historical baseline. The rich generator that produced it was never committed
+  and the pre-Oct-2025 nightly reports are LFS-budget-locked, so that history
+  cannot be re-derived. This script therefore only APPENDS days that are newer
+  than the file's current max daily date, recomputing aggregate totals as
+  baseline + new-day deltas. It never recomputes the historical sections.
+
+  Idempotency invariant: "new days" = cached days with date strictly greater
+  than max(daily.date) in the current file. Because each run appends and the
+  file is committed, the max date advances and the next run only adds genuinely
+  new days — re-running is a no-op, so totals never double-count.
+
+WHAT IT UPDATES (counts / time-series only — statistics, no IOCs committed):
+  meta.{total_reports,total_sites_crawled,total_malicious,date_range,generated,
+        total_domains,carson_*}
+  daily[]            append one entry per new day (full cradle schema)
+  cradles_total      += new-day deltas
+  evasion_totals     += new-day deltas
+  monthly[]          extend boundary month + append new months
+
+WHAT IT PRESERVES VERBATIM (curated / enriched / contains defanged payloads):
+  payload_examples   curated, defanged — example refresh is a manual step
+  domain_monthly     historical per-domain classification (not re-derivable)
+  staging_domains    ASN/geo enrichment is a separate LOCAL step (#001)
+
+INPUT:  cache/clickgrab/days/<YYYY-MM-DD>.json   (written by ingest_clickgrab.py)
+        cache/clickgrab/carson_domains.json       (optional, ingest_carson_domains.py)
+OUTPUT: _data/clickgrab_trends.yml                 (round-tripped via PyYAML)
 
 Usage:
-    python scripts/analyze_clickgrab.py [path/to/reports/directory]
-    python scripts/analyze_clickgrab.py [path/to/clickgrab_combined.json]
-
-Default input: ~/Downloads/MHaggis ClickGrab main nightly_reports/
-Output:        _data/clickgrab_trends.yml  (relative to repo root)
-
-Accepts either:
-  - A directory: globs all clickgrab_report_*.json files inside it (sorted by name)
-  - A single file: processes it as a combined JSON array
+  python scripts/analyze_clickgrab.py
 """
 
-import glob
 import json
 import re
 import sys
-import os
-from collections import defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
-import urllib.request
-import urllib.error
+
+import yaml
+
+REPO_ROOT  = Path(__file__).parent.parent
+DAYS_DIR   = REPO_ROOT / "cache" / "clickgrab" / "days"
+CARSON_CACHE = REPO_ROOT / "cache" / "clickgrab" / "carson_domains.json"
+TRENDS_YML = REPO_ROOT / "_data" / "clickgrab_trends.yml"
 
 # ---------------------------------------------------------------------------
-# Paths
+# Detection — shared with the chokepoint Sigma logic; we classify each site by
+# the invariant behaviour in its clipboard/PowerShell command, not the lure.
 # ---------------------------------------------------------------------------
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_INPUT = os.path.join(
-    os.path.expanduser("~"),
-    "Downloads",
-    "MHaggis ClickGrab main nightly_reports",
-)
-OUTPUT_PATH = os.path.join(REPO_ROOT, "_data", "clickgrab_trends.yml")
+RE = {
+    "iex":        re.compile(r"\biex\b|Invoke-Expression", re.I),
+    "iwr":        re.compile(r"\biwr\b|Invoke-WebRequest", re.I),
+    "irm":        re.compile(r"\birm\b|Invoke-RestMethod", re.I),
+    "webclient":  re.compile(r"WebClient|DownloadString|DownloadFile", re.I),
+    "curl":       re.compile(r"\bcurl\b", re.I),
+    "msiexec":    re.compile(r"\bmsiexec\b", re.I),
+    "vbs_wscript":re.compile(r"WinHttp\.WinHttpRequest|\bWScript\b|CreateObject\(", re.I),
+    "hex_xor":    re.compile(r"-bxor", re.I),
+    "self_delete":re.compile(r"\bdel\s|Remove-Item\b", re.I),
+    "start_sleep":re.compile(r"Start-Sleep\b|-sleep\s", re.I),
+    "hidden":     re.compile(r"-w\s+h(idden)?\b|-WindowStyle\s+Hidden\b", re.I),
+    "enc":        re.compile(r"FromBase64String|-enc(odedcommand)?\b", re.I),
+    "url":        re.compile(r"https?://|hxxps?://", re.I),
+}
+# Mixed-case PowerShell: any casing that isn't the three "normal" forms.
+RE_PS_ANY = re.compile(r"p[oO][wW][eE][rR][sS][hH][eE][lL][lL]")
+CDN_PATTERNS = re.compile(r"cdn[-.]|\.wixstatic\.com|irp\.cdn-website\.com", re.I)
 
-# ---------------------------------------------------------------------------
-# Regex patterns
-# ---------------------------------------------------------------------------
 
-# Cradle families (match against PowerShellCommands string)
-# IWR: catches both  iwr ... | iex  and  iex (iwr ...)
-RE_IWR = re.compile(r'\biwr\b', re.IGNORECASE)
-RE_IRM = re.compile(r'\birm\b', re.IGNORECASE)
-RE_WEBCLIENT = re.compile(r'New-Object\s+.*?WebClient', re.IGNORECASE)
-RE_CURL = re.compile(r'\bcurl\b', re.IGNORECASE)
+def extract_ps_text(record: dict) -> str:
+    """Concatenate every command-bearing field into one searchable string."""
+    parts = []
+    for field in ("PowerShellCommands", "ClipboardCommands", "HighRiskCommands",
+                  "EncodedPowerShell", "SuspiciousCommands"):
+        v = record.get(field)
+        if isinstance(v, str):
+            parts.append(v)
+        elif isinstance(v, list):
+            parts.extend(str(x) for x in v if x)
+    b64 = record.get("Base64Strings")
+    if isinstance(b64, dict):
+        parts.append(str(b64.get("Decoded") or b64.get("decoded") or ""))
+    elif isinstance(b64, list):
+        for it in b64:
+            if isinstance(it, dict):
+                parts.append(str(it.get("Decoded") or it.get("decoded") or ""))
+    return " ".join(parts)
 
-# Evasion — mixed-case PowerShell: any capitalisation that isn't fully
-# lowercase ("powershell") or title-case ("PowerShell")
-RE_PS_ANY = re.compile(r'p(?:o|O)(?:w|W)(?:e|E)(?:r|R)(?:s|S)(?:h|H)(?:e|E)(?:l|L)(?:l|L)', re.IGNORECASE)
-RE_PS_NORMAL = re.compile(r'^PowerShell$|^powershell$')
 
-def is_mixed_case_ps(text):
-    """Return True if text contains at least one mixed-case PowerShell variant."""
+def download_urls(record: dict) -> list:
+    urls = []
+    dls = record.get("PowerShellDownloads") or []
+    if isinstance(dls, dict):
+        dls = [dls]
+    for dl in dls:
+        if isinstance(dl, dict):
+            u = dl.get("URL") or dl.get("url")
+            if u:
+                urls.append(u)
+    return urls
+
+
+def has_command(record: dict) -> bool:
+    """True if the site carries an actual clipboard/PowerShell command or download —
+    the real attack artifact, distinct from a lure page that merely scored > 0."""
+    return bool(record.get("PowerShellCommands") or record.get("ClipboardCommands")
+                or record.get("PowerShellDownloads") or record.get("HighRiskCommands"))
+
+
+def is_malicious(record: dict) -> bool:
+    """Upstream's own Verdict is authoritative; a page carrying an actual command or
+    download is malicious regardless. Bare ThreatScore > 0 is deliberately NOT used:
+    in this feed it fires on 'Likely Safe' lure pages (TS 2-5, no payload) and inflated
+    the malicious count ~2x (1560 of 2700 records are 'Likely Safe' — verified)."""
+    verdict = str(record.get("Verdict") or "").lower()
+    return verdict in ("malicious", "suspicious", "high risk") or has_command(record)
+
+
+def is_mixed_case_ps(text: str) -> bool:
     for m in RE_PS_ANY.finditer(text):
-        w = m.group(0)
-        if w not in ('PowerShell', 'powershell', 'POWERSHELL'):
+        if m.group(0) not in ("PowerShell", "powershell", "POWERSHELL"):
             return True
     return False
 
-RE_SELF_DELETE = re.compile(r'\bdel\s+|Remove-Item\b', re.IGNORECASE)
-RE_SLEEP = re.compile(r'Start-Sleep\b|-sleep\s', re.IGNORECASE)
-RE_HIDDEN = re.compile(r'-w\s+h(?:idden)?\b|-WindowStyle\s+Hidden\b', re.IGNORECASE)
 
-# CDN staging
-CDN_PATTERNS = re.compile(r'cdn[-.]|\.wixstatic\.com|irp\.cdn-website\.com', re.IGNORECASE)
+def _b64_is_ps(blob) -> bool:
+    """True only for a Base64Strings blob the upstream flagged as PowerShell-bearing.
+    ContainsPowerShell arrives as a stringified bool ('True'/'False'); the literal
+    '[TRUNCATED BASE64]' is a truncation placeholder, not a payload."""
+    if not isinstance(blob, dict):
+        return False
+    dec = str(blob.get("Decoded") or blob.get("decoded") or "").strip()
+    if not dec or dec == "[TRUNCATED BASE64]":
+        return False
+    return str(blob.get("ContainsPowerShell")).strip().lower() == "true"
 
-# ---------------------------------------------------------------------------
-# Infrastructure enrichment
-# ---------------------------------------------------------------------------
 
-# Analyst-curated labels for known staging hosts (updated manually as new hosts appear)
-_ANALYST_TAGS = {
-    'irp.cdn-website.com':              {'hosting_type': 'cdn',         'status': 'active'},
-    'yogasitesdev.wpengine.com':        {'hosting_type': 'managed',     'status': 'active'},
-    'aatox.com':                        {'hosting_type': 'bulletproof', 'status': 'taken_down'},
-    '80.253.249.186':                   {'hosting_type': 'bulletproof', 'status': 'taken_down'},
-    '95.164.53.214':                    {'hosting_type': 'bulletproof', 'status': 'taken_down'},
-    '91.247.36.3':                      {'hosting_type': 'bulletproof', 'status': 'taken_down'},
-    'sitecariri.com.br':                {'hosting_type': 'compromised', 'status': 'unknown'},
-    'fundacion-cannabis-argentina.org': {'hosting_type': 'compromised', 'status': 'unknown'},
-    'ghenvironment.com':                {'hosting_type': 'compromised', 'status': 'unknown'},
-    'cmparazinho.rn.gov.br':            {'hosting_type': 'compromised', 'status': 'unknown'},
-}
+def has_b64(record: dict, text: str) -> bool:
+    """A real base64-obfuscated payload: a Base64Strings blob flagged ContainsPowerShell
+    (excluding the truncation placeholder), OR an explicit -enc / FromBase64String in the
+    command text. The prior 'any blob with Decoded' rule was ~93% noise — lure-page UI
+    strings (ContainsPowerShell=False) and '[TRUNCATED BASE64]' markers (judged + verified)."""
+    b = record.get("Base64Strings")
+    blobs = b if isinstance(b, list) else ([b] if isinstance(b, dict) else [])
+    if any(_b64_is_ps(x) for x in blobs):
+        return True
+    return bool(RE["enc"].search(text))
 
-_RE_IP = re.compile(r'^\d{1,3}(?:\.\d{1,3}){3}$')
 
-def _is_ip(host):
-    return bool(_RE_IP.match(host))
+def classify_site(record: dict) -> dict:
+    """Return the cradle/evasion tags + staging hosts for one site."""
+    text = extract_ps_text(record)
+    urls = download_urls(record)
+    has_iex = bool(RE["iex"].search(text))
+    has_iwr = bool(RE["iwr"].search(text))
+    has_url = bool(urls) or bool(RE["url"].search(text))
 
-def _dns_history_url(host):
-    if _is_ip(host):
-        return f'https://securitytrails.com/list/ip/{host}'
-    return f'https://securitytrails.com/domain/{host}/history/a'
+    staging = []
+    for u in urls:
+        try:
+            host = urlparse(u).hostname or ""
+        except ValueError:
+            host = ""
+        if host:
+            staging.append((host, bool(CDN_PATTERNS.search(host))))
 
-def _yaml_str(s):
-    """Return a JSON-quoted string safe for embedding as a YAML scalar value."""
-    return json.dumps(str(s)) if s is not None else 'null'
-
-_enrich_cache = {}
-
-def enrich_domain(host):
-    """Fetch ASN, geo, and registration info for a hostname or IP.
-
-    Returns a dict with keys: asn, country, city, created, registrar, is_ip.
-    All values default to None on lookup failure — the YAML writer emits 'null'.
-    Network calls are skipped if host is in the in-process cache.
-    """
-    if host in _enrich_cache:
-        return _enrich_cache[host]
-
-    result = {
-        'asn': None, 'country': None, 'city': None,
-        'created': None, 'registrar': None, 'is_ip': _is_ip(host),
+    return {
+        "malicious":   is_malicious(record),
+        # cradles (non-exclusive, mirrors baseline counting)
+        "iwr_iex":     has_iwr and has_iex,
+        "irm_iex":     bool(RE["irm"].search(text)) and has_iex and not has_iwr,
+        "webclient":   bool(RE["webclient"].search(text)),
+        "curl":        bool(RE["curl"].search(text)),
+        "msiexec":     bool(RE["msiexec"].search(text)),
+        "vbs_wscript": bool(RE["vbs_wscript"].search(text)),
+        "hex_xor":     bool(RE["hex_xor"].search(text)),
+        # A true inline payload: the site HAS a clipboard/PowerShell command and that
+        # command carries no URL. The prior 'malicious and not has_url' admitted empty
+        # lure pages — 60% of inline hits had no command text at all (judged + verified).
+        "inline_no_url": is_malicious(record) and has_command(record) and not has_url,
+        # evasion
+        "mixed_case":  bool(text) and is_mixed_case_ps(text),
+        "base64":      has_b64(record, text),
+        "cdn_staging": any(cdn for _, cdn in staging),
+        "self_delete": bool(RE["self_delete"].search(text)),
+        "start_sleep": bool(RE["start_sleep"].search(text)),
+        "hidden_window": bool(RE["hidden"].search(text)),
     }
 
-    # --- ip-api.com geo/ASN lookup (works for both IPs and domain names) ---
+
+CRADLE_KEYS  = ["iwr_iex", "irm_iex", "webclient", "curl", "msiexec", "vbs_wscript", "hex_xor", "inline_no_url"]
+EVASION_KEYS = ["mixed_case", "base64", "cdn_staging", "self_delete", "start_sleep", "hidden_window"]
+
+
+def aggregate_day(records) -> dict:
+    """Compute one day's aggregate entry from its site records. Defensive about
+    shape: a non-list day or non-dict elements must never inflate the counts —
+    total_sites is the number of records actually classified, not len(raw)."""
+    if not isinstance(records, list):
+        records = []
+    valid = [r for r in records if isinstance(r, dict)]
+    cradles = {k: 0 for k in CRADLE_KEYS}
+    evasion = {k: 0 for k in EVASION_KEYS}
+    malicious = 0
+    for r in valid:
+        c = classify_site(r)
+        if c["malicious"]:
+            malicious += 1
+        for k in CRADLE_KEYS:
+            cradles[k] += int(bool(c[k]))
+        for k in EVASION_KEYS:
+            evasion[k] += int(bool(c[k]))
+    return {"total_sites": len(valid), "malicious": malicious,
+            "cradles": cradles, "evasion": evasion,
+            "inline_payload": cradles["inline_no_url"]}
+
+
+# ---------------------------------------------------------------------------
+# Merge
+# ---------------------------------------------------------------------------
+
+ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _valid_iso(s) -> bool:
+    """ISO-shaped AND a real calendar date — rejects 2026-13-40 / 2026-02-30 / '' that
+    a shape-only regex would admit (and which, sorting lexicographically after every real
+    date, would poison the watermark)."""
     try:
-        url = f'http://ip-api.com/json/{host}?fields=status,country,city,as,org'
-        req = urllib.request.Request(url, headers={'User-Agent': 'detection-chokepoints/1.0'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read())
-        if data.get('status') == 'success':
-            result['asn'] = data.get('as') or data.get('org') or None
-            result['country'] = data.get('country') or None
-            result['city'] = data.get('city') or None
-    except Exception:
-        pass
-
-    # --- RDAP domain registration date + registrar (domains only) ---
-    if not result['is_ip']:
-        try:
-            rdap_url = f'https://rdap.org/domain/{host}'
-            req = urllib.request.Request(
-                rdap_url,
-                headers={'User-Agent': 'detection-chokepoints/1.0', 'Accept': 'application/json'}
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read())
-            for event in data.get('events', []):
-                if event.get('eventAction') == 'registration':
-                    result['created'] = event.get('eventDate', '')[:10] or None
-                    break
-            for entity in data.get('entities', []):
-                if 'registrar' in entity.get('roles', []):
-                    vcard = entity.get('vcardArray', [])
-                    if isinstance(vcard, list) and len(vcard) > 1:
-                        for field in vcard[1]:
-                            if isinstance(field, list) and field[0] == 'fn':
-                                result['registrar'] = field[3] or None
-                                break
-                    break
-        except Exception:
-            pass
-
-    _enrich_cache[host] = result
-    return result
-
-# Payload example collection constants
-_MAX_EXAMPLES = 3
-_EXAMPLE_MAXLEN = 350
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def extract_ps_text(record):
-    """Return a normalised string of all PowerShell command text in a record."""
-    parts = []
-    # PowerShellCommands (string or list)
-    cmds = record.get('PowerShellCommands')
-    if isinstance(cmds, str):
-        parts.append(cmds)
-    elif isinstance(cmds, list):
-        parts.extend(str(c) for c in cmds if c)
-    # EncodedPowerShell (newer format)
-    enc = record.get('EncodedPowerShell')
-    if isinstance(enc, list):
-        parts.extend(str(c) for c in enc if c)
-    elif isinstance(enc, str) and enc:
-        parts.append(enc)
-    # HighRiskCommands (newer format)
-    hrc = record.get('HighRiskCommands')
-    if isinstance(hrc, list):
-        parts.extend(str(c) for c in hrc if c)
-    elif isinstance(hrc, str) and hrc:
-        parts.append(hrc)
-    # Decoded Base64 strings
-    b64 = record.get('Base64Strings')
-    if isinstance(b64, dict):
-        decoded = b64.get('Decoded') or b64.get('decoded')
-        if decoded:
-            parts.append(str(decoded))
-    elif isinstance(b64, list):
-        for item in b64:
-            if isinstance(item, dict):
-                decoded = item.get('Decoded') or item.get('decoded')
-                if decoded:
-                    parts.append(str(decoded))
-    return ' '.join(parts)
-
-# Extensions that indicate staging payloads (ps1, hta, vbs, bat, exe, dll, txt used as scripts)
-STAGING_EXT = re.compile(r'\.(ps1|hta|vbs|bat|cmd|exe|dll|txt|js|msi|lnk|iso)(\?|$)', re.IGNORECASE)
-# Benign domains to skip even if they appear in PowerShellDownloads
-BENIGN_SKIP = re.compile(
-    r'(google\.com|fontawesome\.com|cloudflare\.com|w3\.org|jquery\.com'
-    r'|bootstrapcdn\.com|googleapis\.com|gstatic\.com|github\.com'
-    r'|microsoft\.com|windows\.net|amazonaws\.com)$',
-    re.IGNORECASE
-)
-
-def extract_staging_domains(record):
-    """Return list of (domain, is_cdn) tuples from PowerShellDownloads URLs only.
-    We deliberately avoid the general 'Urls'/'URLs' page-resource list to prevent
-    false positives (Google Analytics, CDN scripts, etc.)."""
-    domains = []
-    downloads = record.get('PowerShellDownloads') or []
-    if isinstance(downloads, dict):
-        downloads = [downloads]
-    for dl in downloads:
-        if not isinstance(dl, dict):
-            continue
-        url = dl.get('URL') or dl.get('url') or ''
-        if url:
-            try:
-                parsed = urlparse(url)
-                host = parsed.hostname or ''
-                if host and not BENIGN_SKIP.search(host):
-                    is_cdn = bool(CDN_PATTERNS.search(host))
-                    domains.append((host, is_cdn))
-            except Exception:
-                pass
-    return domains
-
-def is_malicious(record):
-    """Return True if the record contains any malicious indicator."""
-    # Check Verdict field if present (newer format)
-    verdict = record.get('Verdict') or ''
-    if isinstance(verdict, str) and verdict.lower() in ('malicious', 'suspicious', 'high risk'):
+        datetime.strptime(str(s), "%Y-%m-%d")
         return True
-    threat_score = record.get('ThreatScore') or 0
-    if threat_score and int(threat_score) > 0:
-        return True
-    return bool(
-        record.get('PowerShellCommands')
-        or record.get('ClipboardCommands')
-        or record.get('PowerShellDownloads')
-        or record.get('HighRiskCommands')
-        or record.get('ClipboardManipulation')
-    )
-
-def parse_date(ts_str):
-    """Parse a timestamp string like '2025-04-17 21:39:51' → 'YYYY-MM-DD'."""
-    if not ts_str:
-        return None
-    try:
-        return ts_str[:10]  # slice 'YYYY-MM-DD'
-    except Exception:
-        return None
-
-# ---------------------------------------------------------------------------
-# Report file loading
-# ---------------------------------------------------------------------------
-
-def date_from_filename(path):
-    """Extract YYYY-MM-DD from report filename for fallback timestamp."""
-    name = os.path.basename(path)
-    # clickgrab_report_2025-04-17.json
-    m = re.search(r'(\d{4}-\d{2}-\d{2})', name)
-    if m:
-        return m.group(1)
-    # clickgrab_report_20260119_030240.json
-    m = re.search(r'(\d{4})(\d{2})(\d{2})_', name)
-    if m:
-        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
-    return None
+    except (ValueError, TypeError):
+        return False
 
 
-def load_report_file(path):
-    """Load one report JSON file; return list of site records.
-    Handles both the original format (list of report objects with 'Sites')
-    and the newer format (single dict with lowercase 'sites' + 'report_date').
+def _today() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def load_new_days(after: str) -> list:
+    """Return [(date, records)] for cached days strictly after `after`, sorted.
+
+    Filenames MUST be a strict zero-padded ISO date. This is load-bearing: the
+    `day <= after` comparison is LEXICOGRAPHIC, so a stray non-date stem
+    (latest.json, an editor backup, an unpadded 2026-6-9.json) could sort after
+    a real date, get appended as a bogus daily entry, and poison the watermark —
+    silently killing the append-only pipeline forever. Reject anything non-ISO.
     """
-    fallback_date = date_from_filename(path)
-    sites = []
+    today = _today()
+    out = []
+    for p in sorted(DAYS_DIR.glob("*.json")):
+        day = p.stem
+        if not _valid_iso(day):
+            print(f"  WARN: ignoring non-/impossible-ISO-date cache file {p.name}", file=sys.stderr)
+            continue
+        if day > today:
+            # A valid future date would set the watermark to the future and suppress
+            # every real day thereafter — symmetric with ingest's today-cap.
+            print(f"  WARN: ignoring future-dated cache file {p.name}", file=sys.stderr)
+            continue
+        if day <= after:
+            continue
+        try:
+            recs = json.loads(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"  WARN: skip {p.name}: {exc}", file=sys.stderr)
+            continue
+        if not isinstance(recs, list):
+            print(f"  WARN: skip {p.name}: expected a list of records, got {type(recs).__name__}",
+                  file=sys.stderr)
+            continue
+        out.append((day, recs))
+    return out
+
+
+def load_carson() -> dict | None:
+    """Return {count, updated, norm} from the Carson cache, or None if absent/unreadable.
+    `norm` is the www-stripped lowercased host set used for the lure-overlap join."""
+    if not CARSON_CACHE.exists():
+        return None
     try:
-        with open(path, 'r', encoding='utf-8', errors='replace') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"  WARN: could not parse {os.path.basename(path)}: {e}", file=sys.stderr)
-        return sites
-
-    def _ingest(item, report_time=None):
-        if not isinstance(item, dict):
-            return
-        # Normalise timestamp field: prefer Timestamp, then report_time, then filename date
-        ts = item.get('Timestamp') or item.get('timestamp') or report_time or fallback_date or ''
-        item['Timestamp'] = ts
-        sites.append(item)
-
-    if isinstance(data, list):
-        # Original format: list of report objects, each with 'Sites'
-        for item in data:
-            if isinstance(item, dict):
-                site_list = item.get('Sites') or item.get('sites') or []
-                if site_list:
-                    rtime = (
-                        item.get('ReportTime') or item.get('report_date')
-                        or item.get('timestamp') or fallback_date or ''
-                    )
-                    for site in site_list:
-                        _ingest(site, rtime)
-                elif 'Url' in item or 'URL' in item:
-                    # Flat list of site records
-                    _ingest(item, fallback_date)
-    elif isinstance(data, dict):
-        # Newer format: single report dict with lowercase 'sites'
-        site_list = data.get('Sites') or data.get('sites') or []
-        rtime = (
-            data.get('ReportTime') or data.get('report_date')
-            or data.get('timestamp') or fallback_date or ''
-        )
-        for site in site_list:
-            _ingest(site, rtime)
-
-    return sites
+        c = json.loads(CARSON_CACHE.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"  WARN: carson cache unreadable: {exc}", file=sys.stderr)
+        return None
+    norm = {re.sub(r"^www\.", "", str(d).lower()) for d in c.get("domains", [])}
+    count = c.get("count")
+    return {"count": count if isinstance(count, int) else None,
+            "updated": c.get("updated"), "norm": norm}
 
 
-def collect_sites(input_path):
-    """Return (sites_list, report_file_paths) from a file or directory."""
-    if os.path.isdir(input_path):
-        pattern = os.path.join(input_path, 'clickgrab_report_*.json')
-        report_files = sorted(glob.glob(pattern))
-        # Exclude combined/latest files if accidentally matched
-        report_files = [
-            p for p in report_files
-            if 'combined' not in os.path.basename(p)
-            and 'latest' not in os.path.basename(p)
-            and 'consolidated' not in os.path.basename(p)
-        ]
-        print(f"Found {len(report_files)} report files in {input_path}")
-        sites = []
-        for rfile in report_files:
-            sites.extend(load_report_file(rfile))
-        return sites, report_files
+def main() -> None:
+    if not TRENDS_YML.exists():
+        print(f"ERROR: baseline {TRENDS_YML} missing", file=sys.stderr)
+        sys.exit(1)
+    data = yaml.safe_load(TRENDS_YML.read_text(encoding="utf-8"))
+
+    daily = data.setdefault("daily", [])
+    meta = data.setdefault("meta", {})
+    if not daily:
+        print("ERROR: baseline has no daily[] — refusing to run (would not be append-only)", file=sys.stderr)
+        sys.exit(1)
+
+    # ── Watermark ────────────────────────────────────────────────────────────
+    # Authoritative "append after" date. Prefer the explicit meta.appended_through
+    # stamp this script maintains — it doesn't depend on parsing a human-facing
+    # display string. First run: absent, so derive from max(daily_max, date_range
+    # end). FAIL CLOSED if date_range end is present but unparseable: silently
+    # collapsing to the much-earlier daily_max would re-append (and double-count)
+    # months already in the totals — exactly what #011 exists to prevent.
+    today = _today()
+    valid_dates = [d["date"] for d in daily if _valid_iso(d.get("date")) and d["date"] <= today]
+    daily_max = max(valid_dates) if valid_dates else ""
+    appended_through = str(meta.get("appended_through", "")).strip()
+    has_range_key = "date_range" in meta
+    range_end = (str(meta.get("date_range", "")) or "").split(" to ")[-1].strip()
+    if _valid_iso(appended_through):
+        watermark = appended_through
+    elif not has_range_key:
+        watermark = daily_max          # genuine first run on a file with no totals coverage
+    elif _valid_iso(range_end):
+        watermark = max(daily_max, range_end)
     else:
-        return load_report_file(input_path), [input_path]
-
-
-# ---------------------------------------------------------------------------
-# Main analysis
-# ---------------------------------------------------------------------------
-
-def analyse(input_path):
-    sites, report_files = collect_sites(input_path)
-    total_reports = len(report_files)
-
-    if not sites:
-        print("ERROR: no site records found.", file=sys.stderr)
+        # date_range is present but empty/unparseable: FAIL CLOSED. Collapsing to the
+        # earlier daily_max would re-append (double-count) history already in the totals.
+        print(f"ERROR: meta.date_range end {range_end!r} is not a valid date — refusing to run "
+              f"(cannot establish a safe watermark without risking re-counting history).",
+              file=sys.stderr)
         sys.exit(1)
+    print(f"Watermark (append after): {watermark}  (appended_through={appended_through or 'n/a'}, "
+          f"daily_max={daily_max or 'n/a'}, range_end={range_end or 'n/a'})")
 
-    # --- Per-day accumulators ---
-    # Each value: dict with lists/counts
-    by_date = defaultdict(lambda: {
-        'total': 0,
-        'malicious': 0,
-        'iwr_iex': 0,
-        'irm_iex': 0,
-        'webclient': 0,
-        'curl': 0,
-        'mixed_case': 0,
-        'base64': 0,
-        'cdn_staging': 0,
-        'self_delete': 0,
-        'start_sleep': 0,
-        'hidden_window': 0,
-    })
+    new_days = load_new_days(watermark)
 
-    domain_counts = defaultdict(int)
-    domain_cdn = {}
+    # Carson refreshes on its own cadence — a Carson-only update (no new ClickGrab
+    # day) is still a reason to write, so total_domains doesn't go stale when
+    # ClickGrab is quiet. Detect change before deciding whether there's work to do.
+    # The daily gist count is the live LANDSCAPE figure (meta.carson_landscape), kept
+    # distinct from meta.total_domains — which is the command-classified set (the XLSX,
+    # owned by build_domain_monthly.py) that the charts/cards reflect. See DECISIONS #012.
+    carson = load_carson()
+    carson_total = None
+    carson_changed = False
+    if carson:
+        carson_total = (carson["count"] if carson["count"] is not None
+                        else (len(carson["norm"]) if carson["norm"] else meta.get("carson_landscape")))
+        carson_changed = (carson_total != meta.get("carson_landscape")
+                          or carson["updated"] != meta.get("carson_updated"))
 
-    cradles_total = defaultdict(int)
-    evasion_totals = defaultdict(int)
+    if not new_days and not carson_changed:
+        print("No new ClickGrab days and Carson unchanged — up to date. Nothing written.")
+        return
+    if new_days:
+        print(f"Appending {len(new_days)} new day(s): {new_days[0][0]} .. {new_days[-1][0]}")
 
-    # Payload examples — up to _MAX_EXAMPLES per category for the trends page
-    payload_examples = defaultdict(list)
+    cradles_total = data.setdefault("cradles_total", {})
+    evasion_totals = data.setdefault("evasion_totals", {})
+    # Index monthly entries by month so we can extend the boundary month in place.
+    monthly = data.setdefault("monthly", [])
+    monthly_idx = {m["month"]: m for m in monthly}
 
-    for record in sites:
-        if not isinstance(record, dict):
-            continue
+    add_reports = add_sites = add_mal = 0
+    lure_hosts = set()   # unique lure-site hostnames across the new days (for Carson overlap)
 
-        date = parse_date(record.get('Timestamp') or record.get('ReportTime', ''))
-        if not date:
-            continue
+    for day, records in new_days:
+        agg = aggregate_day(records)
+        for r in records:
+            if isinstance(r, dict):
+                u = r.get("URL") or r.get("Url") or r.get("url") or ""
+                if not isinstance(u, str):
+                    continue   # a non-string URL is never a valid host
+                try:
+                    h = urlparse(u if "//" in u else "//" + u).hostname
+                except (ValueError, TypeError):
+                    h = None
+                if h:
+                    lure_hosts.add(h.lower())
 
-        day = by_date[date]
-        day['total'] += 1
+        # daily[] — append (full cradle schema so future runs stay consistent)
+        daily.append({
+            "date": day,
+            "total_sites": agg["total_sites"],
+            "malicious": agg["malicious"],
+            "cradles": dict(agg["cradles"]),
+            "evasion": dict(agg["evasion"]),
+        })
 
-        malicious = is_malicious(record)
-        if malicious:
-            day['malicious'] += 1
+        # *_total += deltas
+        for k in CRADLE_KEYS:
+            cradles_total[k] = cradles_total.get(k, 0) + agg["cradles"][k]
+        for k in EVASION_KEYS:
+            evasion_totals[k] = evasion_totals.get(k, 0) + agg["evasion"][k]
+        evasion_totals["inline_payload"] = evasion_totals.get("inline_payload", 0) + agg["inline_payload"]
 
-        ps_text = extract_ps_text(record)
+        # monthly[] — extend boundary month / create new month
+        mk = day[:7]
+        m = monthly_idx.get(mk)
+        if m is None:
+            m = {"month": mk, "total_sites": 0, "malicious": 0,
+                 "cradles": {k: 0 for k in CRADLE_KEYS},
+                 "evasion": {k: 0 for k in EVASION_KEYS}}
+            monthly.append(m)
+            monthly_idx[mk] = m
+        m["total_sites"] = m.get("total_sites", 0) + agg["total_sites"]
+        m["malicious"] = m.get("malicious", 0) + agg["malicious"]
+        mc = m.setdefault("cradles", {})
+        me = m.setdefault("evasion", {})
+        for k in CRADLE_KEYS:
+            mc[k] = mc.get(k, 0) + agg["cradles"][k]
+        for k in EVASION_KEYS:
+            me[k] = me.get(k, 0) + agg["evasion"][k]
 
-        # --- Cradle detection (non-exclusive: count each that applies) ---
-        has_iex = bool(re.search(r'\biex\b', ps_text, re.IGNORECASE))
-        if RE_IWR.search(ps_text) and has_iex:
-            day['iwr_iex'] += 1
-            cradles_total['iwr_iex'] += 1
-        if RE_IRM.search(ps_text) and has_iex and not RE_IWR.search(ps_text):
-            day['irm_iex'] += 1
-            cradles_total['irm_iex'] += 1
-        if RE_WEBCLIENT.search(ps_text):
-            day['webclient'] += 1
-            cradles_total['webclient'] += 1
-        if RE_CURL.search(ps_text):
-            day['curl'] += 1
-            cradles_total['curl'] += 1
+        add_reports += 1
+        add_sites += agg["total_sites"]
+        add_mal += agg["malicious"]
 
-        # --- Evasion techniques ---
-        if ps_text and is_mixed_case_ps(ps_text):
-            day['mixed_case'] += 1
-            evasion_totals['mixed_case'] += 1
+    # meta — accumulate counts, advance window end + watermark, restamp generated.
+    if new_days:
+        meta["total_reports"] = meta.get("total_reports", 0) + add_reports
+        meta["total_sites_crawled"] = meta.get("total_sites_crawled", 0) + add_sites
+        meta["total_malicious"] = meta.get("total_malicious", 0) + add_mal
+        start = (meta.get("date_range", "").split(" to ")[0]) or daily[0]["date"]
+        meta["date_range"] = f"{start} to {new_days[-1][0]}"
+        meta["appended_through"] = new_days[-1][0]   # explicit, ISO, machine watermark
+    meta["generated"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        if record.get('Base64Strings'):
-            day['base64'] += 1
-            evasion_totals['base64'] += 1
-
-        staging = extract_staging_domains(record)
-        has_cdn = any(cdn for _, cdn in staging)
-        if has_cdn:
-            day['cdn_staging'] += 1
-            evasion_totals['cdn_staging'] += 1
-
-        if ps_text and RE_SELF_DELETE.search(ps_text):
-            day['self_delete'] += 1
-            evasion_totals['self_delete'] += 1
-
-        if ps_text and RE_SLEEP.search(ps_text):
-            day['start_sleep'] += 1
-            evasion_totals['start_sleep'] += 1
-
-        if ps_text and RE_HIDDEN.search(ps_text):
-            day['hidden_window'] += 1
-            evasion_totals['hidden_window'] += 1
-
-        # --- Staging domains ---
-        for domain, is_cdn in staging:
-            domain_counts[domain] += 1
-            domain_cdn[domain] = is_cdn
-
-        # --- Payload examples (collect representative samples per category) ---
-        def _add_ex(key, text, extra=None):
-            if len(payload_examples[key]) >= _MAX_EXAMPLES:
-                return
-            t = str(text).strip()[:_EXAMPLE_MAXLEN]
-            if not t:
-                return
-            # Deduplicate on first 50 chars
-            existing_keys = [
-                e.get('text', e.get('url', e.get('encoded', '')))[:50]
-                for e in payload_examples[key]
-            ]
-            if t[:50] in existing_keys:
-                return
-            entry = {'date': date}
-            if extra:
-                entry.update(extra)
-            else:
-                entry['text'] = t
-            payload_examples[key].append(entry)
-
-        if ps_text:
-            if RE_IWR.search(ps_text) and has_iex:
-                _add_ex('iwr_iex', ps_text)
-            if RE_IRM.search(ps_text) and has_iex and not RE_IWR.search(ps_text):
-                _add_ex('irm_iex', ps_text)
-            if RE_WEBCLIENT.search(ps_text):
-                _add_ex('webclient', ps_text)
-            if RE_CURL.search(ps_text):
-                _add_ex('curl', ps_text)
-            if RE_SELF_DELETE.search(ps_text):
-                _add_ex('self_delete', ps_text)
-            if RE_HIDDEN.search(ps_text):
-                _add_ex('hidden_window', ps_text)
-
-        # Base64: capture encoded command + decoded text together
-        if record.get('Base64Strings') and len(payload_examples['base64']) < _MAX_EXAMPLES:
-            enc_cmd = ''
-            enc_field = record.get('EncodedPowerShell')
-            if isinstance(enc_field, list) and enc_field:
-                enc_cmd = str(enc_field[0]).strip()[:_EXAMPLE_MAXLEN]
-            elif isinstance(enc_field, str) and enc_field:
-                enc_cmd = enc_field.strip()[:_EXAMPLE_MAXLEN]
-            decoded_text = ''
-            b64 = record.get('Base64Strings')
-            if isinstance(b64, dict):
-                decoded_text = str(b64.get('Decoded') or b64.get('decoded') or '').strip()[:_EXAMPLE_MAXLEN]
-            elif isinstance(b64, list):
-                for item in b64:
-                    if isinstance(item, dict):
-                        d_val = item.get('Decoded') or item.get('decoded') or ''
-                        if d_val:
-                            decoded_text = str(d_val).strip()[:_EXAMPLE_MAXLEN]
-                            break
-            if enc_cmd or decoded_text:
-                _add_ex('base64', enc_cmd or '(encoded command)', {
-                    'encoded': enc_cmd or '(encoded command not captured)',
-                    'decoded': decoded_text or '(decoded text not available)',
-                })
-
-        # CDN staging: capture the actual download URL
-        if has_cdn and len(payload_examples['cdn_staging']) < _MAX_EXAMPLES:
-            downloads = record.get('PowerShellDownloads') or []
-            if isinstance(downloads, dict):
-                downloads = [downloads]
-            for dl in downloads:
-                if isinstance(dl, dict):
-                    cdn_url = dl.get('URL') or dl.get('url') or ''
-                    if cdn_url and CDN_PATTERNS.search(cdn_url):
-                        _add_ex('cdn_staging', cdn_url, {'url': cdn_url.strip()[:_EXAMPLE_MAXLEN]})
-                        break
-
-    # Sort dates
-    sorted_dates = sorted(by_date.keys())
-
-    # Build top-10 staging domains
-    top_domains = sorted(domain_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-
-    # Enrich staging domains with geo/ASN/registration data
-    print("Enriching staging domains via ip-api.com and RDAP...")
-    domain_enrichment = {}
-    for domain, _count in top_domains:
-        print(f"  {domain}...", end=' ', flush=True)
-        domain_enrichment[domain] = enrich_domain(domain)
-        print('done')
-
-    total_sites = sum(d['total'] for d in by_date.values())
-    total_malicious = sum(d['malicious'] for d in by_date.values())
-
-    # Infer report count if not found via nested format
-    if total_reports == 0:
-        # Flat format — estimate from unique timestamps
-        total_reports = len(set(
-            parse_date(r.get('Timestamp', ''))
-            for r in sites if isinstance(r, dict)
-        ))
-
-    # --- Build date_range string ---
-    date_range = f"{sorted_dates[0]} to {sorted_dates[-1]}" if sorted_dates else "unknown"
-
-    # ---------------------------------------------------------------------------
-    # YAML output (hand-built to avoid PyYAML dependency)
-    # ---------------------------------------------------------------------------
-
-    lines = []
-    lines.append('# Generated by scripts/analyze_clickgrab.py')
-    lines.append(f'# Source: {os.path.basename(input_path)}')
-    lines.append('')
-    lines.append('meta:')
-    lines.append(f'  source: {os.path.basename(input_path)}')
-    lines.append(f'  date_range: "{date_range}"')
-    lines.append(f'  total_reports: {total_reports}')
-    lines.append(f'  total_sites_crawled: {total_sites}')
-    lines.append(f'  total_malicious: {total_malicious}')
-    lines.append(f'  generated: "{datetime.now(timezone.utc).strftime("%Y-%m-%d")}"')
-    lines.append('')
-    lines.append('daily:')
-    for date in sorted_dates:
-        d = by_date[date]
-        lines.append(f'  - date: "{date}"')
-        lines.append(f'    total_sites: {d["total"]}')
-        lines.append(f'    malicious: {d["malicious"]}')
-        lines.append(f'    cradles:')
-        lines.append(f'      iwr_iex: {d["iwr_iex"]}')
-        lines.append(f'      irm_iex: {d["irm_iex"]}')
-        lines.append(f'      webclient: {d["webclient"]}')
-        lines.append(f'      curl: {d["curl"]}')
-        lines.append(f'    evasion:')
-        lines.append(f'      mixed_case: {d["mixed_case"]}')
-        lines.append(f'      base64: {d["base64"]}')
-        lines.append(f'      cdn_staging: {d["cdn_staging"]}')
-        lines.append(f'      self_delete: {d["self_delete"]}')
-        lines.append(f'      start_sleep: {d["start_sleep"]}')
-        lines.append(f'      hidden_window: {d["hidden_window"]}')
-    lines.append('')
-    lines.append('cradles_total:')
-    lines.append(f'  iwr_iex: {cradles_total["iwr_iex"]}')
-    lines.append(f'  irm_iex: {cradles_total["irm_iex"]}')
-    lines.append(f'  webclient: {cradles_total["webclient"]}')
-    lines.append(f'  curl: {cradles_total["curl"]}')
-    lines.append('')
-    lines.append('evasion_totals:')
-    lines.append(f'  mixed_case: {evasion_totals["mixed_case"]}')
-    lines.append(f'  base64: {evasion_totals["base64"]}')
-    lines.append(f'  cdn_staging: {evasion_totals["cdn_staging"]}')
-    lines.append(f'  self_delete: {evasion_totals["self_delete"]}')
-    lines.append(f'  start_sleep: {evasion_totals["start_sleep"]}')
-    lines.append(f'  hidden_window: {evasion_totals["hidden_window"]}')
-    lines.append('')
-    lines.append('staging_domains:')
-    for domain, count in top_domains:
-        cdn_flag = 'true' if domain_cdn.get(domain) else 'false'
-        enr = domain_enrichment.get(domain, {})
-        tags = _ANALYST_TAGS.get(domain, {'hosting_type': 'unknown', 'status': 'unknown'})
-        lines.append(f'  - domain: "{domain}"')
-        lines.append(f'    count: {count}')
-        lines.append(f'    cdn: {cdn_flag}')
-        lines.append(f'    is_ip: {"true" if enr.get("is_ip") else "false"}')
-        lines.append(f'    asn: {_yaml_str(enr.get("asn"))}')
-        lines.append(f'    country: {_yaml_str(enr.get("country"))}')
-        lines.append(f'    city: {_yaml_str(enr.get("city"))}')
-        lines.append(f'    hosting_type: "{tags["hosting_type"]}"')
-        lines.append(f'    created: {_yaml_str(enr.get("created"))}')
-        lines.append(f'    registrar: {_yaml_str(enr.get("registrar"))}')
-        lines.append(f'    status: "{tags["status"]}"')
-        lines.append(f'    dns_history_url: "{_dns_history_url(domain)}"')
-
-    # Payload examples (up to _MAX_EXAMPLES per detection category)
-    lines.append('')
-    lines.append('payload_examples:')
-    for key in ['iwr_iex', 'irm_iex', 'webclient', 'curl', 'base64', 'self_delete', 'cdn_staging', 'hidden_window']:
-        examples = payload_examples.get(key, [])
-        if examples:
-            lines.append(f'  {key}:')
-            for ex in examples:
-                lines.append(f'    - date: "{ex["date"]}"')
-                if key == 'base64':
-                    lines.append(f'      encoded: {_yaml_str(ex.get("encoded"))}')
-                    lines.append(f'      decoded: {_yaml_str(ex.get("decoded"))}')
-                elif key == 'cdn_staging':
-                    lines.append(f'      url: {_yaml_str(ex.get("url"))}')
-                else:
-                    lines.append(f'      text: {_yaml_str(ex.get("text"))}')
+    # Carson landscape (domains-only feed): faithful host count + lure overlap.
+    # carson_total is pre-computed (None-safe, so a genuine count of 0 records 0,
+    # not the stale prior value); lure overlap is 0/0 on a Carson-only refresh.
+    if carson:
+        # Defense-in-depth floor (the ingest has its own): never let a bypassed/hand-edited
+        # cache publish a 0 or implausibly-shrunken landscape count into the public page.
+        prior = meta.get("carson_landscape")
+        if carson_total in (None, 0) or (isinstance(prior, int) and isinstance(carson_total, int)
+                                         and prior > 0 and carson_total < prior * 0.5):
+            print(f"  WARN: Carson count {carson_total} implausibly low vs prior {prior} — "
+                  f"keeping prior carson_landscape.", file=sys.stderr)
         else:
-            lines.append(f'  {key}: []')
+            meta["carson_landscape"] = carson_total
+        meta["carson_updated"] = carson["updated"]
+        lure_norm = {re.sub(r"^www\.", "", h) for h in lure_hosts}
+        meta["carson_lure_overlap"] = len(lure_norm & carson["norm"])
+        meta["carson_lure_observed"] = len(lure_norm)
+        print(f"Carson: {meta['total_domains']} hosts; lure overlap "
+              f"{meta['carson_lure_overlap']}/{meta['carson_lure_observed']} new-day lures")
 
-    # ---------------------------------------------------------------------------
-    # Monthly aggregation (for readable trend charts)
-    # ---------------------------------------------------------------------------
+    header = (
+        "# Generated by scripts/analyze_clickgrab.py (baseline + append; see DECISIONS #011)\n"
+        "# Sources: MHaggis ClickGrab nightly reports (raw blobs) + Carson ClickFix domain gist\n"
+        "# Historical sections (payload_examples, domain_monthly, staging_domains) are frozen baseline.\n\n"
+    )
+    body = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, default_flow_style=False, width=4096)
+    TRENDS_YML.write_text(header + body, encoding="utf-8")
 
-    from collections import OrderedDict
-    monthly = OrderedDict()
-    for date in sorted_dates:
-        month = date[:7]  # 'YYYY-MM'
-        if month not in monthly:
-            monthly[month] = {
-                'total': 0, 'malicious': 0,
-                'iwr_iex': 0, 'irm_iex': 0, 'webclient': 0, 'curl': 0,
-                'mixed_case': 0, 'base64': 0, 'cdn_staging': 0,
-                'self_delete': 0, 'start_sleep': 0, 'hidden_window': 0,
-            }
-        d = by_date[date]
-        m = monthly[month]
-        for key in m:
-            m[key] += d.get(key, 0)
-
-    lines.append('')
-    lines.append('monthly:')
-    for month, m in monthly.items():
-        lines.append(f'  - month: "{month}"')
-        lines.append(f'    total_sites: {m["total"]}')
-        lines.append(f'    malicious: {m["malicious"]}')
-        lines.append(f'    cradles:')
-        lines.append(f'      iwr_iex: {m["iwr_iex"]}')
-        lines.append(f'      irm_iex: {m["irm_iex"]}')
-        lines.append(f'      webclient: {m["webclient"]}')
-        lines.append(f'      curl: {m["curl"]}')
-        lines.append(f'    evasion:')
-        lines.append(f'      mixed_case: {m["mixed_case"]}')
-        lines.append(f'      base64: {m["base64"]}')
-        lines.append(f'      cdn_staging: {m["cdn_staging"]}')
-        lines.append(f'      self_delete: {m["self_delete"]}')
-        lines.append(f'      start_sleep: {m["start_sleep"]}')
-        lines.append(f'      hidden_window: {m["hidden_window"]}')
-
-    return '\n'.join(lines) + '\n'
+    print(f"\nAppended {add_reports} day(s): +{add_sites} sites, +{add_mal} malicious")
+    print(f"Window now: {meta['date_range']}  | written: {TRENDS_YML}")
 
 
-def main():
-    input_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_INPUT
-
-    if not os.path.exists(input_path):
-        print(f"ERROR: Input file not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"Reading: {input_path}")
-    yaml_out = analyse(input_path)
-
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-        f.write(yaml_out)
-
-    print(f"Written: {OUTPUT_PATH}")
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
