@@ -191,6 +191,14 @@ TRENDS_SPECS = {
             "campaigns": {"slug": str, "brand": str},
         },
     },
+    "_data/edge_exploits_provenance.yml": {
+        "meta": {"source": str, "generated": TYPE_DATE, "window": str,
+                 "cumulative_unique_ips": int, "total_events": int},
+        "sections": {
+            "providers": {"name": str, "total": int},
+            "asn_totals": {"name": str, "events": int},
+        },
+    },
 }
 
 
