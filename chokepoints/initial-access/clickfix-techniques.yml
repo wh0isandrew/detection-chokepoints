@@ -570,6 +570,22 @@ OsintSources:
   URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard%20AND%20page.body%3A%22Win%2BR%22
   Notes: 'Pages with clipboard API AND Run dialog instruction. The execution step unique to ClickFix.
     Swap "Win+R" for "PowerShell" or "Terminal" to find TerminalFix variants.'
+- Platform: URLScan
+  Query: 'page.body:navigator.clipboard AND page.body:"to better prove you are not a robot"'
+  URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard%20AND%20page.body%3A%22to%20better%20prove%20you%20are%20not%20a%20robot%22
+  Notes: 'Data-driven from MHaggis crawls (388 of 2700 lures, see _data/clickfix_lure_keywords.yml).
+    A verbatim fake-CAPTCHA instruction string — very high precision because the exact phrasing is
+    near-unique to the ClickFix lure kit, independent of clipboard payload, cradle, or staging infra.'
+- Platform: URLScan
+  Query: 'page.body:navigator.clipboard AND page.body:"checking if you are human"'
+  URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard%20AND%20page.body%3A%22checking%20if%20you%20are%20human%22
+  Notes: 'Cloudflare-interstitial impersonation phrase (317 lures, FakeCloudflare family). Catches the
+    family regardless of cradle; pairing with the clipboard write keeps FP low vs the real Cloudflare page.'
+- Platform: URLScan
+  Query: 'page.body:navigator.clipboard AND page.body:"captcha-verificatie-id"'
+  URL: https://urlscan.io/search/#page.body%3Anavigator.clipboard%20AND%20page.body%3A%22captcha-verificatie-id%22
+  Notes: 'Multilingual coverage — Dutch CAPTCHA-id string (290 lures). The kit is localized; English-only
+    page.body hunts miss translated lures, so track per-language variants for your threat landscape.'
 - Platform: VirusTotal Intelligence
   Query: behavior_processes:"nslookup.exe" tag:powershell
   URL: https://www.virustotal.com/gui/search/behavior_processes%3A%22nslookup.exe%22%20tag%3Apowershell

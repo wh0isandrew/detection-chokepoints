@@ -10,7 +10,9 @@
   var DATA = window.CLICKGRAB_TRENDS;
   if (!DATA) return;
 
-  var monthly = DATA.monthly || [];
+  // Behavioural trend is the CLEAN per-domain command classification (Carson
+  // ClickFix Hunter export), NOT the noisy MHaggis site-crawl monthly (DECISIONS #012).
+  var monthly = DATA.domain_monthly || [];
   if (!monthly.length) return;
 
   /* ── Palette (matches project CSS vars) ─────────────────────────────── */
@@ -148,9 +150,9 @@
     svg.setAttribute('aria-label', 'Monthly malicious site volume');
 
     var labels   = monthly.map(function (m) { return m.month.slice(5); });
-    var malicious = monthly.map(function (m) { return m.malicious; });
-    var yMax     = Math.max.apply(null, malicious);
-    var yMaxR    = Math.ceil(yMax / 500) * 500 || 500;
+    var counts   = monthly.map(function (m) { return m.n; });
+    var yMax     = Math.max.apply(null, counts);
+    var yMaxR    = Math.ceil(yMax / 100) * 100 || 100;
 
     drawAxes(svg, pad, W, H, yMaxR, labels, 5);
 
@@ -162,7 +164,7 @@
 
     monthly.forEach(function (m, i) {
       var cx   = pad.left + slotW * (i + 0.5);
-      var mal  = m.malicious;
+      var mal  = m.n;
 
       var hMal = (mal / yMaxR) * chartH;
       var yMal = pad.top + chartH - hMal;
@@ -172,7 +174,7 @@
       }));
 
       var html = '<strong style="color:#c9d1d9">' + m.month + '</strong><br>'
-               + '<span style="color:' + C.red + '">&#9646; Malicious sites: ' + mal + '</span>';
+               + '<span style="color:' + C.red + '">&#9646; ClickFix domains: ' + mal + '</span>';
       hitZone(svg, cx, pad.top + chartH / 2, slotW, chartH, html);
     });
 
@@ -193,15 +195,17 @@
     svg.setAttribute('aria-label', 'Cradle family monthly distribution');
 
     var series = [
-      { key: 'iwr_iex',   label: 'IWR/IEX',   color: C.yellow  },
-      { key: 'webclient', label: 'WebClient',  color: C.orange  },
-      { key: 'curl',      label: 'Curl/Bash',  color: C.purple  },
-      { key: 'irm_iex',   label: 'IRM/IEX',   color: C.cyan    },
+      { key: 'msiexec',   label: 'MSIExec',   color: C.red     },
+      { key: 'webclient', label: 'WebClient', color: C.orange  },
+      { key: 'curl',      label: 'Curl',      color: C.purple  },
+      { key: 'iwr',       label: 'IWR',       color: C.yellow  },
+      { key: 'irm',       label: 'IRM',       color: C.cyan    },
+      { key: 'vbs',       label: 'VBS/WSH',   color: C.green   },
     ];
 
     var labels = monthly.map(function (m) { return m.month.slice(5); });
     var allVals = monthly.map(function (m) {
-      return series.reduce(function (s, sr) { return s + (m.cradles[sr.key] || 0); }, 0);
+      return series.reduce(function (s, sr) { return s + (m[sr.key] || 0); }, 0);
     });
     var yMax  = Math.max.apply(null, allVals);
     var yMaxR = Math.ceil(yMax / 100) * 100 || 100;
@@ -217,7 +221,7 @@
 
     // Draw a line per series
     series.forEach(function (sr) {
-      var pts = monthly.map(function (m) { return m.cradles[sr.key] || 0; });
+      var pts = monthly.map(function (m) { return m[sr.key] || 0; });
 
       // Area fill
       var areaPath = 'M ' + xOf(0) + ',' + yOf(0);
@@ -245,7 +249,7 @@
         var m = monthly[i];
         var html = '<strong style="color:#c9d1d9">' + m.month + '</strong><br>'
                  + '<span style="color:' + sr.color + '">&#9646; ' + sr.label + ': ' + v + '</span><br>'
-                 + '<span style="color:' + C.text + '">Malicious sites: ' + m.malicious + '</span>';
+                 + '<span style="color:' + C.text + '">Domains: ' + m.n + '</span>';
         hitZone(svg, xOf(i), yOf(v), 20, 20, html);
       });
     });
@@ -278,18 +282,15 @@
     svg.setAttribute('aria-label', 'Evasion technique monthly trends');
 
     var series = [
-      { key: 'base64',       label: 'Base64 encoding',      color: C.yellow },
-      { key: 'hidden_window',label: 'Hidden window',         color: C.blue   },
-      { key: 'mixed_case',   label: 'Mixed-case PS',         color: C.orange },
-      { key: 'cdn_staging',  label: 'CDN staging',           color: C.cyan   },
-      { key: 'self_delete',  label: 'Self-delete',           color: C.red    },
-      { key: 'start_sleep',  label: 'Start-Sleep',           color: C.purple },
+      { key: 'no_url',  label: 'Inline (no URL)', color: C.red    },
+      { key: 'base64',  label: 'Base64 encoding', color: C.yellow },
+      { key: 'hex_xor', label: 'Hex-XOR',         color: C.cyan   },
     ];
 
     var labels = monthly.map(function (m) { return m.month.slice(5); });
     var allVals = [];
     monthly.forEach(function (m) {
-      series.forEach(function (sr) { allVals.push(m.evasion[sr.key] || 0); });
+      series.forEach(function (sr) { allVals.push(m[sr.key] || 0); });
     });
     var yMax  = Math.max.apply(null, allVals);
     var yMaxR = Math.ceil(yMax / 500) * 500 || 500;
@@ -304,7 +305,7 @@
     function yOf(v) { return pad.top + chartH - (v / yMaxR) * chartH; }
 
     series.forEach(function (sr) {
-      var pts = monthly.map(function (m) { return m.evasion[sr.key] || 0; });
+      var pts = monthly.map(function (m) { return m[sr.key] || 0; });
 
       var linePath = pts.map(function (v, i) {
         return (i === 0 ? 'M' : 'L') + ' ' + xOf(i) + ',' + yOf(v);
@@ -322,7 +323,7 @@
         var m = monthly[i];
         var html = '<strong style="color:#c9d1d9">' + m.month + '</strong><br>'
                  + '<span style="color:' + sr.color + '">&#9646; ' + sr.label + ': ' + v + '</span><br>'
-                 + '<span style="color:' + C.text + '">Malicious sites: ' + m.malicious + '</span>';
+                 + '<span style="color:' + C.text + '">Domains: ' + m.n + '</span>';
         hitZone(svg, xOf(i), yOf(v), 20, 20, html);
       });
     });

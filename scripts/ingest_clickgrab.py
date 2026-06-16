@@ -1,438 +1,263 @@
 #!/usr/bin/env python3
 """
 ingest_clickgrab.py
-Fetch the last 7 nightly ClickGrab reports from the public GitHub repo and
-write a deduplicated list of per-URL records to cache/clickgrab_raw.json.
+Fetch MHaggis ClickGrab nightly reports as plain git blobs and cache them
+per-day for the trends generator (analyze_clickgrab.py).
 
-Actual filename format in MHaggis/ClickGrab:
-  nightly_reports/clickgrab_report_YYYYMMDD_HHMMSS.json
+WHY raw blobs instead of Git LFS (see docs/DECISIONS.md #010):
+  MHaggis exhausted the repo's Git-LFS storage/bandwidth quota and migrated
+  new files to regular git blobs (confirmed in upstream .gitattributes). The
+  old LFS flow (pointer -> LFS batch API -> presigned URL) now returns no
+  href once the budget is gone, so the previous ingest silently wrote zero
+  records. Regular blobs are one plain GET from raw.githubusercontent.com:
+  no token, no batch API, no bandwidth gate.
 
-Files are stored in Git LFS. Download flow:
-  1. List nightly_reports/ via GitHub Contents API to find files in the
-     last LOOKBACK_DAYS by parsing the YYYYMMDD prefix from each filename.
-  2. Read the LFS pointer (oid, size) from the file's raw content.
-  3. Resolve the real download URL via the GitHub LFS Batch API.
-  4. Download and parse the JSON report.
+WHY synchronous requests instead of async httpx:
+  We fetch one small file per calendar day (<=~90 sequential GETs for a full
+  backfill, one per normal daily run). The async/concurrency machinery only
+  added complexity around the LFS hop that no longer exists. A straight loop
+  is easier to read and reason about, and the run is I/O-trivial.
 
-All files within the lookback window are processed concurrently.
+Source files (raw.githubusercontent.com/MHaggis/ClickGrab/main/):
+  nightly_reports/clickgrab_report_YYYY-MM-DD.json   (per-day, ~100 sites)
+  latest_consolidated_report.json                    (alias for the latest day)
 
-Requires: GITHUB_TOKEN env var (optional but avoids rate limits and gives
-LFS access priority). Without it the script uses unauthenticated GitHub API
-calls (60 req/hr limit) and may hit the repo's LFS bandwidth budget limit.
+Output (gitignored cache — raw payloads never get committed; see memory-hygiene
+rule and DECISIONS #001/#011):
+  cache/clickgrab/days/<YYYY-MM-DD>.json   one file per day, list of site dicts
+  cache/clickgrab/ingest_log.json          run summary
 
-Output: cache/clickgrab_raw.json
+Usage:
+  python scripts/ingest_clickgrab.py                       # last LOOKBACK_DAYS
+  python scripts/ingest_clickgrab.py 2026-05-20 2026-06-15 # explicit backfill range
+  python scripts/ingest_clickgrab.py --since 2026-05-20    # since date -> today
+
+Env:
+  CLICKGRAB_LOOKBACK_DAYS   default 21 (overlap is fine; merge is by-date idempotent)
+  CLICKGRAB_REQUEST_TIMEOUT default 60
 """
 
-import asyncio
-import base64
 import json
 import os
 import re
 import sys
-import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
 
-import httpx
-from dotenv import load_dotenv
+import requests
 
-load_dotenv(Path(__file__).parent.parent / ".env")
+ISO_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Paths / config
 # ---------------------------------------------------------------------------
 
-REPO_ROOT   = Path(__file__).parent.parent
-CACHE_DIR   = REPO_ROOT / "cache"
-OUTPUT_PATH = CACHE_DIR / "clickgrab_raw.json"
+REPO_ROOT = Path(__file__).parent.parent
+CACHE_DIR = REPO_ROOT / "cache" / "clickgrab"
+DAYS_DIR  = CACHE_DIR / "days"
+LOG_PATH  = CACHE_DIR / "ingest_log.json"
 
-CLICKGRAB_OWNER  = "MHaggis"
-CLICKGRAB_REPO   = "ClickGrab"
-CLICKGRAB_BRANCH = "main"
-REPORTS_DIR      = "nightly_reports"
+RAW_BASE = "https://raw.githubusercontent.com/MHaggis/ClickGrab/main"
+NIGHTLY_URL_TMPL  = RAW_BASE + "/nightly_reports/clickgrab_report_{date}.json"
+CONSOLIDATED_URL  = RAW_BASE + "/latest_consolidated_report.json"
 
-LOOKBACK_DAYS   = int(os.getenv("CLICKGRAB_LOOKBACK_DAYS", "7"))
-REQUEST_TIMEOUT = float(os.getenv("CLICKGRAB_REQUEST_TIMEOUT", "30"))
+LOOKBACK_DAYS   = int(os.getenv("CLICKGRAB_LOOKBACK_DAYS", "21"))
+REQUEST_TIMEOUT = float(os.getenv("CLICKGRAB_REQUEST_TIMEOUT", "60"))
 
-GITHUB_API  = "https://api.github.com"
-LFS_BATCH_URL = (
-    f"https://github.com/{CLICKGRAB_OWNER}/{CLICKGRAB_REPO}.git/info/lfs/objects/batch"
-)
+HEADERS = {"User-Agent": "detection-chokepoints/clickgrab-ingest"}
 
 # ---------------------------------------------------------------------------
-# GitHub API helpers
+# Helpers
 # ---------------------------------------------------------------------------
 
-def _github_headers(token: str | None = None) -> dict:
-    headers = {
-        "User-Agent": "detection-chokepoints/enrichment-pipeline",
-        "Accept": "application/vnd.github+json",
-    }
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    return headers
+def _looks_like_lfs_pointer(text: str) -> bool:
+    """Old (pre-migration) reports resolve to a ~130-byte LFS pointer stub on raw,
+    not JSON. A real pointer's FIRST line is exactly the git-lfs spec URL and the
+    whole blob is tiny. Gate on BOTH so a real report whose payload merely contains
+    'oid sha256:' (attacker-controlled ClickFix text can) isn't misclassified and
+    silently dropped as 'budget-locked'."""
+    return text.lstrip().startswith("version https://git-lfs") and len(text) < 400
 
 
-async def _list_report_files(client: httpx.AsyncClient, token: str | None) -> list:
-    """Return list of {name, sha, size} dicts for files in nightly_reports/."""
-    url = (
-        f"{GITHUB_API}/repos/{CLICKGRAB_OWNER}/{CLICKGRAB_REPO}"
-        f"/contents/{REPORTS_DIR}?ref={CLICKGRAB_BRANCH}"
-    )
-    try:
-        resp = await client.get(url, headers=_github_headers(token), timeout=REQUEST_TIMEOUT)
-        resp.raise_for_status()
-    except httpx.HTTPError as exc:
-        print(f"ERROR listing {REPORTS_DIR}: {exc}", file=sys.stderr)
-        return []
-
-    entries = resp.json()
-    if not isinstance(entries, list):
-        print(f"ERROR: unexpected response listing {REPORTS_DIR}", file=sys.stderr)
-        return []
-
-    return [
-        {"name": e.get("name", ""), "sha": e.get("sha", ""), "size": e.get("size", 0)}
-        for e in entries
-        if e.get("name", "").endswith(".json")
-        and e.get("name") != "latest_consolidated_report.json"
-    ]
+def _report_date(data) -> str:
+    """The report's own date (YYYY-MM-DD) from report_date/timestamp, or ''. Used to
+    confirm the consolidated alias has actually rolled to the requested day."""
+    if not isinstance(data, dict):
+        return ""
+    for f in ("report_date", "ReportDate", "date"):
+        v = data.get(f)
+        if isinstance(v, str) and ISO_RE.match(v):
+            return v[:10]
+    ts = data.get("timestamp") or data.get("Timestamp") or ""
+    return ts[:10] if isinstance(ts, str) and ISO_RE.match(ts) else ""
 
 
-def _parse_date_from_filename(filename: str):
-    m = re.search(r"_(\d{8})_", filename)
-    if m:
-        raw = m.group(1)
-        try:
-            return date(int(raw[:4]), int(raw[4:6]), int(raw[6:8]))
-        except ValueError:
-            pass
-    return None
-
-
-async def _fetch_lfs_pointer(
-    client: httpx.AsyncClient, filename: str, token: str | None
-) -> tuple:
-    """Fetch LFS pointer file and return (oid, size) or (None, None)."""
-    url = (
-        f"https://raw.githubusercontent.com/{CLICKGRAB_OWNER}"
-        f"/{CLICKGRAB_REPO}/{CLICKGRAB_BRANCH}/{REPORTS_DIR}/{filename}"
-    )
-    try:
-        resp = await client.get(url, headers=_github_headers(token), timeout=REQUEST_TIMEOUT)
-        resp.raise_for_status()
-        content = resp.text
-    except httpx.HTTPError as exc:
-        print(f"    Could not fetch LFS pointer for {filename}: {exc}", file=sys.stderr)
-        return None, None
-
-    oid_m  = re.search(r"oid sha256:([0-9a-f]{64})", content)
-    size_m = re.search(r"size (\d+)", content)
-    if oid_m and size_m:
-        return oid_m.group(1), int(size_m.group(1))
-    print(f"    {filename}: not a valid LFS pointer", file=sys.stderr)
-    return None, None
-
-
-async def _resolve_lfs_download_url(
-    oid: str, size: int, client: httpx.AsyncClient, token: str | None
-) -> str | None:
-    """Use LFS Batch API to get the real download URL for an LFS object."""
-    headers = {
-        "Content-Type": "application/vnd.git-lfs+json",
-        "Accept":       "application/vnd.git-lfs+json",
-    }
-    if token:
-        cred = base64.b64encode(f"token:{token}".encode()).decode()
-        headers["Authorization"] = f"Basic {cred}"
-
-    payload = {
-        "operation": "download",
-        "transfers": ["basic"],
-        "objects":   [{"oid": oid, "size": size}],
-    }
-    try:
-        resp = await client.post(
-            LFS_BATCH_URL, json=payload, headers=headers, timeout=REQUEST_TIMEOUT
-        )
-        resp.raise_for_status()
-    except httpx.HTTPError as exc:
-        print(f"    LFS batch API error: {exc}", file=sys.stderr)
-        return None
-
-    data    = resp.json()
-    objects = data.get("objects", [])
-    if not objects:
-        print(f"    LFS batch API returned no objects: {data.get('message', 'unknown')}", file=sys.stderr)
-        return None
-
-    obj   = objects[0]
-    error = obj.get("error")
-    if error:
-        print(f"    LFS object error: {error.get('message', error)}", file=sys.stderr)
-        return None
-
-    return obj.get("actions", {}).get("download", {}).get("href")
-
-
-async def _download_lfs_file(download_url: str, client: httpx.AsyncClient):
-    """Download the actual JSON content from an LFS download URL."""
-    try:
-        # LFS download URLs are pre-signed — send without custom auth headers
-        resp = await client.get(download_url, headers={}, timeout=60)
-        resp.raise_for_status()
-        return resp.json()
-    except httpx.HTTPError as exc:
-        print(f"    LFS download failed: {exc}", file=sys.stderr)
-        return None
-    except ValueError as exc:
-        print(f"    LFS content JSON parse error: {exc}", file=sys.stderr)
-        return None
-
-
-# ---------------------------------------------------------------------------
-# Report parsing
-# ---------------------------------------------------------------------------
-
-def _extract_url(record: dict) -> str:
-    return (
-        record.get("Url") or record.get("URL") or record.get("url")
-        or record.get("SourceUrl") or record.get("source_url") or ""
-    )
-
-
-def _extract_tags(record: dict) -> list:
-    tags = record.get("Tags") or record.get("tags") or []
-    if isinstance(tags, str):
-        tags = [tags]
-    for field in ("Verdict", "verdict", "DetectionType", "detection_type"):
-        val = record.get(field)
-        if isinstance(val, str) and val:
-            tags = list(tags) + [val]
-    return [str(t).strip() for t in tags if t]
-
-
-def _extract_redirect_chain(record: dict) -> list:
-    chain = (
-        record.get("RedirectChain") or record.get("redirect_chain")
-        or record.get("Redirects") or []
-    )
-    if isinstance(chain, str):
-        chain = [chain]
-    return [str(u).strip() for u in chain if u]
-
-
-def _extract_downloaded_files(record: dict) -> list:
-    files = []
-    for dl in (record.get("PowerShellDownloads") or []):
-        if not isinstance(dl, dict):
-            continue
-        fname = dl.get("FileName") or dl.get("file_name") or dl.get("SavedAs") or ""
-        if not fname:
-            url = dl.get("URL") or dl.get("url") or ""
-            try:
-                fname = Path(urlparse(url).path).name
-            except Exception:
-                pass
-        if fname:
-            files.append(str(fname).strip())
-    direct = record.get("DownloadedFiles") or record.get("downloaded_files") or []
-    if isinstance(direct, str):
-        direct = [direct]
-    files.extend(str(f).strip() for f in direct if f)
-    return list(dict.fromkeys(files))
-
-
-def _extract_script_snippets(record: dict, max_len: int = 350) -> list:
-    parts = []
-    for field in ("PowerShellCommands", "HighRiskCommands", "ClipboardCommands"):
-        val = record.get(field)
-        if isinstance(val, str) and val:
-            parts.append(val[:max_len])
-        elif isinstance(val, list):
-            for item in val:
-                if item:
-                    parts.append(str(item)[:max_len])
-    return parts[:5]
-
-
-def _extract_risk_score(record: dict) -> int:
-    score = (
-        record.get("ThreatScore") or record.get("threat_score")
-        or record.get("RiskScore") or 0
-    )
-    try:
-        return int(float(score))
-    except (TypeError, ValueError):
-        return 0
-
-
-def _parse_site_record(record: dict, report_date: str):
-    url = _extract_url(record)
-    if not url:
-        return None
-    return {
-        "url":              url,
-        "date":             report_date,
-        "tags":             _extract_tags(record),
-        "redirect_chain":   _extract_redirect_chain(record),
-        "downloaded_files": _extract_downloaded_files(record),
-        "script_snippets":  _extract_script_snippets(record),
-        "risk_score":       _extract_risk_score(record),
-    }
-
-
-def _parse_report(data, report_date: str) -> list:
-    """Extract site records from a raw report (handles list or dict top-level)."""
-    records: list = []
-
-    def _collect_sites(site_list, rdate):
-        for site in site_list:
-            if not isinstance(site, dict):
-                continue
-            r = _parse_site_record(site, rdate)
-            if r:
-                records.append(r)
-
+def _extract_sites(data) -> list:
+    """A nightly/consolidated report is a dict with a 'sites' list. Be tolerant
+    of the older capitalised 'Sites' and of a bare top-level list."""
+    if isinstance(data, dict):
+        return data.get("sites") or data.get("Sites") or []
     if isinstance(data, list):
-        for item in data:
-            if not isinstance(item, dict):
-                continue
-            site_list = item.get("Sites") or item.get("sites") or []
-            if site_list:
-                rdate = (
-                    (item.get("ReportTime") or item.get("report_date") or report_date or "")[:10]
-                    or report_date
-                )
-                _collect_sites(site_list, rdate)
-            elif _extract_url(item):
-                r = _parse_site_record(item, report_date)
-                if r:
-                    records.append(r)
-    elif isinstance(data, dict):
-        site_list = data.get("Sites") or data.get("sites") or []
-        rdate = (
-            (data.get("ReportTime") or data.get("report_date") or report_date or "")[:10]
-            or report_date
-        )
-        _collect_sites(site_list, rdate)
+        return data
+    return []
 
-    return records
+
+def _normalise_day_records(sites: list, day: str) -> list:
+    """Stamp each site with the report date under 'Timestamp' so the generator
+    has a reliable per-record date regardless of the upstream field name.
+    Records are stored verbatim otherwise (the generator reads PowerShellCommands,
+    PowerShellDownloads, ThreatScore, Verdict, etc. directly)."""
+    out = []
+    for s in sites:
+        if not isinstance(s, dict):
+            continue
+        s = dict(s)
+        s.setdefault("Timestamp", day)
+        out.append(s)
+    return out
+
+
+def _fetch_json(url: str) -> tuple:
+    """GET a raw blob. Returns (status, data_or_None, note).
+    note distinguishes the skip reasons so the run log is diagnosable."""
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    except requests.RequestException as exc:
+        return ("error", None, f"request failed: {exc}")
+
+    if resp.status_code == 404:
+        return ("missing", None, "404 (no report this day)")
+    if resp.status_code != 200:
+        return ("error", None, f"HTTP {resp.status_code}")
+
+    text = resp.text
+    if _looks_like_lfs_pointer(text):
+        return ("lfs_locked", None, "LFS pointer (pre-migration, budget-locked)")
+
+    try:
+        return ("ok", json.loads(text), "")
+    except ValueError as exc:
+        return ("error", None, f"JSON parse error: {exc}")
 
 
 # ---------------------------------------------------------------------------
-# Run log
+# Date range resolution
 # ---------------------------------------------------------------------------
 
-def _write_run_log(cache_dir: Path, section: str, data: dict) -> None:
-    import datetime as _dt
-    path = cache_dir / "pipeline_run.json"
-    log: dict = {}
-    if path.exists():
-        try:
-            log = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    log.setdefault("run_date", _dt.date.today().isoformat())
-    log[section] = {"timestamp": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **data}
-    path.write_text(json.dumps(log, indent=2), encoding="utf-8")
+def _parse_date(s: str) -> date:
+    return datetime.strptime(s, "%Y-%m-%d").date()
+
+
+def _resolve_range(argv: list) -> tuple:
+    """Resolve the [start, end] inclusive date range to fetch.
+      (no args)                 -> last LOOKBACK_DAYS ending today
+      --since YYYY-MM-DD        -> that date through today
+      YYYY-MM-DD YYYY-MM-DD     -> explicit inclusive range
+    """
+    today = datetime.now(timezone.utc).date()
+    if not argv:
+        return today - timedelta(days=LOOKBACK_DAYS - 1), today
+    if argv[0] == "--since" and len(argv) >= 2:
+        return _parse_date(argv[1]), today
+    if len(argv) >= 2:
+        return _parse_date(argv[0]), _parse_date(argv[1])
+    # single date -> just that day
+    d = _parse_date(argv[0])
+    return d, d
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-async def main():
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+def main() -> None:
+    DAYS_DIR.mkdir(parents=True, exist_ok=True)
 
-    today   = date.today()
-    cutoff  = today - timedelta(days=LOOKBACK_DAYS)
-    token   = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    start, end = _resolve_range(sys.argv[1:])
+    today = datetime.now(timezone.utc).date()
+    print(f"Fetching ClickGrab nightly blobs {start} -> {end}")
 
-    print(f"Fetching ClickGrab reports from {cutoff} → {today}")
-    print(f"Listing {REPORTS_DIR}/ via GitHub API…")
-    if token:
-        print("  Using GITHUB_TOKEN for authenticated API access")
-    else:
-        print("  No GITHUB_TOKEN — using unauthenticated (60 req/hr limit)")
+    stats = {"days_requested": 0, "days_written": 0, "sites_total": 0,
+             "missing": 0, "lfs_locked": 0, "empty": 0, "errors": 0}
+    day_status = {}   # per-day outcome, so a broken 'today' isn't masked by good cached days
 
-    async with httpx.AsyncClient() as client:
-        all_files = await _list_report_files(client, token)
-        print(f"  Found {len(all_files)} JSON files in {REPORTS_DIR}/")
+    d = start
+    while d <= end:
+        stats["days_requested"] += 1
+        day = d.isoformat()
+        url = NIGHTLY_URL_TMPL.format(date=day)
+        status, data, note = _fetch_json(url)
 
-        recent_files = [
-            (f["name"], d)
-            for f in all_files
-            if (d := _parse_date_from_filename(f["name"])) and d >= cutoff
-        ]
-        recent_files.sort(key=lambda x: x[1], reverse=True)
-        print(f"  {len(recent_files)} files in last {LOOKBACK_DAYS} days")
+        # The latest day's nightly file is occasionally published a few minutes
+        # after the consolidated alias; fall back to the consolidated report for
+        # "today" — but ONLY if the alias has actually rolled to today. During the
+        # publish window it may still hold YESTERDAY's content; writing that under
+        # today's filename would mislabel and double-count it (its real day was
+        # already ingested). Verify the report's own date before accepting.
+        if status != "ok" and d == today:
+            status2, data2, _ = _fetch_json(CONSOLIDATED_URL)
+            if status2 == "ok" and _report_date(data2) == day:
+                status, data, note = "ok", data2, "via consolidated alias"
+            elif status2 == "ok":
+                note = f"consolidated alias is {_report_date(data2) or 'undated'}, not today — skipped"
 
-        async def _process_file(filename: str, file_date: date) -> tuple:
-            """Fetch pointer → resolve URL → download → parse. Returns (records, skipped)."""
-            date_str = file_date.isoformat()
-            print(f"\n  {filename}")
+        if status != "ok":
+            bucket = status if status in ("missing", "lfs_locked") else "errors"
+            stats[bucket] += 1
+            day_status[day] = note or bucket
+            print(f"  {day}: skip — {note}")
+            d += timedelta(days=1)
+            continue
 
-            oid, size = await _fetch_lfs_pointer(client, filename, token)
-            if not oid:
-                print("    Skipping — could not read LFS pointer")
-                return [], 1
+        # A 200 that parses but is the wrong shape (dict lacking sites/Sites) is an
+        # upstream schema break, not a quiet day — flag it as an error, not empty.
+        if isinstance(data, dict) and not (data.get("sites") or data.get("Sites")):
+            stats["errors"] += 1
+            day_status[day] = "200 but no sites/Sites key (schema break?)"
+            print(f"  {day}: skip — 200 but no sites/Sites key (schema break?)", file=sys.stderr)
+            d += timedelta(days=1)
+            continue
 
-            download_url = await _resolve_lfs_download_url(oid, size, client, token)
-            if not download_url:
-                print("    Skipping — LFS download URL unavailable (budget exceeded?)")
-                return [], 1
+        records = _normalise_day_records(_extract_sites(data), day)
+        if not records:
+            # A real nightly report is ~100 sites; 0 sites on a NON-today day is
+            # almost certainly an upstream break, so surface it on stderr.
+            stats["empty"] += 1
+            day_status[day] = "0 sites"
+            historical = d != today
+            print(f"  {day}: 0 sites — not written"
+                  + ("  [WARN: unexpected for a historical day]" if historical else ""),
+                  file=sys.stderr if historical else sys.stdout)
+            d += timedelta(days=1)
+            continue
 
-            data = await _download_lfs_file(download_url, client)
-            if data is None:
-                print("    Skipping — download failed")
-                return [], 1
-
-            records = _parse_report(data, date_str)
-            print(f"    {len(records)} URL records extracted")
-            return records, 0
-
-        results = await asyncio.gather(*[_process_file(n, d) for n, d in recent_files])
-
-    all_records: list = []
-    lfs_skipped = 0
-    seen: set = set()
-
-    for records, skipped in results:
-        lfs_skipped += skipped
-        for r in records:
-            key = (r["url"], r["date"])
-            if key not in seen:
-                seen.add(key)
-                all_records.append(r)
-
-    print(f"\nTotal unique URL records: {len(all_records)}")
-
-    OUTPUT_PATH.write_text(
-        json.dumps(all_records, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    print(f"Written: {OUTPUT_PATH}")
-
-    if not all_records:
-        print(
-            "\nNOTE: Zero records written. This is normal if:\n"
-            "  - No ClickGrab reports were published in the last 7 days\n"
-            "  - The repo's Git LFS bandwidth budget is exhausted (resets monthly)\n"
-            "  - GITHUB_TOKEN is missing and the unauthenticated rate limit was hit\n"
-            "Subsequent pipeline steps will run with empty input.",
-            file=sys.stderr,
+        (DAYS_DIR / f"{day}.json").write_text(
+            json.dumps(records, ensure_ascii=False), encoding="utf-8"
         )
+        stats["days_written"] += 1
+        stats["sites_total"] += len(records)
+        day_status[day] = f"ok ({len(records)} sites)" + (f" {note}" if note else "")
+        print(f"  {day}: {len(records)} sites{(' (' + note + ')') if note else ''}")
+        d += timedelta(days=1)
 
-    _write_run_log(CACHE_DIR, "ingest_clickgrab", {
-        "files_found":     len(all_files),
-        "files_in_window": len(recent_files),
-        "lfs_skipped":     lfs_skipped,
-        "records_ingested": len(all_records),
-        "status": "ok" if all_records else "empty",
-    })
+    LOG_PATH.write_text(json.dumps({
+        "run_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "range": {"start": start.isoformat(), "end": end.isoformat()},
+        **stats,
+        "per_day": day_status,
+    }, indent=2), encoding="utf-8")
+
+    print(f"\nDays written: {stats['days_written']}  "
+          f"sites: {stats['sites_total']}  "
+          f"missing: {stats['missing']}  lfs_locked: {stats['lfs_locked']}  "
+          f"errors: {stats['errors']}")
+    print(f"Cache: {DAYS_DIR}")
+
+    if stats["days_written"] == 0:
+        print("\nWARNING: no days written. If this persists, verify the upstream "
+              "filename format and that recent reports are non-LFS blobs.",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

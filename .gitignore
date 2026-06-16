@@ -57,6 +57,7 @@ drafts/
 mockups/
 docs/ATTEMPTS.md
 docs/DECISIONS.md
+docs/M3-PROVENANCE-PLAN.md
 scripts/enrich_staging_domains.py
 # Local ASN/IP enrichment tooling + inputs (touch IPs/keys/external lookups; never
 # committed -- the repo holds only published site data, decision #009). These write
