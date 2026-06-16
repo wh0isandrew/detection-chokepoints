@@ -55,9 +55,19 @@ CRADLE_RE = OrderedDict([
 ])
 EVASION_RE = OrderedDict([
     ("hex_xor",   re.compile(r"-bxor", re.I)),
-    ("base64",    re.compile(r"frombase64string|-enc\b|-encodedcommand", re.I)),
+    # base64: FromBase64String, or -EncodedCommand and its valid PowerShell prefix
+    # abbreviations (-e .. -encodedcommand). The base64-blob lookahead disambiguates
+    # -e from -ExecutionPolicy, which is followed by a word, not a blob (DECISIONS #013).
+    ("base64",    re.compile(
+        r"frombase64string"
+        r"|-e(?:n(?:c(?:o(?:d(?:e(?:d(?:c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?)?)?)?)?)?)?)?"
+        r"(?=\s+[\"']?[A-Za-z0-9+/]{16,})", re.I)),
 ])
-URL_RE = re.compile(r"https?://", re.I)
+# no_url means "no REMOTE FETCH", not merely "no https?:// URL": also catch
+# single-slash http:/, ftp, UNC/WebDAV (\\host\.., \\IP@port\DavWWWRoot), and
+# scheme-less bare-IPv4 fetches (irm/iwr/curl <ip>) (DECISIONS #013).
+REMOTE_FETCH_RE = re.compile(
+    r"https?:/+|ftp://|\\\\[\w.$@-]|\b(?:\d{1,3}\.){3}\d{1,3}\b", re.I)
 
 CRADLE_KEYS  = list(CRADLE_RE.keys())
 EVASION_KEYS = list(EVASION_RE.keys()) + ["no_url"]
@@ -71,7 +81,7 @@ def classify_commandline(cmd: str) -> dict:
         flags[k] = bool(rx.search(cmd))
     for k, rx in EVASION_RE.items():
         flags[k] = bool(rx.search(cmd))
-    flags["no_url"] = not bool(URL_RE.search(cmd))
+    flags["no_url"] = not bool(REMOTE_FETCH_RE.search(cmd))
     return flags
 
 

