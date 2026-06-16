@@ -1,9 +1,18 @@
 name: Update ClickGrab Trends
 
-# Appends new ClickFix delivery-chain days to _data/clickgrab_trends.yml from
-# MHaggis ClickGrab (behavioural data) + Carson Williams' domain gist (landscape
-# count). Opens a review PR — never pushes to main. The generator is append-only
-# and idempotent (see docs/DECISIONS.md #010/#011), so re-runs are safe.
+# Daily refresh of the CI-maintainable ClickFix trends feeds in
+# _data/clickgrab_trends.yml: MHaggis ClickGrab nightly crawls (VOLUME — sites
+# crawled) + Carson Williams' domain gist (landscape count). Opens a review PR —
+# never pushes to main. Append-only and idempotent (docs/DECISIONS.md #010/#011),
+# so re-runs are safe.
+#
+# NOT run in CI — manual/local refresh only, because these rebuild from the full
+# local dataset that a fresh CI checkout cannot hold:
+#   - scripts/build_domain_monthly.py  behavioural command classification; needs
+#       the manually exported Carson ClickFix Hunter XLSX (DECISIONS #012/#013).
+#   - scripts/build_lure_keywords.py    lure-page OSINT keywords; rebuilds from the
+#       full cache/clickgrab/days/ history, of which CI fetches only a 14-day
+#       window — running it here would shrink the committed full-history file.
 
 on:
   workflow_dispatch:          # manual / on-demand
