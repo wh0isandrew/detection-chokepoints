@@ -1,10 +1,11 @@
 name: Update ClickGrab Trends
 
-# Daily refresh of the CI-maintainable ClickFix trends feeds in
+# Weekly refresh of the CI-maintainable ClickFix trends feeds in
 # _data/clickgrab_trends.yml: MHaggis ClickGrab nightly crawls (VOLUME — sites
-# crawled) + Carson Williams' domain gist (landscape count). Opens a review PR —
-# never pushes to main. Append-only and idempotent (docs/DECISIONS.md #010/#011),
-# so re-runs are safe.
+# crawled) + Carson Williams' domain gist (landscape count). Maintains a single
+# rolling review PR on a fixed branch — never pushes to main, never piles up.
+# Append-only and idempotent (docs/DECISIONS.md #010/#011), so re-runs are safe;
+# the 14-day lookback backfills any gap between weekly runs.
 #
 # NOT run in CI — manual/local refresh only, because these rebuild from the full
 # local dataset that a fresh CI checkout cannot hold:
@@ -17,7 +18,7 @@ name: Update ClickGrab Trends
 on:
   workflow_dispatch:          # manual / on-demand
   schedule:
-    - cron: '0 6 * * *'       # daily 06:00 UTC — after MHaggis nightly (~01:50 UTC) publishes
+    - cron: '0 6 * * 1'       # Mondays 06:00 UTC — 14-day lookback backfills the week (MHaggis nightly publishes ~01:50 UTC)
 
 permissions:
   contents: write             # push the data branch
@@ -53,7 +54,10 @@ jobs:
       - name: Append new days to trends data
         run: python scripts/analyze_clickgrab.py
 
-      - name: Open PR with updated trends data
+      # Single rolling PR: a fixed branch is rebuilt from main and force-pushed
+      # each run, so at most one ClickGrab PR is ever open. It never piles up and
+      # never mutually conflicts the way per-day dated branches did.
+      - name: Publish updated trends data (rolling PR)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,19 +72,23 @@ jobs:
           fi
 
           DATE=$(date -u +%Y-%m-%d)
-          BRANCH="data/clickgrab-${DATE}"
+          BRANCH="data/clickgrab-auto"      # fixed rolling branch — one PR, no pileup
+          TITLE="chore: update clickgrab trends data [${DATE}]"
 
-          git checkout -b "$BRANCH"
-          git commit -m "chore: update clickgrab trends data [${DATE}]"
+          # Reset the branch to current HEAD (main + staged delta) and force-push,
+          # so the open PR always shows a clean append-only diff vs main.
+          git checkout -B "$BRANCH"
+          git commit -m "$TITLE"
           git push --force -u origin "$BRANCH"
 
           PR_BODY=$(printf 'Automated ClickGrab trends update.\n\nAppends new ClickFix delivery-chain days from MHaggis ClickGrab (raw blobs) and refreshes the Carson ClickFix domain-landscape count. Append-only: historical sections (payload_examples, domain_monthly, staging_domains) are unchanged; review the daily/monthly/totals/meta delta below, then merge to publish.')
-          if ! gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q "OPEN"; then
+          if gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q "OPEN"; then
+            gh pr edit "$BRANCH" --title "$TITLE" --body "$PR_BODY"
+            echo "Refreshed existing rolling PR for $BRANCH."
+          else
             gh pr create \
-              --title "chore: update clickgrab trends data [${DATE}]" \
+              --title "$TITLE" \
               --body "$PR_BODY" \
               --base main \
               --head "$BRANCH"
-          else
-            echo "PR for $BRANCH already open — data updated on existing branch."
           fi
